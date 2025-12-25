@@ -1,0 +1,1174 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - KV Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'styles/ecommerce.css' %}">
+    <link rel="stylesheet" href="{% static 'styles/mobile.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Checkout Page Specific Styles - iPhone 14 Pro Max Optimized */
+        .checkout-section {
+            padding: 2rem 0;
+            min-height: 100vh;
+            background: var(--black);
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            color: var(--primary-green);
+            text-align: center;
+            margin-bottom: 3rem;
+            text-shadow: 0 0 20px var(--shadow-green);
+            font-weight: 700;
+        }
+
+        .checkout-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .checkout-form-container {
+            background: var(--dark-gray);
+            border-radius: var(--border-radius-large);
+            padding: 2rem;
+            box-shadow: 0 8px 32px var(--shadow-dark);
+        }
+
+        .form-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .form-section h3 {
+            font-size: 1.5rem;
+            color: var(--primary-green);
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .form-section h3 i {
+            font-size: 1.2rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--text-white);
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 1rem;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            background: var(--medium-gray);
+            color: var(--text-white);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 3px var(--shadow-green);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: var(--text-dark);
+        }
+
+        .error {
+            color: var(--error-red);
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+
+        .order-summary {
+            background: var(--dark-gray);
+            border-radius: var(--border-radius-large);
+            padding: 2rem;
+            box-shadow: 0 8px 32px var(--shadow-dark);
+            height: fit-content;
+            position: sticky;
+            top: 120px;
+        }
+
+        .order-summary h3 {
+            font-size: 1.5rem;
+            color: var(--primary-green);
+            margin-bottom: 2rem;
+            text-align: center;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .order-items {
+            margin-bottom: 2rem;
+        }
+
+        .order-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-image {
+            width: 60px;
+            height: 60px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            background: var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: var(--text-white);
+            margin-bottom: 0.25rem;
+        }
+
+        .item-price {
+            color: var(--primary-green);
+            font-weight: 600;
+        }
+
+        .item-quantity {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        .summary-breakdown {
+            margin-bottom: 2rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .summary-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .summary-row span:first-child {
+            color: var(--text-gray);
+            font-weight: 500;
+        }
+
+        .summary-row span:last-child {
+            color: var(--text-white);
+            font-weight: 600;
+        }
+
+        /* Payment Method Styles */
+        .payment-methods {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .upi-field {
+            margin-top: 1rem;
+        }
+
+        /* Checkout Button */
+        .checkout-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary-green), #00cc88);
+            color: var(--text-white);
+            border: none;
+            padding: 1.2rem 2rem;
+            border-radius: var(--border-radius);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 255, 136, 0.3);
+        }
+
+        .checkout-btn:disabled {
+            background: var(--light-gray);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .security-notice {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--primary-green);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary-green);
+            font-size: 0.9rem;
+        }
+
+        .payment-info {
+            background: rgba(0, 123, 255, 0.1);
+            border: 1px solid #007bff;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            color: #007bff;
+            text-align: center;
+        }
+
+        .payment-info i {
+            margin-right: 0.5rem;
+        }
+
+        /* Checkbox Styling */
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            color: var(--text-white);
+            font-weight: 500;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary-green);
+        }
+
+        .payment-option {
+            position: relative;
+        }
+
+        .payment-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .payment-label {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: var(--input-bg);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-white);
+        }
+
+        .payment-label:hover {
+            border-color: var(--primary-green);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .payment-option input[type="radio"]:checked + .payment-label {
+            border-color: var(--primary-green);
+            background: rgba(0, 255, 136, 0.15);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .payment-icon {
+            margin-right: 1rem;
+            font-size: 1.2rem;
+            color: var(--primary-green);
+            width: 24px;
+            text-align: center;
+        }
+
+        .payment-text {
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .upi-field {
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .summary-total {
+            border-top: 2px solid var(--primary-green);
+            border-bottom: none;
+            padding-top: 1rem;
+            margin-top: 1rem;
+        }
+
+        .summary-total span:first-child {
+            color: var(--primary-green);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .summary-total span:last-child {
+            color: var(--primary-green);
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .payment-methods {
+            margin-bottom: 2rem;
+        }
+
+        .payment-method {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .payment-method:hover,
+        .payment-method.selected {
+            border-color: var(--primary-green);
+            background: var(--medium-gray);
+        }
+
+        .payment-method input[type="radio"] {
+            accent-color: var(--primary-green);
+        }
+
+        .payment-method i {
+            font-size: 1.5rem;
+            color: var(--primary-green);
+        }
+
+        .payment-method-info {
+            flex: 1;
+        }
+
+        .payment-method-name {
+            font-weight: 600;
+            color: var(--text-white);
+            margin-bottom: 0.25rem;
+        }
+
+        .payment-method-desc {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 1.25rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: var(--border-radius);
+            color: var(--black);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--shadow-green);
+        }
+
+        .checkout-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .security-notice {
+            text-align: center;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--medium-gray);
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary-green);
+        }
+
+        .security-notice i {
+            color: var(--primary-green);
+            margin-right: 0.5rem;
+        }
+
+        .security-notice span {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        /* iPhone 14 Pro Max Specific Optimizations */
+        @media (max-width: 430px) {
+            .checkout-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                padding: 0 1rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .order-summary {
+                position: static;
+                margin-top: 2rem;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .order-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+
+            .item-image {
+                width: 80px;
+                height: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <a href="{% url 'home' %}">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>KV Store</span>
+                </a>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="{% url 'products' %}" class="nav-link">Shop</a>
+                <a href="{% url 'about' %}" class="nav-link">About</a>
+                <a href="{% url 'contact' %}" class="nav-link">Contact</a>
+                
+                {% if user.is_authenticated %}
+                    <div class="nav-user">
+                        <a href="{% url 'cart' %}" class="nav-link cart-link">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-count">{{ user.customer.carts.first.total_items|default:0 }}</span>
+                        </a>
+                        <div class="user-dropdown">
+                            <button class="user-btn">
+                                <i class="fas fa-user"></i>
+                                <span>{{ user.get_full_name|default:user.username }}</span>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="{% url 'profile' %}">Profile</a>
+                                <a href="{% url 'order_list' %}">Orders</a>
+                                <a href="{% url 'wishlist' %}">Wishlist</a>
+                                <a href="{% url 'logout' %}">Logout</a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="nav-auth">
+                        <a href="{% url 'login' %}" class="nav-link">Login</a>
+                        <a href="{% url 'register' %}" class="btn btn-primary">Sign Up</a>
+                    </div>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <!-- Checkout Section -->
+    <section class="checkout-section">
+        <div class="container">
+            <h1 class="page-title">
+                <i class="fas fa-lock"></i>
+                Secure Checkout
+            </h1>
+            
+            <div class="checkout-content">
+                <div class="checkout-form-container">
+                    <form method="POST" class="checkout-form" id="checkoutForm">
+                        {% csrf_token %}
+                        
+                        <!-- Shipping Information -->
+                        <div class="form-section">
+                            <h3>
+                                <i class="fas fa-shipping-fast"></i>
+                                Shipping Information
+                            </h3>
+                            {% if addresses %}
+                            <div class="form-group" style="display:flex; gap:0.75rem; align-items:flex-end;">
+                                <label>Select Saved Address</label>
+                                <select id="savedAddressSelect" class="form-input" style="flex:1;">
+                                    <option value="">-- Choose an address --</option>
+                                    {% for a in addresses %}
+                                        <option value="{{ a.id }}" data-first-name="{{ a.first_name }}" data-last-name="{{ a.last_name }}" data-address="{{ a.address }}" data-city="{{ a.city }}" data-state="{{ a.state }}" data-zip="{{ a.zip_code }}" data-phone="{{ a.phone }}">{{ a.label }} - {{ a.address }}, {{ a.city }}</option>
+                                    {% endfor %}
+                                </select>
+                                <a href="{% url 'address_create' %}" class="btn btn-outline" target="_blank" title="Add a new address">
+                                    <i class="fas fa-plus"></i> Add Address
+                                </a>
+                            </div>
+                            {% endif %}
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.shipping_first_name.id_for_label }}">First Name *</label>
+                                    {{ form.shipping_first_name }}
+                                    {% if form.shipping_first_name.errors %}
+                                        <span class="error">{{ form.shipping_first_name.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.shipping_last_name.id_for_label }}">Last Name *</label>
+                                    {{ form.shipping_last_name }}
+                                    {% if form.shipping_last_name.errors %}
+                                        <span class="error">{{ form.shipping_last_name.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="{{ form.shipping_address.id_for_label }}">Address *</label>
+                                {{ form.shipping_address }}
+                                {% if form.shipping_address.errors %}
+                                    <span class="error">{{ form.shipping_address.errors.0 }}</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.shipping_city.id_for_label }}">City *</label>
+                                    {{ form.shipping_city }}
+                                    {% if form.shipping_city.errors %}
+                                        <span class="error">{{ form.shipping_city.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.shipping_state.id_for_label }}">State *</label>
+                                    {{ form.shipping_state }}
+                                    {% if form.shipping_state.errors %}
+                                        <span class="error">{{ form.shipping_state.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.shipping_zip_code.id_for_label }}">Postal Code *</label>
+                                    {{ form.shipping_zip_code }}
+                                    {% if form.shipping_zip_code.errors %}
+                                        <span class="error">{{ form.shipping_zip_code.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.shipping_country.id_for_label }}">Country *</label>
+                                    {{ form.shipping_country }}
+                                    {% if form.shipping_country.errors %}
+                                        <span class="error">{{ form.shipping_country.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="{{ form.shipping_phone.id_for_label }}">Phone Number *</label>
+                                {{ form.shipping_phone }}
+                                {% if form.shipping_phone.errors %}
+                                    <span class="error">{{ form.shipping_phone.errors.0 }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Billing Information -->
+                        <div class="form-section">
+                            <h3>
+                                <i class="fas fa-file-invoice"></i>
+                                Billing Information
+                            </h3>
+                            
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    {{ form.billing_same_as_shipping }}
+                                    <span class="checkmark"></span>
+                                    Billing address is same as shipping address
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div class="form-section">
+                            <h3>
+                                <i class="fas fa-money-bill-wave"></i>
+                                Payment Method
+                            </h3>
+                            <p style="color: var(--text-gray);">Select your preferred payment method below.</p>
+                            
+                            <div class="payment-methods">
+                                {% if razorpay_configured %}
+                                <!-- Razorpay Option -->
+                                <div class="payment-option">
+                                    <input type="radio" id="payment_razorpay" name="payment_method" value="razorpay" checked>
+                                    <label for="payment_razorpay" class="payment-label">
+                                        <span class="payment-icon">
+                                            <i class="fas fa-credit-card"></i>
+                                        </span>
+                                        <span class="payment-text">Credit/Debit Card, UPI, Net Banking</span>
+                                    </label>
+                                </div>
+                                {% else %}
+                                <!-- COD Option (Default when Razorpay not configured) -->
+                                <div class="payment-option">
+                                    <input type="radio" id="payment_cod" name="payment_method" value="cod" checked>
+                                    <label for="payment_cod" class="payment-label">
+                                        <span class="payment-icon">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                        </span>
+                                        <span class="payment-text">Cash on Delivery</span>
+                                    </label>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- COD Option (Always available) -->
+                                <div class="payment-option">
+                                    <input type="radio" id="payment_cod" name="payment_method" value="cod" {% if not razorpay_configured %}checked{% endif %}>
+                                    <label for="payment_cod" class="payment-label">
+                                        <span class="payment-icon">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                        </span>
+                                        <span class="payment-text">Cash on Delivery</span>
+                                    </label>
+                                </div>
+                                
+                                {% if form.payment_method.errors %}
+                                    <div class="error-message">
+                                        {{ form.payment_method.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- UPI ID field (shown when UPI is selected) -->
+                            <div class="form-group upi-field" id="upiField" style="display: none; margin-top: 1rem;">
+                                <label for="{{ form.upi_id.id_for_label }}">UPI ID</label>
+                                {{ form.upi_id }}
+                                {% if form.upi_id.errors %}
+                                    <div class="error-message">
+                                        {{ form.upi_id.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="order-summary">
+                    <h3>
+                        <i class="fas fa-receipt"></i>
+                        Order Summary
+                    </h3>
+                    
+                    <div class="order-items">
+                        {% for item in cart_items %}
+                            <div class="order-item">
+                                <div class="item-image">
+                                    {% if item.product.image %}
+                                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                                    {% else %}
+                                        <i class="fas fa-image"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="item-details">
+                                    <div class="item-name">{{ item.product.name }}</div>
+                                    <div class="item-price">₹{{ item.product.current_price }}</div>
+                                    <div class="item-quantity">Qty: {{ item.quantity }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="summary-breakdown">
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span>₹{{ subtotal }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Shipping</span>
+                            <span>₹{{ shipping_cost }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Tax (18% GST)</span>
+                            <span>₹{{ tax }}</span>
+                        </div>
+                        {% if discount > 0 %}
+                            <div class="summary-row">
+                                <span>Discount</span>
+                                <span>-₹{{ discount }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="summary-row summary-total">
+                            <span>Total</span>
+                            <span>₹{{ total }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="payment-info">
+                        <p><i class="fas fa-info-circle"></i> Payment method will be selected on the next page</p>
+                    </div>
+                    
+                    <button type="submit" form="checkoutForm" class="checkout-btn">
+                        <i class="fas fa-lock"></i>
+                        Continue to Payment - ₹{{ total }}
+                    </button>
+                    
+                    <div class="security-notice">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Your payment information is secure and encrypted</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>KV Store</h3>
+                    <p>Your premium shopping destination for quality products and exceptional service.</p>
+                    <div class="social-links">
+                        <a href="https://x.com/KVigneshar" target="_blank"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.instagram.com/k.vigneshar/" target="_blank"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.linkedin.com/in/vigneshar-kumaravelan-48849a305/" target="_blank"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="{% url 'products' %}">Shop</a></li>
+                        <li><a href="{% url 'about' %}">About Us</a></li>
+                        <li><a href="{% url 'contact' %}">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Customer Service</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Returns & Exchanges</a></li>
+                        <li><a href="#">Shipping Info</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 KV Store. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'scripts/ecommerce.js' %}"></script>
+    <script>
+        // Checkout page functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Saved address autofill
+            const addrSelect = document.getElementById('savedAddressSelect');
+            if (addrSelect) {
+                addrSelect.addEventListener('change', function() {
+                    const opt = this.selectedOptions[0];
+                    if (!opt || !opt.value) return;
+                    const setVal = (name, value) => {
+                        const el = document.getElementById(`id_${name}`);
+                        if (el) el.value = value || '';
+                    };
+                    setVal('shipping_first_name', opt.dataset.firstName);
+                    setVal('shipping_last_name', opt.dataset.lastName);
+                    setVal('shipping_address', opt.dataset.address);
+                    setVal('shipping_city', opt.dataset.city);
+                    setVal('shipping_state', opt.dataset.state);
+                    setVal('shipping_zip_code', opt.dataset.zipCode);
+                    setVal('shipping_phone', opt.dataset.phone);
+                });
+            }
+
+            // Form elements
+            const checkoutForm = document.getElementById('checkoutForm');
+            const checkoutBtn = document.querySelector('.checkout-btn');
+            const upiField = document.getElementById('upiField');
+            const paymentMethodInputs = document.querySelectorAll('input[name="payment_method"]');
+            
+            // Payment method handling
+            if (paymentMethodInputs.length > 0 && upiField) {
+                // Initialize UPI field visibility
+                const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+                if (selectedPayment && selectedPayment.value === 'upi') {
+                    upiField.style.display = 'block';
+                } else {
+                    upiField.style.display = 'none';
+                }
+                
+                // Handle payment method changes
+                paymentMethodInputs.forEach(method => {
+                    method.addEventListener('change', function() {
+                        upiField.style.display = this.value === 'upi' ? 'block' : 'none';
+                    });
+                });
+            }
+            
+            // Function to show error message with enhanced formatting
+            function showError(message, error = null) {
+                console.group('Checkout Error');
+                console.error('Message:', message);
+                if (error) {
+                    console.error('Error details:', error);
+                    if (error.stack) console.error('Stack:', error.stack);
+                }
+                console.groupEnd();
+                
+                // Remove any existing error messages
+                const existingError = document.getElementById('checkout-error');
+                if (existingError) existingError.remove();
+                
+                // Create error element
+                const errorElement = document.createElement('div');
+                errorElement.id = 'checkout-error';
+                errorElement.className = 'error-message';
+                errorElement.style.padding = '15px';
+                errorElement.style.margin = '15px 0';
+                errorElement.style.border = '1px solid #dc3545';
+                errorElement.style.borderRadius = '4px';
+                errorElement.style.backgroundColor = '#f8d7da';
+                errorElement.style.color = '#721c24';
+                errorElement.style.fontFamily = 'monospace';
+                errorElement.style.whiteSpace = 'pre-wrap';
+                errorElement.style.maxHeight = '300px';
+                errorElement.style.overflowY = 'auto';
+                
+                // Format error details
+                let errorDetails = '';
+                if (error) {
+                    if (error.errors) {
+                        errorDetails = '\n\nValidation Errors:\n' + 
+                            Object.entries(error.errors)
+                                .map(([field, errors]) => `• ${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
+                                .join('\n');
+                    } else if (error.message) {
+                        errorDetails = `\n\n${error.message}`;
+                    } else if (error.debug) {
+                        errorDetails = '\n\nDebug Information:\n' + 
+                            (typeof error.debug === 'string' ? error.debug : JSON.stringify(error.debug, null, 2));
+                    } else if (error.responseJSON) {
+                        errorDetails = '\n\nServer Response:\n' + JSON.stringify(error.responseJSON, null, 2);
+                    } else if (error.statusText) {
+                        errorDetails = `\n\n${error.statusText} (${error.status || 'No Status'})`;
+                    } else if (typeof error === 'object') {
+                        errorDetails = '\n\n' + JSON.stringify(error, Object.getOwnPropertyNames(error), 2);
+                    } else {
+                        errorDetails = '\n\n' + String(error);
+                    }
+                }
+                
+                // Scroll to error message
+                errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Create error message content
+                errorElement.innerHTML = `
+                    <strong>Error:</strong> ${message}
+                    ${errorDetails}
+                    <div style="margin-top: 10px; font-size: 0.9em;">
+                        If the problem persists, please contact support.
+                    </div>
+                `;
+                
+                // Add error element to the page
+                checkoutForm.appendChild(errorElement);
+            }
+            
+            // Initialize Razorpay
+            function loadRazorpayScript() {
+                return new Promise((resolve, reject) => {
+                    // Check if Razorpay is configured
+                    if (!{{ razorpay_configured|yesno:"true,false" }}) {
+                        reject(new Error('Razorpay is not configured'));
+                        return;
+                    }
+                    
+                    if (window.Razorpay) {
+                        resolve();
+                        return;
+                    }
+                    
+                    const script = document.createElement('script');
+                    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                    script.async = true;
+                    script.onload = () => resolve();
+                    script.onerror = () => reject(new Error('Failed to load Razorpay script'));
+                    document.body.appendChild(script);
+                });
+            }
+
+            // Payment method handling is already set up above
+            
+            // Handle form submission
+            checkoutForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Clear previous errors
+                const prevError = document.getElementById('checkout-error');
+                if (prevError) prevError.remove();
+                
+                // Get the selected payment method
+                const selectedMethod = document.querySelector('input[name="payment_method"]:checked');
+                if (!selectedMethod) {
+                    showError('Please select a payment method');
+                    return;
+                }
+                
+                // Disable button and show loading state
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    const originalBtnText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                }
+                
+                try {
+                    console.log('Submitting checkout form...');
+                    const formData = new FormData(checkoutForm);
+                    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                    
+                    // Debug: Log form data
+                    console.log('Form data entries:');
+                    for (let [key, value] of formData.entries()) {
+                        console.log(`${key}: ${value}`);
+                    }
+                    
+                    // Debug: Log selected payment method
+                    const selectedMethod = document.querySelector('input[name="payment_method"]:checked');
+                    console.log('Selected payment method:', selectedMethod ? selectedMethod.value : 'None');
+                    
+                    // Log form data for debugging (without sensitive info)
+                    const formDataObj = {};
+                    for (let [key, value] of formData.entries()) {
+                        if (!key.toLowerCase().includes('password') && !key.toLowerCase().includes('cvv')) {
+                            formDataObj[key] = value;
+                        }
+                    }
+                    console.log('Form data:', formDataObj);
+                    
+                    let response;
+                    let responseData;
+                    
+                    try {
+                        console.log('Making payment request...');
+                        response = await fetch('{% url "checkout" %}', {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: formData
+                        });
+                        
+                        responseData = await response.json();
+                        
+                        if (!response.ok) {
+                            throw {
+                                message: `Server returned ${response.status} ${response.statusText}`,
+                                status: response.status,
+                                response: responseData
+                            };
+                        }
+                    } catch (error) {
+                        console.error('Payment request failed:', error);
+                        throw error;
+                    }
+                    
+                    // Handle form validation errors
+                    if (responseData.errors) {
+                        const errorMessages = [];
+                        for (const [field, errors] of Object.entries(responseData.errors)) {
+                            const fieldName = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            errorMessages.push(`• ${fieldName}: ${Array.isArray(errors) ? errors.join(', ') : errors}`);
+                        }
+                        showError('Please fix the following errors:', {
+                            errors: responseData.errors,
+                            message: errorMessages.join('\n')
+                        });
+                        return;
+                    }
+                    
+                    // Handle Razorpay payment flow
+                    if (responseData.order_id && responseData.key && {{ razorpay_configured|yesno:"true,false" }}) {
+                        try {
+                            // Load Razorpay script if not already loaded
+                            await loadRazorpayScript();
+                            
+                            // Create Razorpay options
+                            const options = {
+                                key: responseData.key,
+                                amount: responseData.amount,
+                                currency: responseData.currency || 'INR',
+                                name: responseData.name || 'KV Store',
+                                description: responseData.description || 'Order Payment',
+                                order_id: responseData.razorpay_order_id || responseData.order_id,
+                                handler: function(response) {
+                                    console.log('Razorpay payment successful:', response);
+                                    // Submit the form with payment details
+                                    const paymentForm = document.createElement('form');
+                                    paymentForm.method = 'POST';
+                                    paymentForm.action = '{% url "payment_callback" %}';
+                                    
+                                    const csrfInput = document.createElement('input');
+                                    csrfInput.type = 'hidden';
+                                    csrfInput.name = 'csrfmiddlewaretoken';
+                                    csrfInput.value = '{{ csrf_token }}';
+                                    paymentForm.appendChild(csrfInput);
+                                    
+                                    const razorpayPaymentId = document.createElement('input');
+                                    razorpayPaymentId.type = 'hidden';
+                                    razorpayPaymentId.name = 'razorpay_payment_id';
+                                    razorpayPaymentId.value = response.razorpay_payment_id;
+                                    paymentForm.appendChild(razorpayPaymentId);
+                                    
+                                    const razorpayOrderId = document.createElement('input');
+                                    razorpayOrderId.type = 'hidden';
+                                    razorpayOrderId.name = 'razorpay_order_id';
+                                    razorpayOrderId.value = response.razorpay_order_id;
+                                    paymentForm.appendChild(razorpayOrderId);
+                                    
+                                    const razorpaySignature = document.createElement('input');
+                                    razorpaySignature.type = 'hidden';
+                                    razorpaySignature.name = 'razorpay_signature';
+                                    razorpaySignature.value = response.razorpay_signature;
+                                    paymentForm.appendChild(razorpaySignature);
+                                    
+                                    document.body.appendChild(paymentForm);
+                                    paymentForm.submit();
+                                },
+                                prefill: responseData.prefill || {},
+                                theme: {
+                                    color: '#10B981',
+                                    hide_topbar: false
+                                },
+                                modal: {
+                                    ondismiss: function() {
+                                        console.log('Payment modal dismissed');
+                                        checkoutBtn.disabled = false;
+                                        checkoutBtn.innerHTML = originalBtnText;
+                                    }
+                                }
+                            };
+                            
+                            // Add notes if present
+                            if (responseData.notes) {
+                                options.notes = responseData.notes;
+                            }
+                            
+                            // Open Razorpay payment form
+                            const rzp = new Razorpay(options);
+                            rzp.open();
+                            
+                        } catch (error) {
+                            console.error('Razorpay initialization error:', error);
+                            showError('Failed to initialize payment. Please try again.', error);
+                        }
+                        return;
+                    }
+                    
+                    // Handle server errors
+                    if (responseData.error) {
+                        throw new Error(responseData.error);
+                    }
+                    
+                    // If we get here, it's an unexpected response
+                    throw new Error('Unexpected response from server. Please try again.');
+                    
+                } catch (error) {
+                    console.error('Checkout error:', error);
+                    showError(error.message || 'An error occurred while processing your request. Please try again.', 
+                             error.debug ? { debug: error.debug } : null);
+                } finally {
+                    // Re-enable button
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnText;
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
+

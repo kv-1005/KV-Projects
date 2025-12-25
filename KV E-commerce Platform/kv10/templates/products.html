@@ -1,0 +1,284 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products - KV Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'styles/ecommerce.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <a href="{% url 'home' %}">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>KV Store</span>
+                </a>
+            </div>
+            
+            <div class="nav-search">
+                <form action="{% url 'search' %}" method="GET" class="search-form">
+                    <input type="text" name="q" placeholder="Search products..." class="search-input">
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="{% url 'home' %}" class="nav-link">Home</a>
+                <a href="{% url 'products' %}" class="nav-link">Shop</a>
+                <a href="{% url 'about' %}" class="nav-link">About</a>
+                <a href="{% url 'contact' %}" class="nav-link">Contact</a>
+                
+                {% if user.is_authenticated %}
+                    <div class="nav-user">
+                        <a href="{% url 'cart' %}" class="nav-link cart-link">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-count">{{ user.customer.carts.first.total_items|default:0 }}</span>
+                        </a>
+                        <div class="user-dropdown">
+                            <button class="user-btn">
+                                <i class="fas fa-user"></i>
+                                <span>{{ user.get_full_name|default:user.username }}</span>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="{% url 'profile' %}">Profile</a>
+                                <a href="{% url 'order_list' %}">Orders</a>
+                                <a href="{% url 'wishlist' %}">Wishlist</a>
+                                <a href="{% url 'logout' %}">Logout</a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="nav-auth">
+                        <a href="{% url 'login' %}" class="nav-link">Login</a>
+                        <a href="{% url 'register' %}" class="btn btn-primary">Sign Up</a>
+                    </div>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <!-- Products Section -->
+    <section class="products-section">
+        <div class="container">
+            <!-- Products Header -->
+            <div class="products-header">
+                <h1>All Products</h1>
+                <p>Discover our amazing collection of premium products</p>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="filters-section">
+                <form method="GET" class="filters-form">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label for="query">Search</label>
+                            <input type="text" name="query" id="query" value="{{ request.GET.query }}" placeholder="Search products...">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="category">Category</label>
+                            <select name="category" id="category">
+                                <option value="">All Categories</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.slug }}" {% if request.GET.category == category.slug %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="min_price">Min Price</label>
+                            <input type="number" name="min_price" id="min_price" value="{{ request.GET.min_price }}" placeholder="Min Price">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="max_price">Max Price</label>
+                            <input type="number" name="max_price" id="max_price" value="{{ request.GET.max_price }}" placeholder="Max Price">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="sort_by">Sort By</label>
+                            <select name="sort_by" id="sort_by">
+                                <option value="-created_at" {% if request.GET.sort_by == '-created_at' %}selected{% endif %}>Newest First</option>
+                                <option value="created_at" {% if request.GET.sort_by == 'created_at' %}selected{% endif %}>Oldest First</option>
+                                <option value="name" {% if request.GET.sort_by == 'name' %}selected{% endif %}>Name A-Z</option>
+                                <option value="-name" {% if request.GET.sort_by == '-name' %}selected{% endif %}>Name Z-A</option>
+                                <option value="price" {% if request.GET.sort_by == 'price' %}selected{% endif %}>Price Low to High</option>
+                                <option value="-price" {% if request.GET.sort_by == '-price' %}selected{% endif %}>Price High to Low</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="in_stock_only" {% if request.GET.in_stock_only %}checked{% endif %}>
+                                In Stock Only
+                            </label>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter"></i>
+                                Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Products Grid -->
+            {% if products %}
+                <div class="products-grid">
+                    {% for product in products %}
+                    <div class="product-card">
+                        <div class="product-image">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                            {% else %}
+                                <div class="product-placeholder">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                            {% endif %}
+                            {% if product.is_on_sale %}
+                                <span class="sale-badge">SALE</span>
+                            {% endif %}
+                            <div class="product-actions">
+                                <a href="{% url 'product_detail' product.slug %}" class="action-btn">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if user.is_authenticated %}
+                                    <button class="action-btn wishlist-btn {% if product in user.customer.wishlist.all %}active{% endif %}" 
+                                            onclick="event.preventDefault(); toggleWishlist({{ product.id }}, this);"
+                                            data-product-id="{{ product.id }}">
+                                        <i class="{% if product in user.customer.wishlist.all %}fas{% else %}far{% endif %} fa-heart"></i>
+                                    </button>
+                                    {% csrf_token %}
+                                {% else %}
+                                    <a href="{% url 'login' %}?next={% url 'products' %}" class="action-btn" title="Login to add to wishlist">
+                                        <i class="far fa-heart"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-title">{{ product.name }}</h3>
+                            <p class="product-category">{{ product.category.name }}</p>
+                            <div class="product-price">
+                                {% if product.is_on_sale %}
+                                    <span class="original-price">₹{{ product.price }}</span>
+                                    <span class="sale-price">₹{{ product.sale_price }}</span>
+                                {% else %}
+                                    <span class="price">₹{{ product.price }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="product-actions-bottom">
+                                {% if product.stock_quantity > 0 %}
+                                    <form method="post" action="{% url 'add_to_cart' product.id %}" class="add-to-cart-form" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="quantity" value="1">
+                                        <button type="submit" class="btn btn-primary btn-small add-to-cart-btn" data-product-id="{{ product.id }}">
+                                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <button class="btn btn-disabled btn-small" disabled>Out of Stock</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if products.has_other_pages %}
+                <div class="pagination">
+                    {% if products.has_previous %}
+                        <a href="?page={{ products.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    {% endif %}
+                    
+                    {% for num in products.paginator.page_range %}
+                        {% if products.number == num %}
+                            <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link active">{{ num }}</a>
+                        {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+                            <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if products.has_next %}
+                        <a href="?page={{ products.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="no-products">
+                    <i class="fas fa-search"></i>
+                    <h3>No products found</h3>
+                    <p>Try adjusting your search criteria or browse our categories</p>
+                    <a href="{% url 'products' %}" class="btn btn-primary">View All Products</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>KV Store</h3>
+                    <p>Your premium shopping destination for quality products and exceptional service.</p>
+                    <div class="social-links">
+                        <a href="https://x.com/KVigneshar" target="_blank"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.instagram.com/k.vigneshar/" target="_blank"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.linkedin.com/in/vigneshar-kumaravelan-48849a305/" target="_blank"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="{% url 'products' %}">Shop</a></li>
+                        <li><a href="{% url 'about' %}">About Us</a></li>
+                        <li><a href="{% url 'contact' %}">Contact</a></li>
+                        <li><a href="{% url 'search' %}">Search</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Customer Service</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Returns & Exchanges</a></li>
+                        <li><a href="#">Shipping Info</a></li>
+                        <li><a href="#">Size Guide</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact Info</h4>
+                    <ul>
+                        <li><i class="fas fa-phone"></i> +91 7397381106</li>
+                        <li><i class="fas fa-envelope"></i> k.vigneshar10@gmail.com</li>
+                        <li><i class="fas fa-map-marker-alt"></i> SSN COLLEGE, Chennai</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 KV Store. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'scripts/ecommerce.js' %}"></script>
+</body>
+</html>

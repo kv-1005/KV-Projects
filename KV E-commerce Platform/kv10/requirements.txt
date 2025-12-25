@@ -1,0 +1,6 @@
+Django==5.2.4
+Pillow==10.4.0
+razorpay==1.4.2
+requests==2.32.4
+setuptools==80.9.0
+python-dotenv==1.0.0

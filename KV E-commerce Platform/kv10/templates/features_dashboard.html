@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Features - KV Store</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+            color: #fff !important;
+            min-height: 100vh !important;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .features-section {
+            padding: 2rem 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            color: #000;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1000;
+        }
+        
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #00ff88;
+        }
+        
+        .page-title {
+            color: #00ff88 !important;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        .page-subtitle {
+            color: #ccc;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .feature-category {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-category::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+        }
+        
+        .feature-category:hover {
+            border-color: #00ff88;
+            box-shadow: 0 15px 40px rgba(0, 255, 136, 0.3);
+            transform: translateY(-10px);
+        }
+        
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .category-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 1.5rem;
+        }
+        
+        .category-title {
+            color: #00ff88;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .category-description {
+            color: #ccc;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .feature-links {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .feature-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-link:hover {
+            border-color: #00ff88;
+            background: #2a2a2a;
+            transform: translateX(5px);
+        }
+        
+        .feature-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .feature-icon {
+            color: #00ff88;
+            font-size: 1.2rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .feature-details h4 {
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+        
+        .feature-details p {
+            color: #888;
+            font-size: 0.9rem;
+        }
+        
+        .feature-arrow {
+            color: #00ff88;
+            font-size: 1rem;
+        }
+        
+        .admin-section {
+            background: #000;
+            border: 2px solid #00ff88;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .admin-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff4757, #ff3742);
+        }
+        
+        .admin-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .admin-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff4757, #ff3742);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.5rem;
+        }
+        
+        .admin-title {
+            color: #ff4757;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .admin-warning {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid #ff4757;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            color: #ff4757;
+        }
+        
+        .quick-access {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .quick-link {
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #000;
+            padding: 1rem;
+            border-radius: 10px;
+            text-decoration: none;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .quick-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 255, 136, 0.4);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: 0.5rem;
+        }
+        
+        .status-active {
+            background: #00ff88;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-inactive {
+            background: #888;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .page-title {
+                font-size: 2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .quick-access {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="{% url 'home' %}" class="back-btn">
+        <i class="fas fa-home"></i> Back to Home
+    </a>
+    
+    <section class="features-section">
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-rocket"></i>
+                    All Features
+                </h1>
+                <p class="page-subtitle">Complete access to all KV Store functionality</p>
+                
+                <div class="quick-access">
+                    <a href="{% url 'home' %}" class="quick-link">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    <a href="{% url 'products' %}" class="quick-link">
+                        <i class="fas fa-shopping-bag"></i> Shop Now
+                    </a>
+                    <a href="{% url 'cart' %}" class="quick-link">
+                        <i class="fas fa-shopping-cart"></i> My Cart
+                    </a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'profile' %}" class="quick-link">
+                            <i class="fas fa-user"></i> My Profile
+                        </a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="quick-link">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="features-grid">
+                <!-- Shopping Features -->
+                <div class="feature-category">
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i class="fas fa-shopping-bag"></i>
+                        </div>
+                        <div>
+                            <h3 class="category-title">Shopping & Products</h3>
+                        </div>
+                    </div>
+                    <p class="category-description">Browse products, manage your cart, and complete purchases</p>
+                    <div class="feature-links">
+                        <a href="{% url 'products' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-list feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>All Products</h4>
+                                    <p>Browse our complete product catalog</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        <a href="{% url 'search' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-search feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Search Products</h4>
+                                    <p>Find exactly what you're looking for</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        <a href="{% url 'cart' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-shopping-cart feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Shopping Cart</h4>
+                                    <p>Review and manage your selected items</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        <a href="{% url 'checkout' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-credit-card feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Checkout</h4>
+                                    <p>Complete your purchase securely</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Account Features -->
+                <div class="feature-category">
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h3 class="category-title">Account Management</h3>
+                        </div>
+                    </div>
+                    <p class="category-description">Manage your account, profile, and personal information</p>
+                    <div class="feature-links">
+                        {% if not user.is_authenticated %}
+                        <a href="{% url 'register' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-user-plus feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Create Account</h4>
+                                    <p>Join KV Store community</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        <a href="{% url 'login' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-sign-in-alt feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Login</h4>
+                                    <p>Access your account</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        {% else %}
+                        <a href="{% url 'profile' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-user-edit feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>My Profile</h4>
+                                    <p>Update your personal information</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        <a href="{% url 'address_create' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-map-marker-alt feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Manage Addresses</h4>
+                                    <p>Add and edit shipping addresses</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Order Management -->
+                <div class="feature-category">
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div>
+                            <h3 class="category-title">Order Management</h3>
+                        </div>
+                    </div>
+                    <p class="category-description">Track orders, view history, and manage returns</p>
+                    <div class="feature-links">
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'order_list' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-list-alt feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>My Orders</h4>
+                                    <p>View all your orders</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        <a href="{% url 'order_history' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-history feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Order History</h4>
+                                    <p>Enhanced order history with filters</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        <a href="{% url 'order_tracking_search' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-truck feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Track Order</h4>
+                                    <p>Track your order status</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        {% else %}
+                        <div class="feature-link" style="opacity: 0.5; cursor: not-allowed;">
+                            <div class="feature-info">
+                                <i class="fas fa-lock feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Login Required</h4>
+                                    <p>Please login to access order features</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Wishlist & Social -->
+                <div class="feature-category">
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <div>
+                            <h3 class="category-title">Wishlist & Social</h3>
+                        </div>
+                    </div>
+                    <p class="category-description">Save favorites, write reviews, and engage with community</p>
+                    <div class="feature-links">
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'wishlist' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-heart feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>My Wishlist</h4>
+                                    <p>Save products for later</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        <a href="{% url 'wishlist_enhanced' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-star feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Enhanced Wishlist</h4>
+                                    <p>Advanced wishlist features</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'newsletter' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-envelope feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Newsletter</h4>
+                                    <p>Subscribe to updates and offers</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Information Pages -->
+                <div class="feature-category">
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div>
+                            <h3 class="category-title">Information & Support</h3>
+                        </div>
+                    </div>
+                    <p class="category-description">Get help, learn about us, and find important information</p>
+                    <div class="feature-links">
+                        <a href="{% url 'about' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-building feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>About Us</h4>
+                                    <p>Learn about KV Store</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        <a href="{% url 'contact' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-phone feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Contact Us</h4>
+                                    <p>Get in touch with our team</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        <a href="{% url 'faq' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-question-circle feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>FAQ</h4>
+                                    <p>Frequently asked questions</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        <a href="{% url 'terms' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-file-contract feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Terms & Conditions</h4>
+                                    <p>Legal terms and conditions</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                        <a href="{% url 'privacy' %}" class="feature-link">
+                            <div class="feature-info">
+                                <i class="fas fa-shield-alt feature-icon"></i>
+                                <div class="feature-details">
+                                    <h4>Privacy Policy</h4>
+                                    <p>How we protect your data</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-right feature-arrow"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Section -->
+            {% if user.is_staff %}
+            <div class="admin-section">
+                <div class="admin-header">
+                    <div class="admin-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div>
+                        <h3 class="admin-title">Admin Features</h3>
+                    </div>
+                </div>
+                <div class="admin-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Admin Access:</strong> These features are only available to staff members.
+                </div>
+                <div class="feature-links">
+                    <a href="{% url 'admin_dashboard' %}" class="feature-link">
+                        <div class="feature-info">
+                            <i class="fas fa-tachometer-alt feature-icon"></i>
+                            <div class="feature-details">
+                                <h4>Admin Dashboard</h4>
+                                <p>Comprehensive admin control panel</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-arrow-right feature-arrow"></i>
+                    </a>
+                    <a href="{% url 'analytics' %}" class="feature-link">
+                        <div class="feature-info">
+                            <i class="fas fa-chart-bar feature-icon"></i>
+                            <div class="feature-details">
+                                <h4>Payment Analytics</h4>
+                                <p>View payment and sales analytics</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-arrow-right feature-arrow"></i>
+                    </a>
+                    <a href="/admin/" class="feature-link">
+                        <div class="feature-info">
+                            <i class="fas fa-cogs feature-icon"></i>
+                            <div class="feature-details">
+                                <h4>Django Admin</h4>
+                                <p>Full Django administration panel</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-external-link-alt feature-arrow"></i>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click animations
+            const featureLinks = document.querySelectorAll('.feature-link');
+            featureLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (!this.style.cursor === 'not-allowed') {
+                        this.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            this.style.transform = '';
+                        }, 150);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

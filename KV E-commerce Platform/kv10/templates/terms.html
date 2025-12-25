@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Terms & Conditions - KV Store{% endblock %}
+
+{% block content %}
+<style>
+    .terms-container {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+    
+    .terms-content {
+        background: #000;
+        border: 1px solid #333;
+        border-radius: 15px;
+        padding: 3rem;
+        max-width: 900px;
+        margin: 0 auto;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid #00ff88;
+    }
+    
+    .page-title {
+        color: #00ff88;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        font-weight: bold;
+    }
+    
+    .last-updated {
+        color: #888;
+        font-size: 1rem;
+    }
+    
+    .terms-section {
+        margin-bottom: 2.5rem;
+    }
+    
+    .section-title {
+        color: #00ff88;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #333;
+    }
+    
+    .terms-text {
+        color: #ccc;
+        line-height: 1.8;
+        margin-bottom: 1rem;
+    }
+    
+    .terms-text strong {
+        color: #fff;
+    }
+    
+    .terms-text a {
+        color: #00ff88;
+        text-decoration: none;
+    }
+    
+    .terms-text a:hover {
+        text-decoration: underline;
+    }
+    
+    .terms-list {
+        color: #ccc;
+        padding-left: 1.5rem;
+        margin: 1rem 0;
+    }
+    
+    .terms-list li {
+        margin-bottom: 0.8rem;
+        line-height: 1.6;
+    }
+    
+    .highlight-box {
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid #00ff88;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+    
+    .highlight-box h4 {
+        color: #00ff88;
+        margin-bottom: 0.5rem;
+    }
+    
+    .highlight-box p {
+        color: #ccc;
+        margin: 0;
+        line-height: 1.6;
+    }
+    
+    .contact-info {
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 10px;
+        padding: 2rem;
+        margin-top: 3rem;
+        text-align: center;
+    }
+    
+    .contact-info h3 {
+        color: #00ff88;
+        margin-bottom: 1rem;
+    }
+    
+    .contact-info p {
+        color: #ccc;
+        margin-bottom: 0.5rem;
+    }
+    
+    .contact-info a {
+        color: #00ff88;
+        text-decoration: none;
+    }
+    
+    .contact-info a:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<div class="terms-container">
+    <div class="container">
+        <div class="terms-content">
+            <div class="page-header">
+                <h1 class="page-title">Terms & Conditions</h1>
+                <p class="last-updated">Last updated: {{ "now"|date:"F d, Y" }}</p>
+            </div>
+            
+            <div class="terms-section">
+                <h2 class="section-title">1. Agreement to Terms</h2>
+                <p class="terms-text">
+                    By accessing and using KV Store ("we," "our," or "us"), you accept and agree to be bound by the terms and provision of this agreement. 
+                    If you do not agree to abide by the above, please do not use this service.
+                </p>
+                <div class="highlight-box">
+                    <h4>Important Notice</h4>
+                    <p>These terms may be updated from time to time. Continued use of our service constitutes acceptance of any changes.</p>
+                </div>
+            </div>
+            
+            <div class="terms-section">
+                <h2 class="section-title">2. Use License</h2>
+                <p class="terms-text">
+                    Permission is granted to temporarily download one copy of the materials on KV Store's website for personal, non-commercial transitory viewing only. 
+                    This is the grant of a license, not a transfer of title, and under this license you may not:
+                </p>
+                <ul class="terms-list">
+                    <li>modify or copy the materials</li>
+                    <li>use the materials for any commercial purpose or for any public display (commercial or non-commercial)</li>
+                    <li>attempt to decompile or reverse engineer any software contained on the website</li>
+                    <li>remove any copyright or other proprietary notations from the materials</li>
+                </ul>
+            </div>
+            
+            <div class="terms-section">
+                <h2 class="section-title">3. Product Information & Pricing</h2>
+                <p class="terms-text">
+                    We strive to provide accurate product information and pricing. However, we do not warrant that product descriptions, pricing, or other content is accurate, complete, reliable, current, or error-free.
+                </p>
+                <ul class="terms-list">
+                    <li>Prices are subject to change without notice</li>
+                    <li>We reserve the right to correct pricing errors</li>
+                    <li>Product availability is not guaranteed</li>
+                    <li>Colors and images may vary from actual products</li>
+                </ul>
+            </div>
+            
+            <div class="terms-section">
+                <h2 class="section-title">4. Orders & Payment</h2>
+                <p class="terms-text">
+                    <strong>Order Acceptance:</strong> All orders are subject to acceptance by us. We may refuse or cancel any order for any reason.
+                </p>
+                <p class="terms-text">
+                    <strong>Payment:</strong> Payment must be received before order processing. We accept various payment methods as displayed during checkout.
+                </p>
+                <ul class="terms-list">
+                    <li>All payments are processed securely through our payment partners</li>
+                    <li>We do not store your payment information</li>
+                    <li>Failed payments may result in order cancellation</li>
+                    <li>Refunds will be processed according to our refund policy</li>
+                </ul>
+            </div>
+            
+            <div class="terms-section">
+                <h2 class="section-title">5. Shipping & Delivery</h2>
+                <p class="terms-text">
+                    We will make every effort to deliver products within the estimated timeframe. However, delivery dates are estimates and not guaranteed.
+                </p>
+                <ul class="terms-list">
+                    <li>Shipping costs are calculated at checkout</li>
+                    <li>Risk of loss passes to you upon delivery</li>
+                    <li>We are not responsible for delays caused by shipping carriers</li>
+                    <li>Incorrect addresses may result in additional charges</li>
+                </ul>
+            </div>
+            
+            <div class="terms-section">
+                <h2 class="section-title">6. Returns & Refunds</h2>
+                <p class="terms-text">
+                    Our return policy allows returns within 7 days of delivery, subject to certain conditions:
+                </p>
+                <ul class="terms-list">
+                    <li>Items must be in original condition with tags attached</li>
+                    <li>Certain items (undergarments, perishables) cannot be returned</li>
+                    <li>Return shipping costs may apply</li>
+                    <li>Refunds will be processed within 5-7 business days</li>
+                    <li>Exchanges are subject to product availability</li>
+                </ul>
+            </div>
+            
+            <div class="terms-section">
+                <h2 class="section-title">7. User Accounts</h2>
+                <p class="terms-text">
+                    When you create an account with us, you must provide information that is accurate, complete, and current at all times.
+                </p>
+                <ul class="terms-list">
+                    <li>You are responsible for safeguarding your account password</li>
+                    <li>You must notify us immediately of any unauthorized use</li>
+                    <li>We reserve the right to terminate accounts that violate our terms</li>
+                    <li>One account per person is allowed</li>
+                </ul>
+            </div>
+            
+            <div class="terms-section">
+                <h2 class="section-title">8. Privacy Policy</h2>
+                <p class="terms-text">
+                    Your privacy is important to us. Our Privacy Policy explains how we collect, use, and protect your information when you use our service. 
+                    By using our service, you agree to the collection and use of information in accordance with our 
+                    <a href="{% url 'privacy' %}">Privacy Policy</a>.
+                </p>
+            </div>
+            
+            <div class="terms-section">
+                <h2 class="section-title">9. Prohibited Uses</h2>
+                <p class="terms-text">
+                    You may not use our service:
+                </p>
+                <ul class="terms-list">
+                    <li>For any unlawful purpose or to solicit others to perform unlawful acts</li>
+                    <li>To violate any international, federal, provincial, or state regulations, rules, laws, or local ordinances</li>
+                    <li>To infringe upon or violate our intellectual property rights or the intellectual property rights of others</li>
+                    <li>To harass, abuse, insult, harm, defame, slander, disparage, intimidate, or discriminate</li>
+                    <li>To submit false or misleading information</li>
+                    <li>To upload or transmit viruses or any other type of malicious code</li>
+                </ul>
+            </div>
+            
+            <div class="terms-section">
+                <h2 class="section-title">10. Disclaimer</h2>
+                <p class="terms-text">
+                    The information on this website is provided on an "as is" basis. To the fullest extent permitted by law, this Company:
+                </p>
+                <ul class="terms-list">
+                    <li>excludes all representations and warranties relating to this website and its contents</li>
+                    <li>excludes all liability for damages arising out of or in connection with your use of this website</li>
+                </ul>
+                <div class="highlight-box">
+                    <h4>Limitation of Liability</h4>
+                    <p>In no event shall KV Store be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.</p>
+                </div>
+            </div>
+            
+            <div class="terms-section">
+                <h2 class="section-title">11. Governing Law</h2>
+                <p class="terms-text">
+                    These terms and conditions are governed by and construed in accordance with the laws of India and you irrevocably submit to the exclusive jurisdiction of the courts in that State or location.
+                </p>
+            </div>
+            
+            <div class="terms-section">
+                <h2 class="section-title">12. Changes to Terms</h2>
+                <p class="terms-text">
+                    We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will try to provide at least 30 days notice prior to any new terms taking effect.
+                </p>
+            </div>
+            
+            <div class="contact-info">
+                <h3>Questions About These Terms?</h3>
+                <p>If you have any questions about these Terms & Conditions, please contact us:</p>
+                <p><strong>Email:</strong> <a href="mailto:legal@kvstore.com">legal@kvstore.com</a></p>
+                <p><strong>Phone:</strong> <a href="tel:+911234567890">+91 123 456 7890</a></p>
+                <p><strong>Address:</strong> KV Store, Business District, City, State - 123456</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

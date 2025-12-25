@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login - KV Store{% endblock %}
+
+{% block content %}
+<section class="auth-section auth-login" aria-labelledby="login-title">
+    <div class="container">
+        <div class="auth-container">
+            <div class="auth-form">
+                <h2 id="login-title">Welcome Back</h2>
+                <p>Sign in to your account to continue shopping</p>
+
+                <form method="post" class="form" novalidate>
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label for="username">Username or Email</label>
+                        <input type="text" name="username" id="username" placeholder="yourname or email" autocomplete="username" required>
+                    </div>
+
+                    <div class="form-group password-field">
+                        <label for="password">Password</label>
+                        <input type="password" name="password" id="password" placeholder="Your password" autocomplete="current-password" required>
+                        <button class="toggle-password" type="button" data-target="password" aria-label="Show password">
+                            <i class="fa fa-eye"></i>
+                        </button>
+                    </div>
+
+                    <div class="form-row auth-actions">
+                        <label class="checkbox">
+                            <input type="checkbox" name="remember"> <span>Remember me</span>
+                        </label>
+                        <a href="#" class="forgot-link">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large">Sign In</button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Don't have an account? <a href="{% url 'register' %}">Sign up here</a></p>
+                </div>
+            </div>
+
+            <div class="auth-image" aria-hidden="true">
+                <img src="https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg" alt="" loading="lazy">
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+  var toggles = document.querySelectorAll('.toggle-password');
+  toggles.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var id = btn.getAttribute('data-target');
+      var input = document.getElementById(id);
+      if (!input) return;
+      var isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      btn.innerHTML = isPassword ? '<i class="fa fa-eye-slash"></i>' : '<i class="fa fa-eye"></i>';
+      btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    });
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - KV Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'styles/ecommerce.css' %}">
+    <link rel="stylesheet" href="{% static 'styles/signup.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <a href="{% url 'home' %}">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>KV Store</span>
+                </a>
+            </div>
+            <div class="nav-menu">
+                <a href="{% url 'home' %}" class="nav-link">Home</a>
+                <a href="{% url 'products' %}" class="nav-link">Shop</a>
+                <a href="{% url 'login' %}" class="nav-link">Login</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Sign Up Form -->
+    <section class="auth-section auth-signup">
+        <div class="container">
+            <div class="auth-container">
+                <div class="auth-form">
+                    <h2>Join Our Community</h2>
+                    <p>Create your account to get started with premium shopping</p>
+                    
+                    {% if messages %}
+                        <div class="messages">
+                            {% for message in messages %}
+                                <div class="message message-{{ message.tags }}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post" class="form">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label for="fullname">Full Name</label>
+                            <input type="text" name="fullname" id="fullname" placeholder="Your full name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" name="email" id="email" placeholder="your.email@example.com" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" name="username" id="username" placeholder="Choose a username" required>
+                        </div>
+                        
+                        <div class="form-group password-field">
+                            <label for="password">Password</label>
+                            <input type="password" name="password" id="password" placeholder="Create a strong password" required>
+                            <button class="toggle-password" type="button" data-target="password" aria-label="Show password">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="form-group password-field">
+                            <label for="confirmpassword">Confirm Password</label>
+                            <input type="password" name="confirmpassword" id="confirmpassword" placeholder="Confirm your password" required>
+                            <button class="toggle-password" type="button" data-target="confirmpassword" aria-label="Show password">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-large">
+                            <i class="fas fa-user-plus"></i>
+                            Create Account
+                        </button>
+                    </form>
+                    
+                    <div class="auth-footer">
+                        <p>Already have an account? <a href="{% url 'login' %}">Sign in here</a></p>
+                    </div>
+                </div>
+                
+                <div class="auth-image">
+                    <img src="https://images.pexels.com/photos/1192671/pexels-photo-1192671.jpeg" alt="Sign Up Nature Scenery">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="{% static 'scripts/ecommerce.js' %}"></script>
+    <script>
+        (function(){
+            var toggles = document.querySelectorAll('.toggle-password');
+            toggles.forEach(function(btn){
+                btn.addEventListener('click', function(){
+                    var id = btn.getAttribute('data-target');
+                    var input = document.getElementById(id);
+                    if (!input) return;
+                    var isPassword = input.getAttribute('type') === 'password';
+                    input.setAttribute('type', isPassword ? 'text' : 'password');
+                    btn.innerHTML = isPassword ? '<i class="fa fa-eye-slash"></i>' : '<i class="fa fa-eye"></i>';
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

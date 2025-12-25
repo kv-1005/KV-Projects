@@ -1,0 +1,200 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Detail - KV Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'styles/ecommerce.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <a href="{% url 'home' %}">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>KV Store</span>
+                </a>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="{% url 'products' %}" class="nav-link">Shop</a>
+                <a href="{% url 'about' %}" class="nav-link">About</a>
+                <a href="{% url 'contact' %}" class="nav-link">Contact</a>
+                
+                {% if user.is_authenticated %}
+                    <div class="nav-user">
+                        <a href="{% url 'cart' %}" class="nav-link cart-link">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-count">{{ user.customer.carts.first.total_items|default:0 }}</span>
+                        </a>
+                        <div class="user-dropdown">
+                            <button class="user-btn">
+                                <i class="fas fa-user"></i>
+                                <span>{{ user.get_full_name|default:user.username }}</span>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="{% url 'profile' %}">Profile</a>
+                                <a href="{% url 'order_list' %}" class="active">Orders</a>
+                                <a href="{% url 'wishlist' %}">Wishlist</a>
+                                <a href="{% url 'logout' %}">Logout</a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="nav-auth">
+                        <a href="{% url 'login' %}" class="nav-link">Login</a>
+                        <a href="{% url 'register' %}" class="btn btn-primary">Sign Up</a>
+                    </div>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <!-- Order Detail Section -->
+    <section class="order-detail-section">
+        <div class="container">
+            <div class="order-detail-header">
+                <a href="{% url 'order_list' %}" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Back to Orders
+                </a>
+                <h1 class="page-title">Order #{{ order.order_number }}</h1>
+            </div>
+            
+            <div class="order-detail-content">
+                <h2>Order Details</h2>
+                <div class="order-info-card">
+                    <div class="order-status">
+                        <h3>Order Status</h3>
+                        <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+                    </div>
+                    
+                    <div class="order-dates">
+                        <div class="date-item">
+                            <span class="date-label">Order Date:</span>
+                            <span class="date-value">{{ order.created_at|date:"F j, Y" }}</span>
+                        </div>
+                        {% if order.updated_at != order.created_at %}
+                            <div class="date-item">
+                                <span class="date-label">Last Updated:</span>
+                                <span class="date-value">{{ order.updated_at|date:"F j, Y" }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="order-items-card">
+                    <h3>Order Items</h3>
+                    <div class="order-items">
+                        {% for item in order.items.all %}
+                            <div class="order-item">
+                                <div class="item-image">
+                                    {% if item.product.image %}
+                                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                                    {% else %}
+                                        <div class="product-placeholder">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="item-details">
+                                    <h4>{{ item.product.name }}</h4>
+                                    <p class="item-category">{{ item.product.category.name }}</p>
+                                    <div class="item-info">
+                                        <span class="item-quantity">Qty: {{ item.quantity }}</span>
+                                        <span class="item-price">₹{{ item.price }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="order-summary-card">
+                    <h3>Order Summary</h3>
+                    <div class="summary-details">
+                        <div class="summary-row">
+                            <span>Payment Method:</span>
+                            <span>{{ order.get_payment_method_display }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Payment Status:</span>
+                            <span class="payment-status status-{{ order.payment_status }}">
+                                {{ order.get_payment_status_display }}
+                            </span>
+                        </div>
+                        {% if order.razorpay_payment_id %}
+                        <div class="summary-row">
+                            <span>Payment ID:</span>
+                            <span class="text-monospace">{{ order.razorpay_payment_id }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="summary-row">
+                            <span>Subtotal:</span>
+                            <span>₹{{ order.subtotal }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Shipping:</span>
+                            <span>₹{{ order.shipping_cost }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Tax:</span>
+                            <span>₹{{ order.tax }}</span>
+                        </div>
+                        <div class="summary-row total-row">
+                            <span>Total:</span>
+                            <span>₹{{ order.total_amount }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="shipping-info-card">
+                    <h3>Shipping Information</h3>
+                    <div class="shipping-details">
+                        <p><strong>Address:</strong> {{ order.shipping_address }}</p>
+                        <p><strong>Phone:</strong> {{ order.phone }}</p>
+                        <p><strong>Email:</strong> {{ order.email }}</p>
+                    </div>
+                </div>
+                
+                {% if order.notes %}
+                    <div class="order-notes-card">
+                        <h3>Order Notes</h3>
+                        <p>{{ order.notes }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>KV Store</h3>
+                    <p>Your premium shopping destination for quality products and exceptional service.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="{% url 'products' %}">Shop</a></li>
+                        <li><a href="{% url 'about' %}">About Us</a></li>
+                        <li><a href="{% url 'contact' %}">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 KV Store. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'scripts/ecommerce.js' %}"></script>
+</body>
+</html> 

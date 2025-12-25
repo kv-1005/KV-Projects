@@ -1,0 +1,559 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Secure Payment - KV Store{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'styles/ecommerce.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    /* FORCED DARK THEME - NO PURPLE BACKGROUND */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    html, body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #000000 !important;
+        min-height: 100vh;
+        color: #FFFFFF !important;
+        overflow-x: hidden;
+    }
+
+    .payment-section {
+        padding: 2rem 0;
+        min-height: 100vh;
+        background: #000000 !important;
+    }
+
+    .payment-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .payment-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .payment-header h1 {
+        font-size: 3rem;
+        color: #00DD00 !important;
+        margin-bottom: 1rem;
+        text-shadow: 0 0 20px rgba(0, 221, 0, 0.2);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .payment-header p {
+        color: #CCCCCC;
+        font-size: 1.2rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .payment-content {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 3rem;
+        align-items: start;
+    }
+
+    .payment-main {
+        background: #111111;
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        border: 1px solid #222222;
+    }
+
+    .payment-sidebar {
+        background: #111111;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        border: 1px solid #222222;
+        position: sticky;
+        top: 2rem;
+    }
+
+    .order-summary {
+        background: #222222;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 0;
+        border-left: 4px solid #00DD00;
+    }
+
+    .order-summary h2 {
+        color: #00DD00;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .order-details {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .order-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #333333;
+    }
+
+    .order-row:last-child {
+        border-bottom: none;
+    }
+
+    .order-row.total {
+        border-top: 2px solid #00DD00;
+        margin-top: 1rem;
+        padding-top: 1.5rem;
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: #00DD00;
+        border-bottom: none;
+    }
+
+    .order-label {
+        color: #CCCCCC;
+        font-weight: 500;
+        font-size: 1rem;
+    }
+
+    .order-value {
+        color: #FFFFFF;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .order-row.total .order-value {
+        color: #00DD00;
+    }
+
+    .payment-methods {
+        margin-bottom: 2.5rem;
+    }
+
+    .payment-methods h3 {
+        color: #00DD00;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .payment-options {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .payment-option {
+        border: 2px solid #333333;
+        border-radius: 12px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #222222;
+    }
+
+    .payment-option:hover {
+        border-color: #00DD00;
+        box-shadow: 0 4px 20px rgba(0, 221, 0, 0.2);
+        transform: translateY(-2px);
+    }
+
+    .payment-option.selected {
+        border-color: #00DD00;
+        background: rgba(0, 221, 0, 0.1);
+        box-shadow: 0 0 20px rgba(0, 221, 0, 0.2);
+    }
+
+    .payment-option-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .payment-radio {
+        width: 20px;
+        height: 20px;
+        accent-color: #00DD00;
+    }
+
+    .payment-icon {
+        width: 40px;
+        height: 40px;
+        background: #00DD00;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #000000;
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+
+    .payment-title {
+        font-weight: 600;
+        color: #FFFFFF;
+        font-size: 1.25rem;
+    }
+
+    .payment-description {
+        color: #CCCCCC;
+        font-size: 0.95rem;
+        margin-left: 4rem;
+        line-height: 1.4;
+    }
+
+    .payment-actions {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 2.5rem;
+    }
+
+    .btn {
+        padding: 1rem 2.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        border: none;
+        flex: 1;
+        min-height: 56px;
+    }
+
+    .btn-primary {
+        background: #00DD00;
+        color: #000000;
+        font-weight: 700;
+    }
+
+    .btn-primary:hover {
+        background: #00BB00;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 221, 0, 0.2);
+    }
+
+    .btn-secondary {
+        background: transparent;
+        color: #CCCCCC;
+        border: 2px solid #333333;
+    }
+
+    .btn-secondary:hover {
+        border-color: #00DD00;
+        color: #00DD00;
+        box-shadow: 0 4px 15px rgba(0, 221, 0, 0.2);
+    }
+
+    .security-notice {
+        background: rgba(0, 221, 0, 0.1);
+        border: 1px solid rgba(0, 221, 0, 0.3);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-top: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .security-notice .icon {
+        color: #00DD00;
+        font-size: 1.5rem;
+    }
+
+    .security-notice p {
+        color: #CCCCCC;
+        font-size: 0.95rem;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    @media (max-width: 768px) {
+        .payment-container {
+            padding: 0 15px;
+        }
+        
+        .payment-content {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        
+        .payment-main {
+            padding: 2rem;
+        }
+        
+        .payment-sidebar {
+            position: static;
+            order: -1;
+        }
+        
+        .payment-actions {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .payment-option-header {
+            flex-wrap: wrap;
+        }
+        
+        .payment-description {
+            margin-left: 0;
+            margin-top: 0.75rem;
+        }
+
+        .payment-header h1 {
+            font-size: 2.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-section">
+    <div class="payment-container">
+        <div class="payment-header">
+            <h1><i class="fas fa-shield-alt"></i> Secure Payment</h1>
+            <p>Complete your order securely with our encrypted payment system</p>
+        </div>
+        
+        <div class="payment-content">
+            <!-- Main Payment Area -->
+            <div class="payment-main">
+                <!-- Payment Methods -->
+                <div class="payment-methods">
+                    <h3><i class="fas fa-credit-card"></i> Choose Payment Method</h3>
+                    
+                    <div class="payment-options">
+                        <!-- Razorpay Payment -->
+                        <div class="payment-option selected" data-method="razorpay">
+                            <div class="payment-option-header">
+                                <input type="radio" name="payment_method" value="razorpay" checked class="payment-radio">
+                                <div class="payment-icon">
+                                    <i class="fas fa-credit-card"></i>
+                                </div>
+                                <div class="payment-title">Razorpay</div>
+                            </div>
+                            <div class="payment-description">
+                                Pay securely with Cards, UPI, Net Banking, or Wallets
+                            </div>
+                        </div>
+                        
+                        <!-- Cash on Delivery -->
+                        <div class="payment-option" data-method="cod">
+                            <div class="payment-option-header">
+                                <input type="radio" name="payment_method" value="cod" class="payment-radio">
+                                <div class="payment-icon">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                                <div class="payment-title">Cash on Delivery</div>
+                            </div>
+                            <div class="payment-description">
+                                Pay when your order is delivered
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Actions -->
+                <div class="payment-actions">
+                    <button type="button" class="btn btn-secondary" onclick="history.back()">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Checkout
+                    </button>
+                    <button type="button" class="btn btn-primary" id="payButton">
+                        <i class="fas fa-lock"></i>
+                        <span id="buttonText">Pay Securely - ₹{{ order.total_amount }}</span>
+                    </button>
+                </div>
+                
+                <!-- Security Notice -->
+                <div class="security-notice">
+                    <i class="fas fa-shield-alt icon"></i>
+                    <p>Your payment information is secure and encrypted with 256-bit SSL</p>
+                </div>
+            </div>
+            
+            <!-- Order Summary Sidebar -->
+            <div class="payment-sidebar">
+                <div class="order-summary">
+                    <h2><i class="fas fa-receipt"></i> Order Summary</h2>
+                    <div class="order-details">
+                        <div class="order-row">
+                            <span class="order-label">Order #:</span>
+                            <span class="order-value">{{ order.order_number }}</span>
+                        </div>
+                        <div class="order-row">
+                            <span class="order-label">Subtotal:</span>
+                            <span class="order-value">₹{{ order.subtotal }}</span>
+                        </div>
+                        {% if order.tax > 0 %}
+                        <div class="order-row">
+                            <span class="order-label">Tax (18%):</span>
+                            <span class="order-value">₹{{ order.tax }}</span>
+                        </div>
+                        {% endif %}
+                        {% if order.shipping_cost > 0 %}
+                        <div class="order-row">
+                            <span class="order-label">Shipping:</span>
+                            <span class="order-value">₹{{ order.shipping_cost }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="order-row total">
+                            <span class="order-label">Total Amount:</span>
+                            <span class="order-value">₹{{ order.total_amount }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Razorpay SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var paymentOptions = document.querySelectorAll('.payment-option');
+    var payButton = document.getElementById('payButton');
+    var buttonText = document.getElementById('buttonText');
+    
+    var selectedMethod = 'razorpay';
+    
+    // Handle payment method selection
+    paymentOptions.forEach(function(option) {
+        option.addEventListener('click', function() {
+            paymentOptions.forEach(function(opt) {
+                opt.classList.remove('selected');
+            });
+            this.classList.add('selected');
+            
+            var radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+            selectedMethod = radio.value;
+            
+            if (selectedMethod === 'cod') {
+                buttonText.innerHTML = '<i class="fas fa-money-bill-wave"></i> Place Order - ₹{{ order.total_amount }}';
+            } else {
+                buttonText.innerHTML = '<i class="fas fa-lock"></i> Pay Securely - ₹{{ order.total_amount }}';
+            }
+        });
+    });
+    
+    // Razorpay configuration
+    var razorpayOptions = {
+        key: "{{ razorpay_key_id }}",
+        amount: {{ amount }},
+        currency: "{{ currency }}",
+        name: "KV Store",
+        description: "Order #{{ order.order_number }}",
+        order_id: "{{ razorpay_order_id }}",
+        handler: function (response) {
+            handlePaymentSuccess(response);
+        },
+        prefill: {
+            name: "{{ customer.user.get_full_name|default:customer.user.username }}",
+            email: "{{ customer.user.email }}",
+            contact: "{{ customer.phone }}"
+        },
+        notes: {
+            order_id: "{{ order.id }}",
+            order_number: "{{ order.order_number }}"
+        },
+        theme: {
+            color: "#00DD00"
+        },
+        modal: {
+            ondismiss: function() {
+                console.log('Payment cancelled by user');
+            }
+        }
+    };
+    
+    var rzp = new Razorpay(razorpayOptions);
+    
+    // Handle payment button click
+    payButton.addEventListener('click', function() {
+        if (selectedMethod === 'cod') {
+            window.location.href = '/order/{{ order.id }}/?payment=cod';
+        } else {
+            rzp.open();
+        }
+    });
+    
+    // Handle payment success
+    function handlePaymentSuccess(response) {
+        fetch('{% url "payment_callback" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+            })
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                window.location.href = data.redirect_url + '?payment=success';
+            } else {
+                alert('Payment verification failed: ' + data.error);
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('Payment processing failed. Please try again.');
+        });
+    }
+    
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

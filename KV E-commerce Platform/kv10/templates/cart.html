@@ -1,0 +1,723 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart - KV Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'styles/ecommerce.css' %}">
+    <link rel="stylesheet" href="{% static 'styles/mobile.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cart Page Specific Styles - iPhone 14 Pro Max Optimized */
+        .cart-section {
+            padding: 2rem 0;
+            min-height: 100vh;
+            background: var(--black);
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            color: var(--primary-green);
+            text-align: center;
+            margin-bottom: 3rem;
+            text-shadow: 0 0 20px var(--shadow-green);
+            font-weight: 700;
+        }
+
+        .cart-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .cart-items {
+            background: var(--dark-gray);
+            border-radius: var(--border-radius-large);
+            padding: 2rem;
+            box-shadow: 0 8px 32px var(--shadow-dark);
+        }
+
+        .cart-item {
+            display: grid;
+            grid-template-columns: 120px 1fr auto auto auto;
+            gap: 1.5rem;
+            align-items: center;
+            padding: 1.5rem;
+            background: var(--medium-gray);
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--light-gray);
+            transition: var(--transition);
+        }
+
+        .cart-item:hover {
+            border-color: var(--primary-green);
+            box-shadow: 0 4px 20px var(--shadow-green);
+            transform: translateY(-2px);
+        }
+
+        .item-image {
+            width: 120px;
+            height: 120px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            background: var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transition);
+        }
+
+        .item-image:hover img {
+            transform: scale(1.05);
+        }
+
+        .product-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--light-gray);
+            color: var(--text-dark);
+            font-size: 2rem;
+        }
+
+        .item-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .item-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-white);
+            margin: 0;
+        }
+
+        .item-category {
+            color: var(--primary-green);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .item-price {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .original-price {
+            color: var(--text-dark);
+            text-decoration: line-through;
+            font-size: 0.9rem;
+        }
+
+        .sale-price {
+            color: var(--error-red);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .price {
+            color: var(--primary-green);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .item-quantity {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .item-quantity label {
+            font-size: 0.8rem;
+            color: var(--text-gray);
+            font-weight: 500;
+        }
+
+        .quantity-input {
+            width: 80px;
+            padding: 0.75rem;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            background: var(--medium-gray);
+            color: var(--text-white);
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .quantity-input:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 3px var(--shadow-green);
+        }
+
+        .item-total {
+            text-align: center;
+        }
+
+        .total-price {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-green);
+        }
+
+        .item-actions {
+            display: flex;
+            justify-content: center;
+        }
+
+        .remove-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: var(--error-red);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1rem;
+        }
+
+        .remove-btn:hover {
+            background: #ff6666;
+            transform: scale(1.1);
+        }
+
+        .cart-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .cart-summary {
+            background: var(--dark-gray);
+            border-radius: var(--border-radius-large);
+            padding: 2rem;
+            box-shadow: 0 8px 32px var(--shadow-dark);
+            height: fit-content;
+            position: sticky;
+            top: 120px;
+        }
+
+        .cart-summary h3 {
+            font-size: 1.5rem;
+            color: var(--primary-green);
+            margin-bottom: 2rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .coupon-applied {
+            background: var(--medium-gray);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--primary-green);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .coupon-applied span:first-child {
+            color: var(--text-white);
+            font-weight: 500;
+        }
+
+        .discount {
+            color: var(--error-red);
+            font-weight: 600;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .summary-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .summary-row span:first-child {
+            color: var(--text-gray);
+            font-weight: 500;
+        }
+
+        .summary-row span:last-child {
+            color: var(--text-white);
+            font-weight: 600;
+        }
+
+        .discount-row span:last-child {
+            color: var(--error-red);
+        }
+
+        .total-row {
+            border-top: 2px solid var(--primary-green);
+            border-bottom: none;
+            padding-top: 1rem;
+            margin-top: 1rem;
+        }
+
+        .total-row span:first-child {
+            color: var(--primary-green);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .total-row span:last-child {
+            color: var(--primary-green);
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .coupon-form {
+            margin: 2rem 0;
+        }
+
+        .coupon-input {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .coupon-input input {
+            flex: 1;
+            padding: 0.875rem;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            background: var(--medium-gray);
+            color: var(--text-white);
+            font-size: 0.9rem;
+        }
+
+        .coupon-input input:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 3px var(--shadow-green);
+        }
+
+        .coupon-input input::placeholder {
+            color: var(--text-dark);
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 1.25rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: var(--border-radius);
+            color: var(--black);
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--shadow-green);
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--dark-gray);
+            border-radius: var(--border-radius-large);
+            margin: 2rem auto;
+            max-width: 500px;
+        }
+
+        .empty-cart i {
+            font-size: 4rem;
+            color: var(--text-dark);
+            margin-bottom: 2rem;
+        }
+
+        .empty-cart h2 {
+            font-size: 2rem;
+            color: var(--text-white);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .empty-cart p {
+            color: var(--text-gray);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        /* iPhone 14 Pro Max Specific Optimizations */
+        @media (max-width: 430px) {
+            .cart-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                padding: 0 1rem;
+            }
+
+            .cart-item {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .item-image {
+                width: 100px;
+                height: 100px;
+                margin: 0 auto;
+            }
+
+            .item-quantity {
+                flex-direction: row;
+                justify-content: center;
+                gap: 1rem;
+            }
+
+            .item-quantity label {
+                margin: 0;
+            }
+
+            .cart-actions {
+                flex-direction: column;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .cart-summary {
+                position: static;
+                margin-top: 2rem;
+            }
+        }
+
+        /* Loading animation for cart updates */
+        .cart-updating {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .cart-updating::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid var(--primary-green);
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <a href="{% url 'home' %}">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>KV Store</span>
+                </a>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="{% url 'products' %}" class="nav-link">Shop</a>
+                <a href="{% url 'about' %}" class="nav-link">About</a>
+                <a href="{% url 'contact' %}" class="nav-link">Contact</a>
+                
+                {% if user.is_authenticated %}
+                    <div class="nav-user">
+                        <a href="{% url 'cart' %}" class="nav-link cart-link active">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-count">{{ user.customer.carts.first.total_items|default:0 }}</span>
+                        </a>
+                        <div class="user-dropdown">
+                            <button class="user-btn">
+                                <i class="fas fa-user"></i>
+                                <span>{{ user.get_full_name|default:user.username }}</span>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="{% url 'profile' %}">Profile</a>
+                                <a href="{% url 'order_list' %}">Orders</a>
+                                <a href="{% url 'wishlist' %}">Wishlist</a>
+                                <a href="{% url 'logout' %}">Logout</a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="nav-auth">
+                        <a href="{% url 'login' %}" class="nav-link">Login</a>
+                        <a href="{% url 'register' %}" class="btn btn-primary">Sign Up</a>
+                    </div>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <!-- Cart Section -->
+    <section class="cart-section">
+        <div class="container">
+            <h1 class="page-title">
+                <i class="fas fa-shopping-cart"></i>
+                Shopping Cart
+            </h1>
+            
+            {% if cart_items %}
+                <div class="cart-content">
+                    <div class="cart-items">
+                        <form method="POST" class="cart-form" id="cartForm">
+                            {% csrf_token %}
+                            {% for item in cart_items %}
+                                <div class="cart-item" data-item-id="{{ item.id }}">
+                                    <div class="item-image">
+                                        {% if item.product.image %}
+                                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" loading="lazy">
+                                        {% else %}
+                                            <div class="product-placeholder">
+                                                <i class="fas fa-image"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="item-details">
+                                        <h3 class="item-title">{{ item.product.name }}</h3>
+                                        <p class="item-category">{{ item.product.category.name }}</p>
+                                        <div class="item-price">
+                                            {% if item.product.is_on_sale %}
+                                                <span class="original-price">₹{{ item.product.price }}</span>
+                                                <span class="sale-price">₹{{ item.product.sale_price }}</span>
+                                            {% else %}
+                                                <span class="price">₹{{ item.product.current_price }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="item-quantity">
+                                        <label for="quantity_{{ item.id }}">Qty</label>
+                                        <input type="number" 
+                                               name="quantity_{{ item.id }}" 
+                                               id="quantity_{{ item.id }}"
+                                               value="{{ item.quantity }}" 
+                                               min="1" 
+                                               max="{{ item.product.stock_quantity }}"
+                                               class="quantity-input"
+                                               onchange="updateCartItem(this, {{ item.id }})">
+                                    </div>
+                                    
+                                    <div class="item-total">
+                                        <span class="total-price">₹{{ item.total_price }}</span>
+                                    </div>
+                                    
+                                    <div class="item-actions">
+                                        <button type="button" class="remove-btn" onclick="removeCartItem({{ item.id }})" title="Remove item">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            
+                            <div class="cart-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-sync-alt"></i>
+                                    Update Cart
+                                </button>
+                                <a href="{% url 'products' %}" class="btn btn-outline">
+                                    <i class="fas fa-arrow-left"></i>
+                                    Continue Shopping
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="cart-summary">
+                        <h3>
+                            <i class="fas fa-receipt"></i>
+                            Order Summary
+                        </h3>
+                        
+                        {% if coupon %}
+                            <div class="coupon-applied">
+                                <span>
+                                    <i class="fas fa-tag"></i>
+                                    {{ coupon.code }}
+                                </span>
+                                <span class="discount">-₹{{ discount }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span>₹{{ subtotal }}</span>
+                        </div>
+                        
+                        <div class="summary-row">
+                            <span>Shipping</span>
+                            <span>₹{{ shipping_cost }}</span>
+                        </div>
+                        
+                        <div class="summary-row">
+                            <span>Tax (18% GST)</span>
+                            <span>₹{{ tax }}</span>
+                        </div>
+                        
+                        {% if discount > 0 %}
+                            <div class="summary-row discount-row">
+                                <span>Discount</span>
+                                <span>-₹{{ discount }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="summary-row total-row">
+                            <span>Total</span>
+                            <span>₹{{ total }}</span>
+                        </div>
+                        
+                        <form method="POST" class="coupon-form">
+                            {% csrf_token %}
+                            <div class="coupon-input">
+                                <input type="text" name="coupon_code" placeholder="Enter coupon code" class="form-input">
+                                <button type="submit" class="btn btn-secondary">
+                                    <i class="fas fa-tag"></i>
+                                    Apply
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <a href="{% url 'checkout' %}" class="checkout-btn">
+                            <i class="fas fa-lock"></i>
+                            Proceed to Checkout
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="empty-cart">
+                    <i class="fas fa-shopping-cart"></i>
+                    <h2>Your cart is empty</h2>
+                    <p>Looks like you haven't added any items to your cart yet. Start shopping to discover amazing products!</p>
+                    <a href="{% url 'products' %}" class="btn btn-primary">
+                        <i class="fas fa-shopping-bag"></i>
+                        Start Shopping
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>KV Store</h3>
+                    <p>Your premium shopping destination for quality products and exceptional service.</p>
+                    <div class="social-links">
+                        <a href="https://x.com/KVigneshar" target="_blank"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.instagram.com/k.vigneshar/" target="_blank"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.linkedin.com/in/vigneshar-kumaravelan-48849a305/" target="_blank"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="{% url 'products' %}">Shop</a></li>
+                        <li><a href="{% url 'about' %}">About Us</a></li>
+                        <li><a href="{% url 'contact' %}">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Customer Service</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Returns & Exchanges</a></li>
+                        <li><a href="#">Shipping Info</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 KV Store. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'scripts/ecommerce.js' %}"></script>
+    <script>
+        // Cart functionality
+        function updateCartItem(input, itemId) {
+            const form = document.getElementById('cartForm');
+            const submitButton = form.querySelector('button[type="submit"]');
+            
+            // Show loading state
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            submitButton.disabled = true;
+            
+            // Submit form
+            form.submit();
+        }
+
+        function removeCartItem(itemId) {
+            if (confirm('Are you sure you want to remove this item from your cart?')) {
+                window.location.href = `/remove-from-cart/${itemId}/`;
+            }
+        }
+
+        // Add smooth scrolling for better UX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Smooth scroll to top when page loads
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Add loading animation for form submission
+            const cartForm = document.getElementById('cartForm');
+            if (cartForm) {
+                cartForm.addEventListener('submit', function() {
+                    const cartItems = document.querySelector('.cart-items');
+                    cartItems.classList.add('cart-updating');
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

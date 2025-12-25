@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Analytics - KV Store</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+            color: #fff !important;
+            min-height: 100vh !important;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .analytics-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            min-height: 100vh;
+        }
+        
+        .analytics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #00ff88;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+        
+        .analytics-header h1 {
+            color: #00ff88 !important;
+            font-size: 2.5rem;
+            margin: 0;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        .date-filter {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            background: #000;
+            padding: 1rem;
+            border-radius: 15px;
+            border: 1px solid #333;
+            flex-wrap: wrap;
+        }
+        
+        .date-filter label {
+            color: #00ff88 !important;
+            font-weight: bold;
+        }
+        
+        .date-filter input {
+            padding: 0.75rem;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #1a1a1a !important;
+            color: #fff !important;
+            font-size: 0.9rem;
+        }
+        
+        .date-filter input:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+        
+        .filter-btn {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%) !important;
+            color: #000 !important;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .stat-card {
+            background: #000 !important;
+            border: 1px solid #333;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: #00ff88;
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+        }
+        
+        .stat-icon {
+            font-size: 3rem !important;
+            margin-bottom: 1rem;
+            color: #00ff88 !important;
+            text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+        }
+        
+        .stat-icon.success { color: #00ff88 !important; }
+        .stat-icon.danger { color: #ff4757 !important; }
+        .stat-icon.warning { color: #ffa502 !important; }
+        .stat-icon.info { color: #3742fa !important; }
+        .stat-icon.primary { color: #a55eea !important; }
+        
+        .stat-value {
+            font-size: 2.5rem !important;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #fff !important;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+        
+        .stat-label {
+            color: #ccc !important;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+        
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .chart-card {
+            background: #000 !important;
+            border: 1px solid #333;
+            padding: 2rem;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chart-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+        }
+        
+        .chart-card:hover {
+            border-color: #00ff88;
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+        }
+        
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            color: #00ff88 !important;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+        
+        .method-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .method-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #1a1a1a !important;
+            border: 1px solid #333;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .method-item:hover {
+            border-color: #00ff88;
+            background: #2a2a2a !important;
+        }
+        
+        .method-name {
+            font-weight: 500;
+            color: #fff !important;
+        }
+        
+        .method-name i {
+            color: #00ff88 !important;
+            margin-right: 0.5rem;
+        }
+        
+        .method-value {
+            font-weight: bold;
+            color: #00ff88 !important;
+        }
+        
+        .recent-payments {
+            background: #000 !important;
+            border: 1px solid #333;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .recent-payments::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+        }
+        
+        .table-header {
+            background: #1a1a1a !important;
+            padding: 1.5rem;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            color: #00ff88 !important;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        
+        .payments-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #000 !important;
+        }
+        
+        .payments-table th,
+        .payments-table td {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        
+        .payments-table th {
+            background: #1a1a1a !important;
+            font-weight: 600;
+            color: #00ff88 !important;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+        
+        .payments-table td {
+            color: #fff !important;
+        }
+        
+        .payments-table tr:hover {
+            background: #1a1a1a !important;
+        }
+        
+        .payments-table a {
+            color: #00ff88 !important;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .payments-table a:hover {
+            color: #00cc6a !important;
+            text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+        }
+        
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .status-completed { 
+            background: rgba(0, 255, 136, 0.2) !important; 
+            color: #00ff88 !important; 
+            border: 1px solid #00ff88; 
+        }
+        .status-failed { 
+            background: rgba(255, 71, 87, 0.2) !important; 
+            color: #ff4757 !important; 
+            border: 1px solid #ff4757; 
+        }
+        .status-pending { 
+            background: rgba(255, 165, 2, 0.2) !important; 
+            color: #ffa502 !important; 
+            border: 1px solid #ffa502; 
+        }
+        .status-refunded { 
+            background: rgba(55, 66, 250, 0.2) !important; 
+            color: #3742fa !important; 
+            border: 1px solid #3742fa; 
+        }
+        
+        .success-rate {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .success-rate.good { color: #00ff88 !important; }
+        .success-rate.average { color: #ffa502 !important; }
+        .success-rate.poor { color: #ff4757 !important; }
+        
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            color: #000;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+        }
+        
+        @media (max-width: 768px) {
+            .analytics-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .date-filter {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .payments-table {
+                font-size: 0.9rem;
+            }
+            
+            .payments-table th,
+            .payments-table td {
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="javascript:history.back()" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+    
+    <div class="analytics-container">
+        <div class="analytics-header">
+            <h1>Payment Analytics</h1>
+            <form method="GET" class="date-filter">
+                <label for="start_date">From:</label>
+                <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
+                <label for="end_date">To:</label>
+                <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
+                <button type="submit" class="filter-btn">Filter</button>
+            </form>
+        </div>
+        
+        {% if analytics %}
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-value">{{ analytics.successful_payments }}</div>
+                <div class="stat-label">Successful Payments</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon danger">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-value">{{ analytics.failed_payments }}</div>
+                <div class="stat-label">Failed Payments</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon warning">
+                    <i class="fas fa-undo"></i>
+                </div>
+                <div class="stat-value">{{ analytics.refunded_payments }}</div>
+                <div class="stat-label">Refunded Payments</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon info">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="stat-value success-rate {% if analytics.success_rate >= 90 %}good{% elif analytics.success_rate >= 70 %}average{% else %}poor{% endif %}">
+                    {{ analytics.success_rate }}%
+                </div>
+                <div class="stat-label">Success Rate</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon primary">
+                    <i class="fas fa-rupee-sign"></i>
+                </div>
+                <div class="stat-value">₹{{ analytics.total_amount|floatformat:0 }}</div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon info">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-value">₹{{ analytics.net_revenue|floatformat:0 }}</div>
+                <div class="stat-label">Net Revenue</div>
+            </div>
+        </div>
+        
+        <div class="charts-section">
+            <div class="chart-card">
+                <div class="chart-title">Payment Methods</div>
+                <div class="method-stats">
+                    {% for method, data in analytics.payment_methods.items %}
+                    <div class="method-item">
+                        <div class="method-name">
+                            {% if method == 'card' %}
+                                <i class="fas fa-credit-card"></i> Credit/Debit Card
+                            {% elif method == 'upi' %}
+                                <i class="fas fa-mobile-alt"></i> UPI
+                            {% elif method == 'netbanking' %}
+                                <i class="fas fa-university"></i> Net Banking
+                            {% elif method == 'wallet' %}
+                                <i class="fas fa-wallet"></i> Digital Wallet
+                            {% elif method == 'cod' %}
+                                <i class="fas fa-truck"></i> Cash on Delivery
+                            {% else %}
+                                <i class="fas fa-payment"></i> {{ method|title }}
+                            {% endif %}
+                        </div>
+                        <div class="method-value">
+                            {{ data.count }} (₹{{ data.amount|floatformat:0 }})
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p style="color: #888; text-align: center;">No payment methods data available</p>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-title">Financial Summary</div>
+                <div class="method-stats">
+                    <div class="method-item">
+                        <div class="method-name">
+                            <i class="fas fa-coins"></i> Total Amount
+                        </div>
+                        <div class="method-value">₹{{ analytics.total_amount|floatformat:2 }}</div>
+                    </div>
+                    <div class="method-item">
+                        <div class="method-name">
+                            <i class="fas fa-percentage"></i> Processing Fees
+                        </div>
+                        <div class="method-value">₹{{ analytics.processing_fees|floatformat:2 }}</div>
+                    </div>
+                    <div class="method-item">
+                        <div class="method-name">
+                            <i class="fas fa-undo"></i> Total Refunds
+                        </div>
+                        <div class="method-value">₹{{ analytics.total_refunds|floatformat:2 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="chart-card" style="text-align: center; padding: 3rem;">
+            <div class="chart-title">No Data Available</div>
+            <p style="color: #888;">No analytics data found for the selected date range.</p>
+        </div>
+        {% endif %}
+        
+        <div class="recent-payments">
+            <div class="table-header">
+                Recent Payments
+            </div>
+            {% if recent_payments %}
+            <table class="payments-table">
+                <thead>
+                    <tr>
+                        <th>Payment ID</th>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in recent_payments %}
+                    <tr>
+                        <td><strong>{{ payment.razorpay_payment_id|truncatechars:15 }}</strong></td>
+                        <td>
+                            <a href="{% url 'order_detail' payment.order.id %}">
+                                {{ payment.order.order_number }}
+                            </a>
+                        </td>
+                        <td>{{ payment.order.customer.user.get_full_name|default:payment.order.customer.user.username }}</td>
+                        <td><strong>₹{{ payment.amount }}</strong></td>
+                        <td>{{ payment.method|title }}</td>
+                        <td>
+                            <span class="status-badge status-{{ payment.status }}">
+                                {{ payment.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ payment.initiated_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            {% if payment.status == 'completed' %}
+                                <button onclick="showRefundModal('{{ payment.razorpay_payment_id }}', {{ payment.amount }})" 
+                                        style="background: #ff4757; color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 5px; cursor: pointer;">
+                                    Initiate Refund
+                                </button>
+                            {% else %}
+                                <span style="color: #888;">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="padding: 2rem; text-align: center; color: #888;">
+                <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                No recent payments found.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function showRefundModal(paymentId, maxAmount) {
+            const reason = prompt('Enter reason for refund:');
+            if (reason) {
+                const amount = prompt(`Enter refund amount (Max: ₹${maxAmount}):`);
+                if (amount && parseFloat(amount) <= maxAmount) {
+                    // Here you would normally submit the refund request
+                    alert(`Refund request initiated for ${paymentId} - Amount: ₹${amount} - Reason: ${reason}`);
+                    // You can add actual refund logic here
+                } else {
+                    alert('Invalid amount entered.');
+                }
+            }
+        }
+
+        // Auto-submit form on date change
+        document.getElementById('start_date').addEventListener('change', function() {
+            if (this.value && document.getElementById('end_date').value) {
+                this.form.submit();
+            }
+        });
+
+        document.getElementById('end_date').addEventListener('change', function() {
+            if (this.value && document.getElementById('start_date').value) {
+                this.form.submit();
+            }
+        });
+    </script>
+</body>
+</html>

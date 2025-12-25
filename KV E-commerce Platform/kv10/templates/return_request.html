@@ -1,0 +1,571 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Return Request - Order #{{ order.order_number }} - KV Store{% endblock %}
+
+{% block content %}
+<style>
+    .return-container {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+    
+    .return-card {
+        background: #000;
+        border: 1px solid #333;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        max-width: 800px;
+        margin: 0 auto 2rem auto;
+    }
+    
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #00ff88;
+    }
+    
+    .page-title {
+        color: #00ff88;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .order-info {
+        color: #888;
+        font-size: 1.1rem;
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+    }
+    
+    .form-section h3 {
+        color: #00ff88;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        color: #fff;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        background: #111;
+        border: 2px solid #333;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #00ff88;
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+    }
+    
+    .form-control option {
+        background: #111;
+        color: #fff;
+    }
+    
+    textarea.form-control {
+        resize: vertical;
+        min-height: 120px;
+    }
+    
+    .items-selection {
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .item-checkbox {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border: 1px solid #333;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .item-checkbox:hover {
+        border-color: #00ff88;
+        background: #0a0a0a;
+    }
+    
+    .item-checkbox input[type="checkbox"] {
+        margin-right: 1rem;
+        transform: scale(1.2);
+        accent-color: #00ff88;
+    }
+    
+    .item-details {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .item-info {
+        color: #fff;
+    }
+    
+    .item-name {
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+    
+    .item-meta {
+        color: #888;
+        font-size: 0.9rem;
+    }
+    
+    .item-price {
+        color: #00ff88;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    
+    .reason-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .reason-option {
+        position: relative;
+    }
+    
+    .reason-option input[type="radio"] {
+        display: none;
+    }
+    
+    .reason-option label {
+        display: block;
+        padding: 1rem;
+        background: #111;
+        border: 2px solid #333;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+    
+    .reason-option input[type="radio"]:checked + label {
+        border-color: #00ff88;
+        background: rgba(0, 255, 136, 0.1);
+        color: #00ff88;
+    }
+    
+    .reason-option label:hover {
+        border-color: #00ff88;
+    }
+    
+    .upload-section {
+        background: #111;
+        border: 2px dashed #333;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-section:hover {
+        border-color: #00ff88;
+        background: rgba(0, 255, 136, 0.05);
+    }
+    
+    .upload-section input[type="file"] {
+        display: none;
+    }
+    
+    .upload-label {
+        cursor: pointer;
+        color: #00ff88;
+        font-weight: 500;
+    }
+    
+    .upload-label:hover {
+        text-decoration: underline;
+    }
+    
+    .file-info {
+        color: #888;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+    
+    .policy-info {
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid #00ff88;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .policy-info h4 {
+        color: #00ff88;
+        margin-bottom: 1rem;
+    }
+    
+    .policy-info ul {
+        color: #ccc;
+        padding-left: 1.5rem;
+    }
+    
+    .policy-info li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .submit-section {
+        text-align: center;
+        padding-top: 2rem;
+        border-top: 1px solid #333;
+    }
+    
+    .btn {
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: bold;
+        text-decoration: none;
+        display: inline-block;
+        margin: 0 10px;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(45deg, #00ff88, #00cc6a);
+        color: #000;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+    }
+    
+    .btn-secondary {
+        background: transparent;
+        border: 2px solid #666;
+        color: #666;
+    }
+    
+    .btn-secondary:hover {
+        border-color: #00ff88;
+        color: #00ff88;
+        text-decoration: none;
+    }
+    
+    .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .alert-info {
+        background: rgba(23, 162, 184, 0.2);
+        border: 1px solid #17a2b8;
+        color: #17a2b8;
+    }
+    
+    .selected-items-summary {
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+        display: none;
+    }
+    
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        color: #ccc;
+        border-bottom: 1px solid #333;
+    }
+    
+    .summary-item:last-child {
+        border-bottom: none;
+        font-weight: bold;
+        color: #00ff88;
+    }
+</style>
+
+<div class="return-container">
+    <div class="container">
+        <div class="return-card">
+            <div class="page-header">
+                <h1 class="page-title">Return Request</h1>
+                <p class="order-info">Order #{{ order.order_number }} | Placed on {{ order.created_at|date:"F d, Y" }}</p>
+            </div>
+            
+            <div class="alert alert-info">
+                <strong>Return Policy:</strong> Items can be returned within 7 days of delivery. Please ensure items are in original condition with tags attached.
+            </div>
+            
+            <form method="post" enctype="multipart/form-data" id="returnForm">
+                {% csrf_token %}
+                
+                <div class="form-section">
+                    <h3><i class="fas fa-box"></i> Select Items to Return</h3>
+                    <div class="items-selection">
+                        {% for item in order.items.all %}
+                        <div class="item-checkbox">
+                            <input type="checkbox" name="return_items" value="{{ item.id }}" id="item_{{ item.id }}" 
+                                   data-price="{{ item.total_price }}" data-name="{{ item.product.name }}">
+                            <div class="item-details">
+                                <div class="item-info">
+                                    <div class="item-name">{{ item.product.name }}</div>
+                                    <div class="item-meta">Quantity: {{ item.quantity }} | Unit Price: ₹{{ item.price }}</div>
+                                </div>
+                                <div class="item-price">₹{{ item.total_price }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="selected-items-summary" id="selectedSummary">
+                        <h5 style="color: #00ff88; margin-bottom: 0.5rem;">Selected Items Summary:</h5>
+                        <div id="summaryList"></div>
+                        <div class="summary-item">
+                            <span>Total Refund Amount:</span>
+                            <span id="totalRefund">₹0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3><i class="fas fa-question-circle"></i> Reason for Return</h3>
+                    <div class="reason-options">
+                        <div class="reason-option">
+                            <input type="radio" name="return_reason" value="defective" id="reason_defective" required>
+                            <label for="reason_defective">
+                                <i class="fas fa-exclamation-triangle"></i><br>
+                                Defective Product
+                            </label>
+                        </div>
+                        <div class="reason-option">
+                            <input type="radio" name="return_reason" value="wrong_item" id="reason_wrong" required>
+                            <label for="reason_wrong">
+                                <i class="fas fa-exchange-alt"></i><br>
+                                Wrong Item Received
+                            </label>
+                        </div>
+                        <div class="reason-option">
+                            <input type="radio" name="return_reason" value="not_as_described" id="reason_description" required>
+                            <label for="reason_description">
+                                <i class="fas fa-file-alt"></i><br>
+                                Not as Described
+                            </label>
+                        </div>
+                        <div class="reason-option">
+                            <input type="radio" name="return_reason" value="changed_mind" id="reason_mind" required>
+                            <label for="reason_mind">
+                                <i class="fas fa-heart-broken"></i><br>
+                                Changed Mind
+                            </label>
+                        </div>
+                        <div class="reason-option">
+                            <input type="radio" name="return_reason" value="damaged_shipping" id="reason_damaged" required>
+                            <label for="reason_damaged">
+                                <i class="fas fa-truck"></i><br>
+                                Damaged in Shipping
+                            </label>
+                        </div>
+                        <div class="reason-option">
+                            <input type="radio" name="return_reason" value="other" id="reason_other" required>
+                            <label for="reason_other">
+                                <i class="fas fa-ellipsis-h"></i><br>
+                                Other Reason
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="return_description">Detailed Description *</label>
+                    <textarea name="return_description" id="return_description" class="form-control" 
+                              placeholder="Please provide detailed information about the issue or reason for return..." required></textarea>
+                </div>
+                
+                <div class="form-section">
+                    <h3><i class="fas fa-camera"></i> Upload Images (Optional)</h3>
+                    <div class="upload-section">
+                        <label for="return_images" class="upload-label">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            Click to upload images or drag and drop
+                        </label>
+                        <input type="file" name="return_images" id="return_images" multiple accept="image/*">
+                        <div class="file-info">
+                            Supported formats: JPG, PNG, GIF | Max size: 5MB per image
+                        </div>
+                    </div>
+                    <div id="imagePreview" style="margin-top: 1rem;"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="preferred_resolution">Preferred Resolution</label>
+                    <select name="preferred_resolution" id="preferred_resolution" class="form-control" required>
+                        <option value="">Select preferred resolution</option>
+                        <option value="refund">Full Refund</option>
+                        <option value="exchange">Exchange for Same Item</option>
+                        <option value="store_credit">Store Credit</option>
+                        <option value="replacement">Replacement</option>
+                    </select>
+                </div>
+                
+                <div class="policy-info">
+                    <h4><i class="fas fa-info-circle"></i> Return Policy Information</h4>
+                    <ul>
+                        <li>Returns are processed within 3-5 business days after we receive the item</li>
+                        <li>Refunds will be credited to the original payment method</li>
+                        <li>Return shipping costs may apply based on the reason for return</li>
+                        <li>Items must be in original condition with all tags and packaging</li>
+                        <li>Certain items like undergarments and perishables cannot be returned</li>
+                        <li>You will receive a return tracking number once your request is approved</li>
+                    </ul>
+                </div>
+                
+                <div class="submit-section">
+                    <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                        <i class="fas fa-paper-plane"></i> Submit Return Request
+                    </button>
+                    <a href="{% url 'order_detail' order.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Order
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('input[name="return_items"]');
+    const submitBtn = document.getElementById('submitBtn');
+    const selectedSummary = document.getElementById('selectedSummary');
+    const summaryList = document.getElementById('summaryList');
+    const totalRefund = document.getElementById('totalRefund');
+    const imageInput = document.getElementById('return_images');
+    const imagePreview = document.getElementById('imagePreview');
+    
+    // Handle item selection
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSummary);
+    });
+    
+    function updateSummary() {
+        const selected = Array.from(checkboxes).filter(cb => cb.checked);
+        
+        if (selected.length > 0) {
+            selectedSummary.style.display = 'block';
+            submitBtn.disabled = false;
+            
+            let total = 0;
+            summaryList.innerHTML = '';
+            
+            selected.forEach(item => {
+                const price = parseFloat(item.dataset.price);
+                const name = item.dataset.name;
+                total += price;
+                
+                const summaryItem = document.createElement('div');
+                summaryItem.className = 'summary-item';
+                summaryItem.innerHTML = `<span>${name}</span><span>₹${price}</span>`;
+                summaryList.appendChild(summaryItem);
+            });
+            
+            totalRefund.textContent = `₹${total.toFixed(2)}`;
+        } else {
+            selectedSummary.style.display = 'none';
+            submitBtn.disabled = true;
+        }
+    }
+    
+    // Handle image upload preview
+    imageInput.addEventListener('change', function(e) {
+        imagePreview.innerHTML = '';
+        const files = Array.from(e.target.files);
+        
+        files.forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.maxWidth = '150px';
+                    img.style.maxHeight = '150px';
+                    img.style.margin = '10px';
+                    img.style.border = '2px solid #333';
+                    img.style.borderRadius = '8px';
+                    imagePreview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+    
+    // Form validation
+    document.getElementById('returnForm').addEventListener('submit', function(e) {
+        const selectedItems = Array.from(checkboxes).filter(cb => cb.checked);
+        const reason = document.querySelector('input[name="return_reason"]:checked');
+        const description = document.getElementById('return_description').value.trim();
+        const resolution = document.getElementById('preferred_resolution').value;
+        
+        if (selectedItems.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one item to return.');
+            return;
+        }
+        
+        if (!reason) {
+            e.preventDefault();
+            alert('Please select a reason for return.');
+            return;
+        }
+        
+        if (!description) {
+            e.preventDefault();
+            alert('Please provide a detailed description.');
+            return;
+        }
+        
+        if (!resolution) {
+            e.preventDefault();
+            alert('Please select your preferred resolution.');
+            return;
+        }
+        
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        submitBtn.disabled = true;
+    });
+});
+</script>
+{% endblock %}

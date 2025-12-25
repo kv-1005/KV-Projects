@@ -1,0 +1,536 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Complete Payment - {{ order.order_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #007bff;
+        --success-color: #28a745;
+        --danger-color: #dc3545;
+        --warning-color: #ffc107;
+        --dark-color: #343a40;
+        --light-color: #f8f9fa;
+        --border-radius: 8px;
+        --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --transition: all 0.3s ease;
+    }
+
+    body {
+        background: #000000 !important; /* BLACK BACKGROUND - NO PURPLE */
+        min-height: 100vh;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .payment-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .payment-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .payment-header {
+        background: linear-gradient(135deg, var(--primary-color), #0056b3);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .payment-header h1 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 600;
+    }
+
+    .payment-header p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+        font-size: 1rem;
+    }
+
+    .payment-body {
+        padding: 2rem;
+    }
+
+    .order-summary {
+        background: var(--light-color);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .order-summary h3 {
+        margin: 0 0 1rem 0;
+        color: var(--dark-color);
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        padding: 0.25rem 0;
+    }
+
+    .summary-row.total {
+        border-top: 2px solid var(--primary-color);
+        margin-top: 1rem;
+        padding-top: 1rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--primary-color);
+    }
+
+    .payment-methods {
+        margin-bottom: 2rem;
+    }
+
+    .payment-methods h3 {
+        margin: 0 0 1.5rem 0;
+        color: var(--dark-color);
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .payment-method {
+        border: 2px solid #e9ecef;
+        border-radius: var(--border-radius);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+    }
+
+    .payment-method:hover {
+        border-color: var(--primary-color);
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+
+    .payment-method.selected {
+        border-color: var(--primary-color);
+        background-color: rgba(0, 123, 255, 0.1);
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+
+    .payment-method input[type="radio"] {
+        margin-right: 1rem;
+        transform: scale(1.2);
+    }
+
+    .payment-method-icon {
+        width: 40px;
+        height: 40px;
+        margin-right: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--light-color);
+        border-radius: 50%;
+        font-size: 1.2rem;
+        color: var(--primary-color);
+    }
+
+    .payment-method-info h4 {
+        margin: 0 0 0.25rem 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--dark-color);
+    }
+
+    .payment-method-info p {
+        margin: 0;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    .pay-button {
+        width: 100%;
+        background: linear-gradient(135deg, var(--success-color), #218838);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: var(--border-radius);
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .pay-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(40, 167, 69, 0.3);
+    }
+
+    .pay-button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .loading-spinner {
+        display: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid transparent;
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .security-notice {
+        background: #e7f3ff;
+        border: 1px solid #b3d9ff;
+        border-radius: var(--border-radius);
+        padding: 1rem;
+        margin-top: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--primary-color);
+    }
+
+    .alert {
+        padding: 1rem;
+        border-radius: var(--border-radius);
+        margin-bottom: 1rem;
+        border: 1px solid transparent;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+
+    .alert-info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
+    }
+
+    @media (max-width: 768px) {
+        .payment-container {
+            margin: 1rem auto;
+            padding: 0 0.5rem;
+        }
+        
+        .payment-header {
+            padding: 1.5rem;
+        }
+        
+        .payment-body {
+            padding: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-container">
+    <div class="payment-card">
+        <div class="payment-header">
+            <h1><i class="fas fa-lock"></i> Secure Payment</h1>
+            <p>Order #{{ order.order_number }} - ₹{{ order.total_amount }}</p>
+        </div>
+        
+        <div class="payment-body">
+            <!-- Order Summary -->
+            <div class="order-summary">
+                <h3><i class="fas fa-receipt"></i> Order Summary</h3>
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span>₹{{ order.subtotal }}</span>
+                </div>
+                {% if order.tax > 0 %}
+                <div class="summary-row">
+                    <span>Tax (18%):</span>
+                    <span>₹{{ order.tax }}</span>
+                </div>
+                {% endif %}
+                {% if order.shipping_cost > 0 %}
+                <div class="summary-row">
+                    <span>Shipping:</span>
+                    <span>₹{{ order.shipping_cost }}</span>
+                </div>
+                {% endif %}
+                <div class="summary-row total">
+                    <span>Total Amount:</span>
+                    <span>₹{{ order.total_amount }}</span>
+                </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div class="payment-methods">
+                <h3><i class="fas fa-credit-card"></i> Choose Payment Method</h3>
+                
+                <!-- Razorpay Payment -->
+                <div class="payment-method selected" data-method="razorpay">
+                    <input type="radio" name="payment_method" value="razorpay" checked>
+                    <div class="payment-method-icon">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <div class="payment-method-info">
+                        <h4>Razorpay</h4>
+                        <p>Pay securely with Cards, UPI, Net Banking, or Wallets</p>
+                    </div>
+                </div>
+
+                <!-- Cash on Delivery -->
+                <div class="payment-method" data-method="cod">
+                    <input type="radio" name="payment_method" value="cod">
+                    <div class="payment-method-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="payment-method-info">
+                        <h4>Cash on Delivery</h4>
+                        <p>Pay when your order is delivered</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Button -->
+            <button id="payButton" class="pay-button">
+                <i class="fas fa-shield-alt"></i>
+                <span id="payButtonText">Pay Securely - ₹{{ order.total_amount }}</span>
+                <div class="loading-spinner" id="loadingSpinner"></div>
+            </button>
+
+            <!-- Security Notice -->
+            <div class="security-notice">
+                <i class="fas fa-shield-alt"></i>
+                <span>Your payment information is secure and encrypted with 256-bit SSL</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Razorpay SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Payment method selection
+    const paymentMethods = document.querySelectorAll('.payment-method');
+    const payButton = document.getElementById('payButton');
+    const payButtonText = document.getElementById('payButtonText');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    
+    let selectedMethod = 'razorpay';
+    
+    // Handle payment method selection
+    paymentMethods.forEach(method => {
+        method.addEventListener('click', function() {
+            // Remove selected class from all methods
+            paymentMethods.forEach(m => m.classList.remove('selected'));
+            
+            // Add selected class to clicked method
+            this.classList.add('selected');
+            
+            // Update radio button
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+            selectedMethod = radio.value;
+            
+            // Update button text
+            if (selectedMethod === 'cod') {
+                payButtonText.textContent = 'Place Order - ₹{{ order.total_amount }}';
+            } else {
+                payButtonText.textContent = 'Pay Securely - ₹{{ order.total_amount }}';
+            }
+        });
+    });
+    
+    // Razorpay configuration
+    const razorpayOptions = {
+        "key": "{{ razorpay_key_id }}",
+        "amount": {{ amount }},
+        "currency": "{{ currency }}",
+        "name": "KV Store",
+        "description": "Order #{{ order.order_number }}",
+        "order_id": "{{ razorpay_order_id }}",
+        "handler": function (response) {
+            handlePaymentSuccess(response);
+        },
+        "prefill": {
+            "name": "{{ customer.user.get_full_name|default:customer.user.username }}",
+            "email": "{{ customer.user.email }}",
+            "contact": "{{ customer.phone }}"
+        },
+        "notes": {
+            "order_id": "{{ order.id }}",
+            "order_number": "{{ order.order_number }}"
+        },
+        "theme": {
+            "color": "#007bff"
+        },
+        "modal": {
+            "ondismiss": function() {
+                handlePaymentFailure({
+                    error: {
+                        description: "Payment cancelled by user"
+                    }
+                });
+            }
+        }
+    };
+    
+    const rzp = new Razorpay(razorpayOptions);
+    
+    // Handle payment button click
+    payButton.addEventListener('click', function() {
+        if (selectedMethod === 'cod') {
+            // Handle COD order
+            handleCODOrder();
+        } else {
+            // Handle Razorpay payment
+            showLoading(true);
+            rzp.open();
+        }
+    });
+    
+    // Handle COD order
+    function handleCODOrder() {
+        showLoading(true);
+        
+        // Redirect to order confirmation
+        setTimeout(() => {
+            window.location.href = '/order/{{ order.id }}/?payment=cod';
+        }, 1000);
+    }
+    
+    // Handle payment success
+    function handlePaymentSuccess(response) {
+        showLoading(true);
+        
+        fetch('{% url "payment_callback" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                showAlert('success', 'Payment successful! Redirecting to order details...');
+                
+                // Redirect to order success page
+                setTimeout(() => {
+                    window.location.href = data.redirect_url + '?payment=success';
+                }, 2000);
+            } else {
+                showAlert('danger', 'Payment verification failed: ' + data.error);
+                showLoading(false);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('danger', 'Payment verification failed. Please contact support.');
+            showLoading(false);
+        });
+    }
+    
+    // Handle payment failure
+    function handlePaymentFailure(response) {
+        showLoading(false);
+        const errorMsg = response.error ? response.error.description : 'Payment failed';
+        showAlert('danger', 'Payment failed: ' + errorMsg);
+    }
+    
+    // Show loading state
+    function showLoading(show) {
+        if (show) {
+            payButton.disabled = true;
+            payButtonText.style.display = 'none';
+            loadingSpinner.style.display = 'block';
+        } else {
+            payButton.disabled = false;
+            payButtonText.style.display = 'block';
+            loadingSpinner.style.display = 'none';
+        }
+    }
+    
+    // Show alert message
+    function showAlert(type, message) {
+        // Remove existing alerts
+        const existingAlerts = document.querySelectorAll('.alert');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        // Create new alert
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'}"></i>
+            ${message}
+        `;
+        
+        // Insert at top of payment body
+        const paymentBody = document.querySelector('.payment-body');
+        paymentBody.insertBefore(alert, paymentBody.firstChild);
+        
+        // Auto-remove after 5 seconds for non-success messages
+        if (type !== 'success') {
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+    }
+    
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Handle Razorpay errors
+    rzp.on('payment.failed', function (response) {
+        handlePaymentFailure(response);
+    });
+});
+</script>
+{% endblock %}

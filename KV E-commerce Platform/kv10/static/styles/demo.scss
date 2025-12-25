@@ -1,0 +1,78 @@
+@use 'sass:color';
+
+$white: #fff;
+$black: #000;
+$accent: #cf092c;
+$gray: #666;
+$font-bold: 700;
+
+.product-card {
+  background: $white;
+  border-radius: 16px;
+  padding: 30px;
+  width: 400px;
+  position: relative;
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  font-family: 'Helvetica Neue', sans-serif;
+  margin: 40px auto;
+}
+
+.price-badge {
+  position: absolute;
+  top: -30px;
+  left: -30px;
+  background: $black;
+  color: $white;
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: $font-bold;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.product-image {
+  max-width: 120%;
+  margin-top: -40px;
+  margin-bottom: 30px;
+}
+
+.product-title {
+  font-size: 24px;
+  font-weight: $font-bold;
+  color: $black;
+  margin-bottom: 10px;
+}
+
+.underline {
+  height: 3px;
+  width: 25px;
+  background: $accent;
+  margin: 0 auto 20px auto;
+}
+
+.product-description {
+  color: $gray;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 30px;
+}
+
+.buy-btn {
+  background: $accent;
+  color: $white;
+  padding: 14px 40px;
+  text-decoration: none;
+  font-weight: $font-bold;
+  border-radius: 6px;
+  box-shadow: 0 10px 20px rgba($accent, 0.4);
+  transition: background 0.3s ease;
+
+  &:hover {
+    background: color.mix($accent, $black, 90%);
+  }
+}

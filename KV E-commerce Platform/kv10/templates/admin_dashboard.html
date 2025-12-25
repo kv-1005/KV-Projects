@@ -1,0 +1,445 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard - KV Store{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-container {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+    
+    .dashboard-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid #00ff88;
+    }
+    
+    .dashboard-title {
+        color: #00ff88;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        font-weight: bold;
+    }
+    
+    .dashboard-subtitle {
+        color: #ccc;
+        font-size: 1.1rem;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+    
+    .stat-card {
+        background: #000;
+        border: 1px solid #333;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        border-color: #00ff88;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 255, 136, 0.2);
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(45deg, #00ff88, #00cc6a);
+    }
+    
+    .stat-icon {
+        font-size: 3rem;
+        color: #00ff88;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #fff;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #888;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .dashboard-section {
+        background: #000;
+        border: 1px solid #333;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #333;
+    }
+    
+    .section-title {
+        color: #00ff88;
+        font-size: 1.5rem;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .section-action {
+        background: linear-gradient(45deg, #00ff88, #00cc6a);
+        color: #000;
+        padding: 8px 20px;
+        border-radius: 20px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+    
+    .section-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+        color: #000;
+        text-decoration: none;
+    }
+    
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    
+    .orders-table th {
+        background: #111;
+        color: #00ff88;
+        padding: 1rem;
+        text-align: left;
+        font-weight: bold;
+        border-bottom: 2px solid #333;
+    }
+    
+    .orders-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #333;
+        color: #ccc;
+    }
+    
+    .orders-table tr:hover {
+        background: #111;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    
+    .status-pending { background: #ffc107; color: #000; }
+    .status-confirmed { background: #17a2b8; color: #fff; }
+    .status-processing { background: #fd7e14; color: #fff; }
+    .status-shipped { background: #6f42c1; color: #fff; }
+    .status-delivered { background: #00ff88; color: #000; }
+    .status-cancelled { background: #dc3545; color: #fff; }
+    
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 3rem;
+    }
+    
+    .action-card {
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .action-card:hover {
+        border-color: #00ff88;
+        background: rgba(0, 255, 136, 0.05);
+    }
+    
+    .action-card i {
+        font-size: 2rem;
+        color: #00ff88;
+        margin-bottom: 1rem;
+    }
+    
+    .action-card h4 {
+        color: #fff;
+        margin-bottom: 0.5rem;
+    }
+    
+    .action-card p {
+        color: #888;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+    
+    .chart-container {
+        background: #111;
+        border-radius: 10px;
+        padding: 2rem;
+        margin-top: 2rem;
+        text-align: center;
+    }
+    
+    .chart-placeholder {
+        color: #888;
+        font-size: 1.1rem;
+        padding: 3rem;
+        border: 2px dashed #333;
+        border-radius: 10px;
+    }
+    
+    .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .alert-info {
+        background: rgba(23, 162, 184, 0.2);
+        border: 1px solid #17a2b8;
+        color: #17a2b8;
+    }
+    
+    .alert-warning {
+        background: rgba(255, 193, 7, 0.2);
+        border: 1px solid #ffc107;
+        color: #ffc107;
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+        
+        .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .orders-table {
+            font-size: 0.9rem;
+        }
+        
+        .orders-table th,
+        .orders-table td {
+            padding: 0.5rem;
+        }
+    }
+</style>
+
+<div class="dashboard-container">
+    <div class="container">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Admin Dashboard</h1>
+            <p class="dashboard-subtitle">Manage your e-commerce store efficiently</p>
+        </div>
+        
+        {% if pending_returns > 0 %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Attention Required:</strong> You have {{ pending_returns }} pending return request{{ pending_returns|pluralize }} that need review.
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="stat-number">{{ total_orders|default:0 }}</div>
+                <div class="stat-label">Total Orders</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-number">{{ pending_orders|default:0 }}</div>
+                <div class="stat-label">Pending Orders</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-number">{{ total_customers|default:0 }}</div>
+                <div class="stat-label">Total Customers</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="stat-number">{{ total_products|default:0 }}</div>
+                <div class="stat-label">Active Products</div>
+            </div>
+        </div>
+        
+        <div class="quick-actions">
+            <div class="action-card" onclick="window.location.href='/admin/'">
+                <i class="fas fa-cog"></i>
+                <h4>Django Admin</h4>
+                <p>Access full admin panel</p>
+            </div>
+            
+            <div class="action-card" onclick="window.location.href='{% url \'product_list\' %}'">
+                <i class="fas fa-plus"></i>
+                <h4>Add Product</h4>
+                <p>Add new products to store</p>
+            </div>
+            
+            <div class="action-card" onclick="window.location.href='{% url \'order_list\' %}'">
+                <i class="fas fa-list"></i>
+                <h4>Manage Orders</h4>
+                <p>View and update orders</p>
+            </div>
+            
+            <div class="action-card" onclick="window.location.href='{% url \'payment_analytics\' %}'">
+                <i class="fas fa-chart-bar"></i>
+                <h4>Analytics</h4>
+                <p>View sales analytics</p>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-shopping-bag"></i>
+                    Recent Orders
+                </h2>
+                <a href="{% url 'order_list' %}" class="section-action">View All Orders</a>
+            </div>
+            
+            {% if recent_orders %}
+            <div class="table-responsive">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td><strong>#{{ order.order_number }}</strong></td>
+                            <td>{{ order.customer.user.get_full_name|default:order.customer.user.username }}</td>
+                            <td>{{ order.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="status-badge status-{{ order.status }}">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </td>
+                            <td><strong>₹{{ order.total_amount }}</strong></td>
+                            <td>
+                                <a href="{% url 'order_detail' order.id %}" style="color: #00ff88; text-decoration: none;">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <div>No recent orders found. Orders will appear here once customers start placing them.</div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-line"></i>
+                    Sales Overview
+                </h2>
+                <a href="{% url 'payment_analytics' %}" class="section-action">Detailed Analytics</a>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-placeholder">
+                    <i class="fas fa-chart-bar" style="font-size: 3rem; color: #333; margin-bottom: 1rem; display: block;"></i>
+                    Sales charts and analytics will be displayed here.
+                    <br>
+                    <small style="color: #666;">Integration with charting library coming soon!</small>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #333;">
+            <p style="color: #888;">
+                <i class="fas fa-shield-alt"></i>
+                Admin Dashboard - Secure Access Only
+            </p>
+            <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">
+                Last updated: {{ "now"|date:"F d, Y g:i A" }}
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh dashboard every 5 minutes
+setTimeout(function() {
+    location.reload();
+}, 300000);
+
+// Add click handlers for action cards
+document.querySelectorAll('.action-card').forEach(card => {
+    card.addEventListener('click', function() {
+        this.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            this.style.transform = '';
+        }, 150);
+    });
+});
+</script>
+{% endblock %}

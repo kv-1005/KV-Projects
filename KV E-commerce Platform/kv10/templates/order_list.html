@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Orders - KV Store{% endblock %}
+
+{% block content %}
+
+    <!-- Orders Section -->
+    <section class="orders-section">
+        <div class="container">
+            <h1 class="page-title">My Orders</h1>
+            
+            {% if orders %}
+                <div class="orders-content">
+                    {% for order in orders %}
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div class="order-info">
+                                    <h3>Order #{{ order.order_number }}</h3>
+                                    <p class="order-date">{{ order.created_at|date:"F j, Y" }}</p>
+                                </div>
+                                <div class="order-status">
+                                    <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="order-items">
+                                {% for item in order.items.all %}
+                                    <div class="order-item">
+                                        <div class="item-image">
+                                            {% if item.product.image %}
+                                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                                            {% else %}
+                                                <div class="product-placeholder">
+                                                    <i class="fas fa-image"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="item-details">
+                                            <h4>{{ item.product.name }}</h4>
+                                            <p>Qty: {{ item.quantity }}</p>
+                                            <span class="item-price">₹{{ item.price }}</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="order-summary">
+                                <div class="summary-row">
+                                    <span>Payment:</span>
+                                    <span>{{ order.get_payment_method_display }}</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Total:</span>
+                                    <span>₹{{ order.total_amount }}</span>
+                                </div>
+                                <div class="order-actions">
+                                    <a href="{% url 'order_detail' order.id %}" class="btn btn-outline">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-orders">
+                    <i class="fas fa-shopping-bag"></i>
+                    <h2>No orders yet</h2>
+                    <p>You haven't placed any orders yet. Start shopping to see your order history here.</p>
+                    <a href="{% url 'products' %}" class="btn btn-primary">Start Shopping</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %} 

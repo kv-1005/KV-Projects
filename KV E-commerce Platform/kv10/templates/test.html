@@ -1,0 +1,14 @@
+{% include 'header.html' %}
+
+<h1>Welcome</h1>
+
+
+
+<div class="product-container">
+    {% for i in data %}
+     <h2>{{i.name}}</h2>
+     <h2>{{i.age}}</h2>
+    {% endfor %}
+  </div>
+
+{% include 'footer.html' %}

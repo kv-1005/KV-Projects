@@ -1,0 +1,147 @@
+@import url("https://fonts.googleapis.com/css?family=Nunito:400,600,700");
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Nunito", sans-serif;
+  color: rgba(0, 0, 0, 0.7);
+  background: #4b714d;
+  margin: 0;
+  padding: 0;
+}
+
+.modal.is-open {
+  height: 40%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(51, 51, 51, 0.85);
+}
+
+.modal-container {
+  display: flex;
+  max-width: 800px;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  height: 550px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%);
+}
+
+.modal-left {
+  flex: 1.5;
+  padding: 10px 40px;
+  background: #fff;
+}
+
+.modal-title {
+  font-size: 26px;
+  color:#55311c;
+  margin-bottom: 2px;
+}
+
+.modal-desc {
+  font-size: 14px;
+  margin-bottom: 2px;
+  
+  color: #666;
+}
+
+ul.messages li.success {
+  color: green;
+}
+ul.messages li.error {
+  color: red;
+}
+
+.messages {
+  position: relative;
+  z-index: 10; /* higher than the modal */
+  margin-top: 35px;
+  margin-left: 700px ;
+  background-color: #666;
+  border-radius: 5px;
+ width: 23%;
+
+}
+
+.input-block {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  padding: 12px 10px;
+  border-radius: 6px;
+  transition: 0.3s;
+}
+.input-block:focus-within {
+  border-color: #2e4e32;
+}
+.input-block input {
+  border: none;
+  font-size: 14px;
+  outline: none;
+  padding-top: 6px;
+}
+.input-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2e4e32;
+  text-transform: uppercase;
+}
+
+.input-button {
+  padding: 10px 16px;
+  background: #2e4e32;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-family: "Nunito", sans-serif;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.input-button:hover {
+  background: #55311c;
+}
+
+.modal-buttons {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.sign-up {
+  margin-top: 5px;
+  font-size: 14px;
+  text-align: center;
+}
+.sign-up a {
+  color: #2e4e32;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.modal-right {
+  flex: 1;
+  background: #151c24;
+}
+.modal-right img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 750px) {
+  .modal-container {
+    flex-direction: column;
+  }
+  .modal-right {
+    display: none;
+  }
+}

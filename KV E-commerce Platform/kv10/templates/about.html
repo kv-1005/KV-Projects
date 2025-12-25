@@ -1,0 +1,725 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - KV Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'styles/ecommerce.css' %}">
+    <link rel="stylesheet" href="{% static 'styles/mobile.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+              <style>
+         /* About Page Specific Styles - iPhone 14 Pro Max Optimized */
+         .about-hero {
+             background: var(--gradient-dark);
+             padding: 6rem 0;
+             text-align: center;
+             position: relative;
+             overflow: hidden;
+         }
+
+         .about-hero::before {
+             content: '';
+             position: absolute;
+             top: 0;
+             left: 0;
+             right: 0;
+             bottom: 0;
+             background: linear-gradient(135deg, rgba(0, 221, 0, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%);
+             z-index: 1;
+         }
+
+         .about-hero .container {
+             position: relative;
+             z-index: 2;
+         }
+
+         .about-hero h1 {
+             font-size: 4rem;
+             color: var(--primary-green);
+             margin-bottom: 1rem;
+             text-shadow: 0 0 30px var(--shadow-green);
+             font-weight: 700;
+         }
+
+         .about-hero p {
+             font-size: 1.3rem;
+             color: var(--text-gray);
+             max-width: 600px;
+             margin: 0 auto;
+             line-height: 1.6;
+         }
+
+         .about-content {
+             padding: 4rem 0;
+             background: var(--black);
+         }
+
+         .about-grid {
+             display: grid;
+             grid-template-columns: 1fr 1fr;
+             gap: 4rem;
+             max-width: 1200px;
+             margin: 0 auto;
+             padding: 0 20px;
+             align-items: center;
+         }
+
+         .about-text h2 {
+             font-size: 2.5rem;
+             color: var(--primary-green);
+             margin-bottom: 2rem;
+             font-weight: 600;
+         }
+
+         .about-text h3 {
+             font-size: 1.5rem;
+             color: var(--text-white);
+             margin: 2rem 0 1rem 0;
+             font-weight: 600;
+         }
+
+         .about-text p {
+             color: var(--text-gray);
+             line-height: 1.8;
+             margin-bottom: 1.5rem;
+             font-size: 1.1rem;
+         }
+
+         .about-text ul {
+             list-style: none;
+             padding: 0;
+             margin: 1.5rem 0;
+         }
+
+         .about-text ul li {
+             color: var(--text-gray);
+             padding: 0.75rem 0;
+             border-bottom: 1px solid var(--light-gray);
+             display: flex;
+             align-items: center;
+             gap: 1rem;
+         }
+
+         .about-text ul li:last-child {
+             border-bottom: none;
+         }
+
+         .about-text ul li::before {
+             content: '✓';
+             color: var(--primary-green);
+             font-weight: bold;
+             font-size: 1.2rem;
+         }
+
+         .about-image {
+             position: relative;
+             border-radius: 20px;
+             overflow: hidden;
+             box-shadow: 0 8px 32px rgba(24, 38, 40, 0.5);
+         }
+
+         .about-image img {
+             width: 100%;
+             height: auto;
+             display: block;
+             transition: all 0.3s ease;
+         }
+
+         .about-image:hover img {
+             transform: scale(1.05);
+         }
+
+         .stats-section {
+             background: var(--dark-gray);
+             padding: 4rem 0;
+             margin: 4rem 0;
+         }
+
+         .stats-grid {
+             display: grid;
+             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+             gap: 3rem;
+             max-width: 1200px;
+             margin: 0 auto;
+             padding: 0 20px;
+         }
+
+         .stat-item {
+             text-align: center;
+             padding: 2rem;
+             background: var(--medium-gray);
+             border-radius: var(--border-radius-large);
+             border: 1px solid var(--light-gray);
+             transition: var(--transition);
+         }
+
+         .stat-item:hover {
+             border-color: var(--primary-green);
+             box-shadow: 0 4px 20px var(--shadow-green);
+             transform: translateY(-5px);
+         }
+
+         .stat-number {
+             font-size: 3rem;
+             font-weight: 700;
+             color: var(--primary-green);
+             margin-bottom: 0.5rem;
+             text-shadow: 0 0 20px var(--shadow-green);
+         }
+
+         .stat-label {
+             color: var(--text-white);
+             font-size: 1.1rem;
+             font-weight: 600;
+             text-transform: uppercase;
+             letter-spacing: 1px;
+         }
+
+         .team-section {
+             padding: 4rem 0;
+             background: var(--black);
+         }
+
+         .team-section h2 {
+             font-size: 2.5rem;
+             color: var(--primary-green);
+             text-align: center;
+             margin-bottom: 3rem;
+             font-weight: 600;
+         }
+
+         .team-grid {
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             max-width: 600px;
+             margin: 0 auto;
+             padding: 0 20px;
+         }
+
+         .team-member {
+             background: var(--dark-gray);
+             border-radius: var(--border-radius-large);
+             overflow: hidden;
+             box-shadow: 0 8px 32px var(--shadow-dark);
+             transition: var(--transition);
+             width: 100%;
+             max-width: 500px;
+         }
+
+         .team-member:hover {
+             transform: translateY(-5px);
+             box-shadow: 0 12px 40px var(--shadow-green);
+         }
+
+         .team-photo {
+             width: 100%;
+             height: auto;
+             min-height: 500px;
+             max-height: 550px;
+             background: var(--medium-gray);
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             color: var(--text-dark);
+             font-size: 4rem;
+             overflow: hidden;
+             position: relative;
+         }
+
+         .team-photo img {
+             width: 100%;
+             height: 100%;
+             object-fit: contain;
+             border-radius: 0;
+         }
+
+         .team-info {
+             padding: 2rem;
+             text-align: center;
+         }
+
+         .team-name {
+             font-size: 1.5rem;
+             color: var(--text-white);
+             font-weight: 700;
+             margin-bottom: 0.5rem;
+         }
+
+         .team-position {
+             color: var(--primary-green);
+             font-weight: 600;
+             margin-bottom: 1.5rem;
+             font-size: 1.1rem;
+         }
+
+         .team-bio {
+             color: var(--text-gray);
+             line-height: 1.7;
+             font-size: 1rem;
+             text-align: left;
+         }
+
+         .values-section {
+             background: var(--dark-gray);
+             padding: 4rem 0;
+         }
+
+         .values-section h2 {
+             font-size: 2.5rem;
+             color: var(--primary-green);
+             text-align: center;
+             margin-bottom: 3rem;
+             font-weight: 600;
+         }
+
+         .values-grid {
+             display: grid;
+             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+             gap: 2rem;
+             max-width: 1200px;
+             margin: 0 auto;
+             padding: 0 20px;
+         }
+
+         .value-item {
+             background: var(--medium-gray);
+             padding: 2rem;
+             border-radius: var(--border-radius-large);
+             border-left: 4px solid var(--primary-green);
+             transition: var(--transition);
+         }
+
+         .value-item:hover {
+             transform: translateX(5px);
+             box-shadow: 0 4px 20px var(--shadow-green);
+         }
+
+         .value-icon {
+             font-size: 2.5rem;
+             color: var(--primary-green);
+             margin-bottom: 1rem;
+         }
+
+         .value-title {
+             font-size: 1.3rem;
+             color: var(--text-white);
+             font-weight: 600;
+             margin-bottom: 1rem;
+         }
+
+         .value-description {
+             color: var(--text-gray);
+             line-height: 1.6;
+         }
+
+         .cta-section {
+             background: var(--gradient-primary);
+             padding: 4rem 0;
+             text-align: center;
+         }
+
+         .cta-content h2 {
+             font-size: 2.5rem;
+             color: var(--black);
+             margin-bottom: 1rem;
+             font-weight: 700;
+         }
+
+         .cta-content p {
+             font-size: 1.2rem;
+             color: var(--black);
+             margin-bottom: 2rem;
+             max-width: 600px;
+             margin-left: auto;
+             margin-right: auto;
+         }
+
+         .cta-buttons {
+             display: flex;
+             gap: 1rem;
+             justify-content: center;
+             flex-wrap: wrap;
+         }
+
+         .btn-cta-primary {
+             background: var(--black);
+             color: var(--primary-green);
+             border: 2px solid var(--black);
+             padding: 1rem 2rem;
+             border-radius: var(--border-radius);
+             text-decoration: none;
+             font-weight: 600;
+             transition: var(--transition);
+             display: inline-flex;
+             align-items: center;
+             gap: 0.5rem;
+         }
+
+         .btn-cta-primary:hover {
+             background: transparent;
+             color: var(--black);
+         }
+
+         .btn-cta-secondary {
+             background: transparent;
+             color: var(--black);
+             border: 2px solid var(--black);
+             padding: 1rem 2rem;
+             border-radius: var(--border-radius);
+             text-decoration: none;
+             font-weight: 600;
+             transition: var(--transition);
+             display: inline-flex;
+             align-items: center;
+             gap: 0.5rem;
+         }
+
+         .btn-cta-secondary:hover {
+             background: var(--black);
+             color: var(--primary-green);
+         }
+
+         /* iPhone 14 Pro Max Specific Optimizations */
+         @media (max-width: 430px) {
+             .about-hero h1 {
+                 font-size: 2.5rem;
+             }
+
+             .about-hero p {
+                 font-size: 1.1rem;
+             }
+
+             .about-grid {
+                 grid-template-columns: 1fr;
+                 gap: 2rem;
+                 padding: 0 1rem;
+             }
+
+             .about-text h2 {
+                 font-size: 2rem;
+             }
+
+             .stats-grid {
+                 grid-template-columns: repeat(2, 1fr);
+                 gap: 1.5rem;
+                 padding: 0 1rem;
+             }
+
+             .stat-number {
+                 font-size: 2rem;
+             }
+
+             .team-grid {
+                 grid-template-columns: 1fr;
+                 padding: 0 1rem;
+             }
+
+             .values-grid {
+                 grid-template-columns: 1fr;
+                 padding: 0 1rem;
+             }
+
+             .cta-buttons {
+                 flex-direction: column;
+                 align-items: center;
+             }
+
+             .btn-cta-primary,
+             .btn-cta-secondary {
+                 width: 100%;
+                 max-width: 300px;
+                 justify-content: center;
+             }
+         }
+     </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <a href="{% url 'home' %}">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>KV Store</span>
+                </a>
+            </div>
+            
+            <div class="nav-search">
+                <form action="{% url 'search' %}" method="GET" class="search-form">
+                    <input type="text" name="q" placeholder="Search products..." class="search-input">
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="{% url 'home' %}" class="nav-link">Home</a>
+                <a href="{% url 'products' %}" class="nav-link">Shop</a>
+                <a href="{% url 'about' %}" class="nav-link active">About</a>
+                <a href="{% url 'contact' %}" class="nav-link">Contact</a>
+                
+                {% if user.is_authenticated %}
+                    <div class="nav-user">
+                        <a href="{% url 'cart' %}" class="nav-link cart-link">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-count">{{ user.customer.carts.first.total_items|default:0 }}</span>
+                        </a>
+                        <div class="user-dropdown">
+                            <button class="user-btn">
+                                <i class="fas fa-user"></i>
+                                <span>{{ user.get_full_name|default:user.username }}</span>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="{% url 'profile' %}">Profile</a>
+                                <a href="{% url 'order_list' %}">Orders</a>
+                                <a href="{% url 'wishlist' %}">Wishlist</a>
+                                <a href="{% url 'logout' %}">Logout</a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="nav-auth">
+                        <a href="{% url 'login' %}" class="nav-link">Login</a>
+                        <a href="{% url 'register' %}" class="btn btn-primary">Sign Up</a>
+                    </div>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <!-- About Hero -->
+    <section class="about-hero">
+        <div class="container">
+            <h1>
+                <i class="fas fa-store"></i>
+                About KV Store
+            </h1>
+            <p>Your trusted partner for premium shopping experiences</p>
+        </div>
+    </section>
+
+    <!-- About Content -->
+    <section class="about-content">
+        <div class="container">
+            <div class="about-grid">
+                <div class="about-text">
+                                         <h2>Our Story</h2>
+                     <p>Founded by K.Vigneshar at SSN COLLEGE, Chennai in 2025, KV Store was created with a vision to provide exceptional shopping experiences. We believe that every customer deserves access to quality products at competitive prices, with customer satisfaction as our top priority.</p>
+                    
+                                         <h3>Our Mission</h3>
+                     <p>To deliver quality products at competitive prices with outstanding customer service, making shopping accessible to everyone across India. We strive to create a seamless online shopping experience that exceeds expectations with our 24/7 availability.</p>
+                    
+                                         <h3>Our Values</h3>
+                     <ul>
+                         <li>Quality Products - Every product meets our high standards</li>
+                         <li>Customer Satisfaction - Your satisfaction is our priority</li>
+                         <li>Honesty - Transparent and honest business practices</li>
+                         <li>Competitive Pricing - Quality products at affordable prices</li>
+                         <li>24/7 Availability - Always here when you need us</li>
+                     </ul>
+                </div>
+                
+                <div class="about-image">
+                    <img src="https://images.pexels.com/photos/5632402/pexels-photo-5632402.jpeg" alt="About KV Store">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                                 <div class="stat-item">
+                     <div class="stat-number">1000+</div>
+                     <div class="stat-label">Target Customers</div>
+                 </div>
+                 <div class="stat-item">
+                     <div class="stat-number">All India</div>
+                     <div class="stat-label">Shipping</div>
+                 </div>
+                 <div class="stat-item">
+                     <div class="stat-number">24/7</div>
+                     <div class="stat-label">Online Support</div>
+                 </div>
+                 <div class="stat-item">
+                     <div class="stat-number">UPI & COD</div>
+                     <div class="stat-label">Payment Options</div>
+                 </div>
+            </div>
+        </div>
+    </section>
+
+         <!-- Team Section -->
+     <section class="team-section">
+         <div class="container">
+             <h2>Meet Our Founder</h2>
+             <div class="team-grid">
+                 <div class="team-member">
+                     <div class="team-photo">
+                         <img src="{% static 'images/founder.jpg' %}" alt="K.Vigneshar - Founder" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                         <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; background: var(--medium-gray); color: var(--text-dark); font-size: 4rem;">
+                             <i class="fas fa-user"></i>
+                         </div>
+                     </div>
+                     <div class="team-info">
+                         <div class="team-name">K.Vigneshar</div>
+                         <div class="team-position">Founder & CEO</div>
+                         <div class="team-bio">Passionate about creating exceptional shopping experiences and leading our team to success. Based at SSN COLLEGE, Chennai.</div>
+                     </div>
+                 </div>
+             </div>
+         </div>
+     </section>
+
+    <!-- Values Section -->
+    <section class="values-section">
+        <div class="container">
+            <h2>Our Core Values</h2>
+            <div class="values-grid">
+                <div class="value-item">
+                    <div class="value-icon">
+                        <i class="fas fa-award"></i>
+                    </div>
+                    <div class="value-title">Quality Products</div>
+                    <div class="value-description">Quality products at competitive prices. Every product in our catalog is carefully selected to meet our high standards.</div>
+                </div>
+                
+                <div class="value-item">
+                    <div class="value-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="value-title">Customer Satisfaction</div>
+                    <div class="value-description">Customer satisfaction is our priority. We listen, learn, and continuously improve based on your feedback.</div>
+                </div>
+                
+                <div class="value-item">
+                    <div class="value-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <div class="value-title">Future Goals</div>
+                    <div class="value-description">Reach 1000+ customers and expand our quality product offerings across India.</div>
+                </div>
+                
+                <div class="value-item">
+                    <div class="value-icon">
+                        <i class="fas fa-handshake"></i>
+                    </div>
+                    <div class="value-title">Honesty</div>
+                    <div class="value-description">We conduct our business with honesty, transparency, and ethical practices that you can trust.</div>
+                </div>
+                
+                <div class="value-item">
+                    <div class="value-icon">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <div class="value-title">Free Shipping</div>
+                    <div class="value-description">Free shipping on orders across India, making quality products accessible to everyone.</div>
+                </div>
+                
+                <div class="value-item">
+                    <div class="value-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="value-title">24/7 Support</div>
+                    <div class="value-description">Round the clock customer support to assist you with any questions or concerns.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+                            <div class="cta-content">
+                                         <h2>Ready to Experience KV Store?</h2>
+                     <p>Join our growing community of satisfied customers across India. Start exploring our quality products at competitive prices today!</p>
+                <div class="cta-buttons">
+                    <a href="{% url 'products' %}" class="btn-cta-primary">
+                        <i class="fas fa-shopping-bag"></i>
+                        Shop Now
+                    </a>
+                    <a href="{% url 'contact' %}" class="btn-cta-secondary">
+                        <i class="fas fa-envelope"></i>
+                        Contact Us
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>KV Store</h3>
+                    <p>Your premium shopping destination for quality products and exceptional service.</p>
+                                         <div class="social-links">
+                         <a href="https://x.com/KVigneshar" target="_blank"><i class="fab fa-twitter"></i></a>
+                         <a href="https://www.instagram.com/k.vigneshar/" target="_blank"><i class="fab fa-instagram"></i></a>
+                         <a href="https://www.linkedin.com/in/vigneshar-kumaravelan-48849a305/" target="_blank"><i class="fab fa-linkedin"></i></a>
+                     </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="{% url 'products' %}">Shop</a></li>
+                        <li><a href="{% url 'about' %}">About Us</a></li>
+                        <li><a href="{% url 'contact' %}">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Customer Service</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Returns & Exchanges</a></li>
+                        <li><a href="#">Shipping Info</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 KV Store. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'scripts/ecommerce.js' %}"></script>
+    <script>
+        // Add smooth scrolling for better UX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Smooth scroll to top when page loads
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Add animation on scroll for stats
+            const stats = document.querySelectorAll('.stat-item');
+            const observerOptions = {
+                threshold: 0.5,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+            
+            stats.forEach(stat => {
+                stat.style.opacity = '0';
+                stat.style.transform = 'translateY(20px)';
+                stat.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(stat);
+            });
+        });
+    </script>
+</body>
+</html> 

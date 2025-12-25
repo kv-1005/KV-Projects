@@ -1,0 +1,456 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Newsletter - KV Store{% endblock %}
+
+{% block content %}
+<style>
+    .newsletter-container {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+    
+    .newsletter-card {
+        background: #000;
+        border: 1px solid #333;
+        border-radius: 15px;
+        padding: 3rem;
+        max-width: 600px;
+        margin: 0 auto;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        text-align: center;
+    }
+    
+    .newsletter-icon {
+        font-size: 4rem;
+        color: #00ff88;
+        margin-bottom: 2rem;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    .newsletter-title {
+        color: #00ff88;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        font-weight: bold;
+    }
+    
+    .newsletter-subtitle {
+        color: #ccc;
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+    
+    .benefits-list {
+        text-align: left;
+        margin: 2rem 0;
+        background: #111;
+        border-radius: 10px;
+        padding: 2rem;
+    }
+    
+    .benefits-list h3 {
+        color: #00ff88;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .benefit-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        color: #ccc;
+    }
+    
+    .benefit-item i {
+        color: #00ff88;
+        margin-right: 1rem;
+        font-size: 1.2rem;
+        width: 20px;
+    }
+    
+    .newsletter-form {
+        margin: 2rem 0;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+        text-align: left;
+    }
+    
+    .form-group label {
+        display: block;
+        color: #fff;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 15px 20px;
+        background: #111;
+        border: 2px solid #333;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #00ff88;
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    }
+    
+    .form-control::placeholder {
+        color: #666;
+    }
+    
+    .checkbox-group {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        text-align: left;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+        margin-right: 1rem;
+        margin-top: 0.25rem;
+        transform: scale(1.2);
+        accent-color: #00ff88;
+    }
+    
+    .checkbox-group label {
+        color: #ccc;
+        line-height: 1.5;
+        cursor: pointer;
+    }
+    
+    .checkbox-group label a {
+        color: #00ff88;
+        text-decoration: none;
+    }
+    
+    .checkbox-group label a:hover {
+        text-decoration: underline;
+    }
+    
+    .preferences-section {
+        background: #111;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        text-align: left;
+    }
+    
+    .preferences-section h4 {
+        color: #00ff88;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .preference-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    .preference-item {
+        display: flex;
+        align-items: center;
+        color: #ccc;
+    }
+    
+    .preference-item input[type="checkbox"] {
+        margin-right: 0.5rem;
+        transform: scale(1.1);
+        accent-color: #00ff88;
+    }
+    
+    .preference-item label {
+        cursor: pointer;
+    }
+    
+    .submit-btn {
+        background: linear-gradient(45deg, #00ff88, #00cc6a);
+        border: none;
+        color: #000;
+        padding: 15px 40px;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
+    }
+    
+    .submit-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .success-message {
+        background: rgba(0, 255, 136, 0.1);
+        border: 2px solid #00ff88;
+        border-radius: 10px;
+        padding: 2rem;
+        margin-top: 2rem;
+        display: none;
+    }
+    
+    .success-message.show {
+        display: block;
+        animation: slideIn 0.5s ease;
+    }
+    
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .success-message h3 {
+        color: #00ff88;
+        margin-bottom: 1rem;
+    }
+    
+    .success-message p {
+        color: #ccc;
+        margin-bottom: 0.5rem;
+    }
+    
+    .social-proof {
+        background: #111;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+    }
+    
+    .social-proof h4 {
+        color: #00ff88;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .stat-item {
+        color: #ccc;
+    }
+    
+    .stat-number {
+        display: block;
+        font-size: 2rem;
+        font-weight: bold;
+        color: #00ff88;
+        margin-bottom: 0.5rem;
+    }
+    
+    .privacy-note {
+        background: rgba(0, 255, 136, 0.05);
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 2rem;
+        font-size: 0.9rem;
+        color: #888;
+        text-align: left;
+    }
+    
+    .privacy-note i {
+        color: #00ff88;
+        margin-right: 0.5rem;
+    }
+</style>
+
+<div class="newsletter-container">
+    <div class="container">
+        <div class="newsletter-card">
+            <div class="newsletter-icon">
+                <i class="fas fa-envelope-open"></i>
+            </div>
+            
+            <h1 class="newsletter-title">Stay Updated!</h1>
+            <p class="newsletter-subtitle">
+                Join thousands of happy customers and get exclusive deals, 
+                new product announcements, and insider tips delivered to your inbox.
+            </p>
+            
+            <div class="social-proof">
+                <h4>Join Our Community</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number">25K+</span>
+                        <span>Subscribers</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">4.8★</span>
+                        <span>Rating</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">Weekly</span>
+                        <span>Updates</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="benefits-list">
+                <h3>What You'll Get:</h3>
+                <div class="benefit-item">
+                    <i class="fas fa-tag"></i>
+                    <span>Exclusive discount codes and early access to sales</span>
+                </div>
+                <div class="benefit-item">
+                    <i class="fas fa-star"></i>
+                    <span>First look at new products and collections</span>
+                </div>
+                <div class="benefit-item">
+                    <i class="fas fa-gift"></i>
+                    <span>Special birthday offers and surprise gifts</span>
+                </div>
+                <div class="benefit-item">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Style tips, trends, and product recommendations</span>
+                </div>
+                <div class="benefit-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>Event invitations and exclusive content</span>
+                </div>
+            </div>
+            
+            <form class="newsletter-form" method="post" id="newsletterForm">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" name="email" id="email" class="form-control" 
+                           placeholder="Enter your email address" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="first_name">First Name</label>
+                    <input type="text" name="first_name" id="first_name" class="form-control" 
+                           placeholder="Your first name (optional)">
+                </div>
+                
+                <div class="preferences-section">
+                    <h4>Email Preferences</h4>
+                    <div class="preference-options">
+                        <div class="preference-item">
+                            <input type="checkbox" name="preferences" value="deals" id="pref_deals" checked>
+                            <label for="pref_deals">Deals & Offers</label>
+                        </div>
+                        <div class="preference-item">
+                            <input type="checkbox" name="preferences" value="new_products" id="pref_products" checked>
+                            <label for="pref_products">New Products</label>
+                        </div>
+                        <div class="preference-item">
+                            <input type="checkbox" name="preferences" value="style_tips" id="pref_tips">
+                            <label for="pref_tips">Style Tips</label>
+                        </div>
+                        <div class="preference-item">
+                            <input type="checkbox" name="preferences" value="events" id="pref_events">
+                            <label for="pref_events">Events & News</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" name="agree_terms" id="agree_terms" required>
+                    <label for="agree_terms">
+                        I agree to receive marketing emails and accept the 
+                        <a href="{% url 'terms' %}" target="_blank">Terms & Conditions</a> and 
+                        <a href="{% url 'privacy' %}" target="_blank">Privacy Policy</a>
+                    </label>
+                </div>
+                
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <i class="fas fa-paper-plane"></i> Subscribe Now
+                </button>
+            </form>
+            
+            <div class="success-message" id="successMessage">
+                <h3><i class="fas fa-check-circle"></i> Welcome to KV Store Newsletter!</h3>
+                <p>Thank you for subscribing! You'll receive a welcome email shortly.</p>
+                <p>Keep an eye on your inbox for exclusive deals and updates.</p>
+            </div>
+            
+            <div class="privacy-note">
+                <i class="fas fa-shield-alt"></i>
+                <strong>Privacy Promise:</strong> We respect your privacy and will never spam you or share your email with third parties. 
+                You can unsubscribe at any time with one click.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('newsletterForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const successMessage = document.getElementById('successMessage');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subscribing...';
+        submitBtn.disabled = true;
+        
+        // Simulate API call (replace with actual AJAX call)
+        setTimeout(function() {
+            // Hide form and show success message
+            form.style.display = 'none';
+            successMessage.classList.add('show');
+            
+            // Optional: Send actual form data via AJAX
+            // fetch('/newsletter/subscribe/', {
+            //     method: 'POST',
+            //     body: new FormData(form),
+            //     headers: {
+            //         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            //     }
+            // });
+        }, 2000);
+    });
+    
+    // Email validation
+    const emailInput = document.getElementById('email');
+    emailInput.addEventListener('blur', function() {
+        const email = this.value;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        if (email && !emailRegex.test(email)) {
+            this.style.borderColor = '#dc3545';
+        } else {
+            this.style.borderColor = '#333';
+        }
+    });
+    
+    // Form validation
+    const agreeCheckbox = document.getElementById('agree_terms');
+    agreeCheckbox.addEventListener('change', function() {
+        submitBtn.disabled = !this.checked;
+    });
+});
+</script>
+{% endblock %}

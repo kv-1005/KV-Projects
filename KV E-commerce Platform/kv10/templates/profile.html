@@ -1,0 +1,831 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - KV Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'styles/ecommerce.css' %}">
+    <link rel="stylesheet" href="{% static 'styles/mobile.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Profile Page Specific Styles - iPhone 14 Pro Max Optimized */
+        .profile-section {
+            padding: 2rem 0;
+            min-height: 100vh;
+            background: var(--black);
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            color: var(--primary-green);
+            text-align: center;
+            margin-bottom: 3rem;
+            text-shadow: 0 0 20px var(--shadow-green);
+            font-weight: 700;
+        }
+
+        .profile-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .profile-sidebar {
+            background: var(--dark-gray);
+            border-radius: var(--border-radius-large);
+            padding: 2rem;
+            box-shadow: 0 8px 32px var(--shadow-dark);
+            height: fit-content;
+            position: sticky;
+            top: 120px;
+        }
+
+        .profile-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .profile-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            border-radius: var(--border-radius);
+            color: var(--text-gray);
+            text-decoration: none;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .profile-menu-item:hover,
+        .profile-menu-item.active {
+            background: var(--primary-green);
+            color: var(--black);
+            transform: translateX(5px);
+        }
+
+        .profile-menu-item i {
+            font-size: 1.2rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .profile-main {
+            background: var(--dark-gray);
+            border-radius: var(--border-radius-large);
+            padding: 2rem;
+            box-shadow: 0 8px 32px var(--shadow-dark);
+        }
+
+        .profile-tab {
+            display: none;
+        }
+
+        .profile-tab.active {
+            display: block;
+        }
+
+        .profile-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--primary-green);
+        }
+
+        .profile-header h2 {
+            font-size: 2rem;
+            color: var(--primary-green);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .profile-header p {
+            color: var(--text-gray);
+            font-size: 1.1rem;
+        }
+
+        .profile-form {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .profile-avatar {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .avatar-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--primary-green);
+            box-shadow: 0 0 20px var(--shadow-green);
+        }
+
+        .avatar-placeholder {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--medium-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid var(--primary-green);
+            color: var(--text-dark);
+            font-size: 3rem;
+            margin: 0 auto;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--text-white);
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 1rem;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            background: var(--medium-gray);
+            color: var(--text-white);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 3px var(--shadow-green);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: var(--text-dark);
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .btn-save {
+            background: var(--gradient-primary);
+            color: var(--black);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--shadow-green);
+        }
+
+        .orders-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .order-card {
+            background: var(--medium-gray);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            border: 1px solid var(--light-gray);
+            transition: var(--transition);
+        }
+
+        .order-card:hover {
+            border-color: var(--primary-green);
+            box-shadow: 0 4px 20px var(--shadow-green);
+            transform: translateY(-2px);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .order-number {
+            font-weight: 600;
+            color: var(--primary-green);
+            font-size: 1.1rem;
+        }
+
+        .order-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: var(--warning-orange);
+            color: var(--black);
+        }
+
+        .status-processing {
+            background: var(--primary-green);
+            color: var(--black);
+        }
+
+        .status-shipped {
+            background: var(--accent-green);
+            color: var(--black);
+        }
+
+        .status-delivered {
+            background: var(--success-green);
+            color: var(--black);
+        }
+
+        .order-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .order-detail {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .order-detail span:first-child {
+            font-size: 0.8rem;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .order-detail span:last-child {
+            color: var(--text-white);
+            font-weight: 500;
+        }
+
+        .order-total {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            text-align: right;
+        }
+
+        .wishlist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .wishlist-item {
+            background: var(--medium-gray);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            border: 1px solid var(--light-gray);
+            transition: var(--transition);
+        }
+
+        .wishlist-item:hover {
+            border-color: var(--primary-green);
+            box-shadow: 0 4px 20px var(--shadow-green);
+            transform: translateY(-2px);
+        }
+
+        .wishlist-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .wishlist-info {
+            padding: 1rem;
+        }
+
+        .wishlist-title {
+            font-weight: 600;
+            color: var(--text-white);
+            margin-bottom: 0.5rem;
+        }
+
+        .wishlist-price {
+            color: var(--primary-green);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .address-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .address-card {
+            background: var(--medium-gray);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            border: 1px solid var(--light-gray);
+            transition: var(--transition);
+        }
+
+        .address-card:hover {
+            border-color: var(--primary-green);
+            box-shadow: 0 4px 20px var(--shadow-green);
+        }
+
+        .address-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .address-type {
+            background: var(--primary-green);
+            color: var(--black);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .address-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-edit,
+        .btn-delete {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-edit {
+            background: var(--primary-green);
+            color: var(--black);
+        }
+
+        .btn-delete {
+            background: var(--error-red);
+            color: white;
+        }
+
+        .btn-edit:hover,
+        .btn-delete:hover {
+            transform: scale(1.1);
+        }
+
+        /* iPhone 14 Pro Max Specific Optimizations */
+        @media (max-width: 430px) {
+            .profile-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                padding: 0 1rem;
+            }
+
+            .profile-sidebar {
+                position: static;
+                order: 2;
+            }
+
+            .profile-menu {
+                flex-direction: row;
+                overflow-x: auto;
+                padding-bottom: 1rem;
+            }
+
+            .profile-menu-item {
+                white-space: nowrap;
+                min-width: 120px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-actions {
+                flex-direction: column;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .wishlist-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <a href="{% url 'home' %}">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>KV Store</span>
+                </a>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="{% url 'products' %}" class="nav-link">Shop</a>
+                <a href="{% url 'about' %}" class="nav-link">About</a>
+                <a href="{% url 'contact' %}" class="nav-link">Contact</a>
+                
+                {% if user.is_authenticated %}
+                    <div class="nav-user">
+                        <a href="{% url 'cart' %}" class="nav-link cart-link">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-count">{{ user.customer.carts.first.total_items|default:0 }}</span>
+                        </a>
+                        <div class="user-dropdown">
+                            <button class="user-btn active">
+                                <i class="fas fa-user"></i>
+                                <span>{{ user.get_full_name|default:user.username }}</span>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="{% url 'profile' %}" class="active">Profile</a>
+                                <a href="{% url 'order_list' %}">Orders</a>
+                                <a href="{% url 'wishlist' %}">Wishlist</a>
+                                <a href="{% url 'logout' %}">Logout</a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="nav-auth">
+                        <a href="{% url 'login' %}" class="nav-link">Login</a>
+                        <a href="{% url 'register' %}" class="btn btn-primary">Sign Up</a>
+                    </div>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <!-- Profile Section -->
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+            <div class="message message-{{ message.tags }}">
+                {{ message }}
+                <button class="message-close">&times;</button>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <section class="profile-section">
+        <div class="container">
+            <h1 class="page-title">
+                <i class="fas fa-user-circle"></i>
+                My Profile
+            </h1>
+            
+            <div class="profile-content">
+                <div class="profile-sidebar">
+                    <div class="profile-menu">
+                        <a href="#profile" class="profile-menu-item active" data-tab="profile">
+                            <i class="fas fa-user"></i>
+                            <span>Profile Information</span>
+                        </a>
+                        <a href="#orders" class="profile-menu-item" data-tab="orders">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>My Orders</span>
+                        </a>
+                        <a href="#wishlist" class="profile-menu-item" data-tab="wishlist">
+                            <i class="fas fa-heart"></i>
+                            <span>Wishlist</span>
+                        </a>
+                        <a href="#addresses" class="profile-menu-item" data-tab="addresses">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Addresses</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="profile-main">
+                    <!-- Profile Information Tab -->
+                    <div id="profile" class="profile-tab active">
+                        <div class="profile-header">
+                            <h2>Profile Information</h2>
+                            <p>Update your personal information and preferences</p>
+                        </div>
+                        
+                        <form method="POST" enctype="multipart/form-data" class="profile-form">
+                            {% csrf_token %}
+                            {% if form.errors or form.non_field_errors %}
+                            <div class="form-errors" style="background: var(--error-red, #ffdddd); color: #000; padding: 1rem; border-radius: 8px; border: 1px solid #ff6b6b; margin-bottom: 1rem;">
+                                <ul style="margin: 0; padding-left: 1.25rem;">
+                                    {% for field in form %}
+                                        {% for error in field.errors %}
+                                            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                    {% for error in form.non_field_errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="profile-avatar">
+                                {% if user.customer.profile_picture %}
+                                    <img src="{{ user.customer.profile_picture.url }}" alt="Profile Picture" class="avatar-image">
+                                {% else %}
+                                    <div class="avatar-placeholder">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                        <span class="error">{{ form.first_name.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                        <span class="error">{{ form.last_name.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="{{ form.email.id_for_label }}">Email</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <span class="error">{{ form.email.errors.0 }}</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="{{ form.phone.id_for_label }}">Phone Number</label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                    <span class="error">{{ form.phone.errors.0 }}</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="{{ form.profile_picture.id_for_label }}">Profile Picture</label>
+                                {{ form.profile_picture }}
+                                {% if form.profile_picture.errors %}
+                                    <span class="error">{{ form.profile_picture.errors.0 }}</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="profile-actions">
+                                <button type="submit" class="btn-save">
+                                    <i class="fas fa-save"></i>
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Orders Tab -->
+                    <div id="orders" class="profile-tab">
+                        <div class="profile-header">
+                            <h2>My Orders</h2>
+                            <p>Track your order history and current orders</p>
+                        </div>
+                        
+                        <div class="orders-grid">
+                            {% for order in orders %}
+                                <div class="order-card">
+                                    <div class="order-header">
+                                        <span class="order-number">Order #{{ order.order_number }}</span>
+                                        <span class="order-status status-{{ order.status|lower }}">{{ order.get_status_display }}</span>
+                                    </div>
+                                    
+                                    <div class="order-details">
+                                        <div class="order-detail">
+                                            <span>Date</span>
+                                            <span>{{ order.created_at|date:"M d, Y" }}</span>
+                                        </div>
+                                        <div class="order-detail">
+                                            <span>Items</span>
+                                            <span>{{ order.items.count }} items</span>
+                                        </div>
+                                        <div class="order-detail">
+                                            <span>Status</span>
+                                            <span>{{ order.get_status_display }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="order-total">
+                                        ₹{{ order.total_amount }}
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="empty-state">
+                                    <i class="fas fa-shopping-bag"></i>
+                                    <h3>No Orders Yet</h3>
+                                    <p>You haven't placed any orders yet. Start shopping to see your order history here.</p>
+                                    <a href="{% url 'products' %}" class="btn btn-primary">Start Shopping</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Wishlist Tab -->
+                    <div id="wishlist" class="profile-tab">
+                        <div class="profile-header">
+                            <h2>My Wishlist</h2>
+                            <p>Your saved items and favorites</p>
+                        </div>
+                        
+                        <div class="wishlist-grid">
+                            {% for item in wishlist_items %}
+                                <div class="wishlist-item">
+                                    {% if item.product.image %}
+                                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="wishlist-image">
+                                    {% else %}
+                                        <div class="product-placeholder">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="wishlist-info">
+                                        <h3 class="wishlist-title">{{ item.product.name }}</h3>
+                                        <p class="wishlist-price">₹{{ item.product.current_price }}</p>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="empty-state">
+                                    <i class="fas fa-heart"></i>
+                                    <h3>Wishlist is Empty</h3>
+                                    <p>You haven't added any items to your wishlist yet. Start exploring products!</p>
+                                    <a href="{% url 'products' %}" class="btn btn-primary">Browse Products</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Addresses Tab -->
+                    <div id="addresses" class="profile-tab">
+                        <div class="profile-header">
+                            <h2>My Addresses</h2>
+                            <p>Manage your shipping and billing addresses</p>
+                        </div>
+                        
+                            <div class="address-grid">
+                            {% for address in addresses %}
+                                <div class="address-card">
+                                    <div class="address-header">
+                                        <span class="address-type">{{ address.label }}</span>
+                                        <div class="address-actions">
+                                            <a class="btn-edit" title="Set as Default Shipping" href="{% url 'address_set_default' address.id 'shipping' %}">
+                                                <i class="fas fa-truck"></i>
+                                            </a>
+                                            <a class="btn-edit" title="Set as Default Billing" href="{% url 'address_set_default' address.id 'billing' %}">
+                                                <i class="fas fa-file-invoice"></i>
+                                            </a>
+                                            <a class="btn-edit" title="Edit Address" href="{% url 'address_edit' address.id %}">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a class="btn-delete" title="Delete Address" href="{% url 'address_delete' address.id %}" onclick="return confirm('Delete this address?');">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="address-details">
+                                        <p><strong>{{ address.first_name }} {{ address.last_name }}</strong>{% if address.phone %} · {{ address.phone }}{% endif %}</p>
+                                        <p>{{ address.address }}</p>
+                                        <p>{{ address.city }}, {{ address.state }} {{ address.zip_code }}</p>
+                                        <p>{{ address.country }}</p>
+                                        <p>
+                                            {% if address.is_default_shipping %}<span class="address-type">Default Shipping</span>{% endif %}
+                                            {% if address.is_default_billing %}<span class="address-type">Default Billing</span>{% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="empty-state">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <h3>No Addresses Saved</h3>
+                                    <p>You haven't saved any addresses yet. Add an address for faster checkout.</p>
+                                    <a href="{% url 'address_create' %}" class="btn btn-primary">Add Address</a>
+                                </div>
+                            {% endfor %}
+                            </div>
+                            <div style="margin-top:1rem;">
+                                <a href="{% url 'address_create' %}" class="btn btn-primary">Add New Address</a>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>KV Store</h3>
+                    <p>Your premium shopping destination for quality products and exceptional service.</p>
+                    <div class="social-links">
+                        <a href="https://x.com/KVigneshar" target="_blank"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.instagram.com/k.vigneshar/" target="_blank"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.linkedin.com/in/vigneshar-kumaravelan-48849a305/" target="_blank"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="{% url 'products' %}">Shop</a></li>
+                        <li><a href="{% url 'about' %}">About Us</a></li>
+                        <li><a href="{% url 'contact' %}">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Customer Service</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Returns & Exchanges</a></li>
+                        <li><a href="#">Shipping Info</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 KV Store. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'scripts/ecommerce.js' %}"></script>
+    <script>
+        // Profile tab functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuItems = document.querySelectorAll('.profile-menu-item');
+            const tabs = document.querySelectorAll('.profile-tab');
+            
+            menuItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all items and tabs
+                    menuItems.forEach(i => i.classList.remove('active'));
+                    tabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked item
+                    this.classList.add('active');
+                    
+                    // Show corresponding tab
+                    const targetTab = this.getAttribute('data-tab');
+                    document.getElementById(targetTab).classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

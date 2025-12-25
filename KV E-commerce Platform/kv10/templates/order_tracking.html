@@ -1,0 +1,479 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Track Order #{{ order.order_number }} - KV Store{% endblock %}
+
+{% block content %}
+<style>
+    .tracking-container {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+    
+    .tracking-card {
+        background: #000;
+        border: 1px solid #333;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #00ff88;
+    }
+    
+    .order-number {
+        color: #00ff88;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .order-status {
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+    }
+    
+    .status-pending { background: #ffc107; color: #000; }
+    .status-confirmed { background: #17a2b8; color: #fff; }
+    .status-processing { background: #fd7e14; color: #fff; }
+    .status-shipped { background: #6f42c1; color: #fff; }
+    .status-delivered { background: #00ff88; color: #000; }
+    .status-cancelled { background: #dc3545; color: #fff; }
+    
+    .tracking-timeline {
+        position: relative;
+        padding: 2rem 0;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-left: 3rem;
+        margin-bottom: 2rem;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 3px solid #333;
+        background: #000;
+    }
+    
+    .timeline-item.completed::before {
+        background: #00ff88;
+        border-color: #00ff88;
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+    }
+    
+    .timeline-item.active::before {
+        background: #ffc107;
+        border-color: #ffc107;
+        animation: pulse 2s infinite;
+    }
+    
+    .timeline-item:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 9px;
+        top: 20px;
+        width: 2px;
+        height: calc(100% + 1rem);
+        background: #333;
+    }
+    
+    .timeline-item.completed:not(:last-child)::after {
+        background: #00ff88;
+    }
+    
+    .timeline-content {
+        color: #fff;
+    }
+    
+    .timeline-title {
+        color: #00ff88;
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .timeline-date {
+        color: #888;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .timeline-description {
+        color: #ccc;
+        line-height: 1.5;
+    }
+    
+    .order-details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+        .order-details-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .order-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+    }
+    
+    .detail-section {
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 10px;
+        padding: 1.5rem;
+    }
+    
+    .detail-section h4 {
+        color: #00ff88;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #333;
+        color: #ccc;
+    }
+    
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+    
+    .detail-row strong {
+        color: #fff;
+    }
+    
+    .action-buttons {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #333;
+    }
+    
+    .btn {
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: bold;
+        text-decoration: none;
+        display: inline-block;
+        margin: 0 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(45deg, #00ff88, #00cc6a);
+        border: none;
+        color: #000;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+        color: #000;
+        text-decoration: none;
+    }
+    
+    .btn-outline {
+        background: transparent;
+        border: 2px solid #00ff88;
+        color: #00ff88;
+    }
+    
+    .btn-outline:hover {
+        background: #00ff88;
+        color: #000;
+        text-decoration: none;
+    }
+    
+    .btn-danger {
+        background: transparent;
+        border: 2px solid #dc3545;
+        color: #dc3545;
+    }
+    
+    .btn-danger:hover {
+        background: #dc3545;
+        color: #fff;
+        text-decoration: none;
+    }
+    
+    .estimated-delivery {
+        background: linear-gradient(45deg, #00ff88, #00cc6a);
+        color: #000;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 2rem;
+    }
+    
+    .items-list {
+        margin-top: 1rem;
+    }
+    
+    .item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #333;
+    }
+    
+    .item-row:last-child {
+        border-bottom: none;
+    }
+    
+    .item-info {
+        flex: 1;
+    }
+    
+    .item-name {
+        color: #fff;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+    
+    .item-details {
+        color: #888;
+        font-size: 0.9rem;
+    }
+    
+    .item-price {
+        color: #00ff88;
+        font-weight: bold;
+        text-align: right;
+    }
+</style>
+
+<div class="tracking-container">
+    <div class="container">
+        <div class="tracking-card">
+            <div class="order-header">
+                <div>
+                    <h2 class="order-number">Order #{{ order.order_number }}</h2>
+                    <p style="color: #888; margin: 0;">Placed on {{ order.created_at|date:"F d, Y" }}</p>
+                </div>
+                <div class="order-status status-{{ order.status }}">
+                    {{ order.get_status_display }}
+                </div>
+            </div>
+            
+            {% if order.status == 'shipped' or order.status == 'processing' %}
+            <div class="estimated-delivery">
+                <i class="fas fa-truck"></i>
+                Estimated Delivery: 
+                {% if order.status == 'shipped' %}
+                    {{ order.created_at|date:"F d"|add_days:3 }} - {{ order.created_at|date:"F d"|add_days:5 }}
+                {% else %}
+                    {{ order.created_at|date:"F d"|add_days:5 }} - {{ order.created_at|date:"F d"|add_days:7 }}
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="tracking-timeline">
+                <div class="timeline-item {% if order.status != 'cancelled' %}completed{% endif %}">
+                    <div class="timeline-content">
+                        <div class="timeline-title">Order Placed</div>
+                        <div class="timeline-date">{{ order.created_at|date:"F d, Y - g:i A" }}</div>
+                        <div class="timeline-description">
+                            Your order has been placed successfully and payment has been confirmed.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item {% if order.status == 'confirmed' or order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}completed{% elif order.status == 'pending' %}active{% endif %}">
+                    <div class="timeline-content">
+                        <div class="timeline-title">Order Confirmed</div>
+                        <div class="timeline-date">
+                            {% if order.status != 'pending' and order.status != 'cancelled' %}
+                                {{ order.updated_at|date:"F d, Y - g:i A" }}
+                            {% else %}
+                                Pending confirmation
+                            {% endif %}
+                        </div>
+                        <div class="timeline-description">
+                            Your order has been confirmed and is being prepared for processing.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item {% if order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}completed{% elif order.status == 'confirmed' %}active{% endif %}">
+                    <div class="timeline-content">
+                        <div class="timeline-title">Processing</div>
+                        <div class="timeline-date">
+                            {% if order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}
+                                Processing started
+                            {% else %}
+                                Waiting for processing
+                            {% endif %}
+                        </div>
+                        <div class="timeline-description">
+                            Your items are being picked, packed, and prepared for shipment.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item {% if order.status == 'shipped' or order.status == 'delivered' %}completed{% elif order.status == 'processing' %}active{% endif %}">
+                    <div class="timeline-content">
+                        <div class="timeline-title">Shipped</div>
+                        <div class="timeline-date">
+                            {% if order.status == 'shipped' or order.status == 'delivered' %}
+                                Out for delivery
+                            {% else %}
+                                Preparing for shipment
+                            {% endif %}
+                        </div>
+                        <div class="timeline-description">
+                            Your order has been shipped and is on its way to your delivery address.
+                            {% if order.status == 'shipped' %}
+                            <br><strong>Tracking ID:</strong> TRK{{ order.order_number }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item {% if order.status == 'delivered' %}completed{% elif order.status == 'shipped' %}active{% endif %}">
+                    <div class="timeline-content">
+                        <div class="timeline-title">Delivered</div>
+                        <div class="timeline-date">
+                            {% if order.status == 'delivered' %}
+                                {{ order.updated_at|date:"F d, Y - g:i A" }}
+                            {% else %}
+                                Pending delivery
+                            {% endif %}
+                        </div>
+                        <div class="timeline-description">
+                            Your order has been successfully delivered to your address.
+                        </div>
+                    </div>
+                </div>
+                
+                {% if order.status == 'cancelled' %}
+                <div class="timeline-item completed" style="color: #dc3545;">
+                    <div class="timeline-content">
+                        <div class="timeline-title" style="color: #dc3545;">Order Cancelled</div>
+                        <div class="timeline-date">{{ order.updated_at|date:"F d, Y - g:i A" }}</div>
+                        <div class="timeline-description">
+                            Your order has been cancelled. If payment was made, refund will be processed within 5-7 business days.
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="order-details-grid">
+            <div class="detail-section">
+                <h4><i class="fas fa-box"></i> Order Items</h4>
+                <div class="items-list">
+                    {% for item in order.items.all %}
+                    <div class="item-row">
+                        <div class="item-info">
+                            <div class="item-name">{{ item.product.name }}</div>
+                            <div class="item-details">
+                                Quantity: {{ item.quantity }} | Price: ₹{{ item.price }}
+                            </div>
+                        </div>
+                        <div class="item-price">₹{{ item.total_price }}</div>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="detail-row" style="margin-top: 1rem; font-weight: bold; color: #00ff88;">
+                        <span>Total Amount:</span>
+                        <span>₹{{ order.total_amount }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4><i class="fas fa-map-marker-alt"></i> Delivery Address</h4>
+                <div style="color: #ccc; line-height: 1.6;">
+                    {{ order.shipping_address|linebreaks }}
+                </div>
+                
+                <h4 style="margin-top: 2rem;"><i class="fas fa-credit-card"></i> Payment Details</h4>
+                <div class="detail-row">
+                    <span>Payment Method:</span>
+                    <strong>{{ order.get_payment_method_display }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Payment Status:</span>
+                    <strong style="color: {% if order.payment_status == 'paid' %}#00ff88{% else %}#ffc107{% endif %};">
+                        {{ order.get_payment_status_display }}
+                    </strong>
+                </div>
+                {% if order.razorpay_payment_id %}
+                <div class="detail-row">
+                    <span>Payment ID:</span>
+                    <strong>{{ order.razorpay_payment_id }}</strong>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            {% if order.status == 'pending' or order.status == 'confirmed' %}
+            <a href="{% url 'cancel_order' order.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to cancel this order?')">
+                <i class="fas fa-times"></i> Cancel Order
+            </a>
+            {% endif %}
+            
+            {% if order.status == 'delivered' %}
+            <a href="{% url 'return_request' order.id %}" class="btn btn-outline">
+                <i class="fas fa-undo"></i> Request Return
+            </a>
+            {% endif %}
+            
+            <a href="{% url 'download_invoice' order.id %}" class="btn btn-primary">
+                <i class="fas fa-download"></i> Download Invoice
+            </a>
+            
+            <a href="{% url 'order_list' %}" class="btn btn-outline">
+                <i class="fas fa-list"></i> All Orders
+            </a>
+            
+            <a href="{% url 'contact' %}" class="btn btn-outline">
+                <i class="fas fa-headset"></i> Contact Support
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh page every 30 seconds if order is in progress
+{% if order.status != 'delivered' and order.status != 'cancelled' %}
+setTimeout(function() {
+    location.reload();
+}, 30000);
+{% endif %}
+</script>
+{% endblock %}

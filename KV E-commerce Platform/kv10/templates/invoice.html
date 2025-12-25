@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice #{{ order.order_number }} - KV Store</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #fff;
+        }
+        
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #fff;
+        }
+        
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid #00ff88;
+        }
+        
+        .company-info h1 {
+            color: #000;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .company-info p {
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        
+        .invoice-details {
+            text-align: right;
+        }
+        
+        .invoice-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 0.5rem;
+        }
+        
+        .invoice-date {
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        
+        .billing-shipping {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .address-section h3 {
+            color: #000;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #00ff88;
+            padding-bottom: 0.5rem;
+        }
+        
+        .address-content {
+            color: #666;
+            line-height: 1.8;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .items-table th {
+            background: #00ff88;
+            color: #000;
+            padding: 1rem;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        .items-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .items-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        
+        .items-table tr:hover {
+            background: #f0f0f0;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .totals-section {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .totals-table {
+            width: 300px;
+            border-collapse: collapse;
+        }
+        
+        .totals-table td {
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .totals-table .total-row {
+            background: #00ff88;
+            color: #000;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .payment-info {
+            background: #f9f9f9;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 8px;
+            border-left: 4px solid #00ff88;
+        }
+        
+        .payment-info h3 {
+            color: #000;
+            margin-bottom: 1rem;
+        }
+        
+        .payment-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .payment-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .payment-detail:last-child {
+            border-bottom: none;
+        }
+        
+        .footer {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid #eee;
+            text-align: center;
+            color: #666;
+        }
+        
+        .footer h4 {
+            color: #000;
+            margin-bottom: 1rem;
+        }
+        
+        .terms {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #f9f9f9;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .terms h4 {
+            color: #000;
+            margin-bottom: 0.5rem;
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .invoice-container {
+                box-shadow: none;
+                margin: 0;
+                padding: 0;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+        
+        .print-button {
+            background: #00ff88;
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .print-button:hover {
+            background: #00cc6a;
+            transform: translateY(-2px);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-paid {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <button class="print-button no-print" onclick="window.print()">
+            Print Invoice
+        </button>
+        
+        <div class="invoice-header">
+            <div class="company-info">
+                <h1>KV STORE</h1>
+                <p>Premium E-commerce Solutions</p>
+                <p> support@kvstore.com</p>
+                <p> +91 123 456 7890</p>
+                <p> www.kvstore.com</p>
+            </div>
+            
+            <div class="invoice-details">
+                <div class="invoice-number">INVOICE #{{ order.order_number }}</div>
+                <div class="invoice-date">Date: {{ order.created_at|date:"F d, Y" }}</div>
+                <div class="invoice-date">Due Date: {{ order.created_at|date:"F d, Y" }}</div>
+                <div style="margin-top: 1rem;">
+                    <span class="status-badge status-{{ order.payment_status }}">
+                        {{ order.get_payment_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="billing-shipping">
+            <div class="address-section">
+                <h3> Bill To</h3>
+                <div class="address-content">
+                    <strong>{{ order.customer.user.get_full_name|default:order.customer.user.username }}</strong><br>
+                    {{ order.billing_address|linebreaks }}
+                     {{ order.email }}<br>
+                     {{ order.phone }}
+                </div>
+            </div>
+            
+            <div class="address-section">
+                <h3> Ship To</h3>
+                <div class="address-content">
+                    {{ order.shipping_address|linebreaks }}
+                </div>
+            </div>
+        </div>
+        
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Item Description</th>
+                    <th class="text-center" style="width: 15%;">Quantity</th>
+                    <th class="text-right" style="width: 15%;">Unit Price</th>
+                    <th class="text-right" style="width: 20%;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td>
+                        <strong>{{ item.product.name }}</strong>
+                        {% if item.product.sku %}
+                        <br><small style="color: #666;">SKU: {{ item.product.sku }}</small>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ item.quantity }}</td>
+                    <td class="text-right">₹{{ item.price }}</td>
+                    <td class="text-right">₹{{ item.total_price }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="totals-section">
+            <table class="totals-table">
+                <tr>
+                    <td>Subtotal:</td>
+                    <td class="text-right">₹{{ order.subtotal }}</td>
+                </tr>
+                {% if order.tax > 0 %}
+                <tr>
+                    <td>Tax (18% GST):</td>
+                    <td class="text-right">₹{{ order.tax }}</td>
+                </tr>
+                {% endif %}
+                {% if order.shipping_cost > 0 %}
+                <tr>
+                    <td>Shipping:</td>
+                    <td class="text-right">₹{{ order.shipping_cost }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td>Shipping:</td>
+                    <td class="text-right">FREE</td>
+                </tr>
+                {% endif %}
+                <tr class="total-row">
+                    <td>TOTAL:</td>
+                    <td class="text-right">₹{{ order.total_amount }}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="payment-info">
+            <h3>💳 Payment Information</h3>
+            <div class="payment-details">
+                <div>
+                    <div class="payment-detail">
+                        <span>Payment Method:</span>
+                        <strong>{{ order.get_payment_method_display }}</strong>
+                    </div>
+                    <div class="payment-detail">
+                        <span>Payment Status:</span>
+                        <strong>{{ order.get_payment_status_display }}</strong>
+                    </div>
+                </div>
+                <div>
+                    {% if order.razorpay_payment_id %}
+                    <div class="payment-detail">
+                        <span>Payment ID:</span>
+                        <strong>{{ order.razorpay_payment_id }}</strong>
+                    </div>
+                    {% endif %}
+                    {% if order.razorpay_order_id %}
+                    <div class="payment-detail">
+                        <span>Order ID:</span>
+                        <strong>{{ order.razorpay_order_id }}</strong>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="terms">
+            <h4> Terms & Conditions</h4>
+            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                <li>Payment is due within 30 days of invoice date</li>
+                <li>Returns accepted within 7 days of delivery</li>
+                <li>Warranty terms apply as per product specifications</li>
+                <li>For support, contact us at support@kvstore.com</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <h4>Thank you for your business! </h4>
+            <p>This is a computer-generated invoice and does not require a signature.</p>
+            <p style="margin-top: 1rem; font-size: 0.9rem;">
+                Generated on {{ "now"|date:"F d, Y g:i A" }} | 
+                Invoice ID: INV-{{ order.order_number }}-{{ order.created_at|date:"Ymd" }}
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Auto-print functionality
+        function printInvoice() {
+            window.print();
+        }
+        
+        // Add keyboard shortcut for printing
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                printInvoice();
+            }
+        });
+    </script>
+</body>
+</html>

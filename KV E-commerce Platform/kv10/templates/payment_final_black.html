@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Payment - KV Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* FINAL BLACK THEME - NO EXTERNAL CSS DEPENDENCIES */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+            background: #000000 !important;
+            background-color: #000000 !important;
+            min-height: 100vh;
+            color: #FFFFFF !important;
+            overflow-x: hidden;
+        }
+
+        .payment-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #000000 !important;
+            min-height: 100vh;
+        }
+
+        .payment-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem 0;
+            background: #000000 !important;
+        }
+
+        .payment-header h1 {
+            font-size: 2.5rem;
+            color: #00DD00;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(0, 221, 0, 0.3);
+        }
+
+        .payment-header p {
+            color: #CCCCCC;
+            font-size: 1.1rem;
+        }
+
+        .payment-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 3rem;
+            background: #000000 !important;
+        }
+
+        .payment-methods {
+            background: #111111;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #333333;
+        }
+
+        .payment-methods h2 {
+            color: #00DD00;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .payment-option {
+            background: #1a1a1a;
+            border: 2px solid #333333;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        
+        .payment-option i {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            color: #00DD00;
+        }
+        
+        .payment-option .method-details {
+            flex: 1;
+        }
+        
+        .payment-option .method-name {
+            font-weight: 600;
+            color: #FFFFFF;
+            margin-bottom: 0.25rem;
+        }
+        
+        .payment-option .method-desc {
+            font-size: 0.9rem;
+            color: #CCCCCC;
+        }
+
+        .payment-option:hover {
+            border-color: #00DD00;
+            background: #222222;
+        }
+
+        .payment-option.selected {
+            border-color: #00DD00;
+            background: #1a2a1a;
+        }
+
+        .payment-option h3 {
+            color: #FFFFFF;
+            margin-bottom: 0.5rem;
+        }
+
+        .payment-option p {
+            color: #CCCCCC;
+            font-size: 0.9rem;
+        }
+
+        .order-summary {
+            background: #111111;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #333333;
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .order-summary h2 {
+            color: #00DD00;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            color: #FFFFFF;
+        }
+
+        .order-total {
+            border-top: 1px solid #333333;
+            padding-top: 1rem;
+            margin-top: 1rem;
+        }
+
+        .order-total .total-amount {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #00DD00;
+        }
+
+        .pay-button {
+            width: 100%;
+            background: linear-gradient(135deg, #00DD00, #00AA00);
+            color: #000000;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .pay-button:hover {
+            background: linear-gradient(135deg, #00FF00, #00DD00);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 221, 0, 0.3);
+        }
+
+        .security-notice {
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .security-notice i {
+            color: #00DD00;
+            margin-right: 0.5rem;
+        }
+
+        .security-notice p {
+            color: #CCCCCC;
+            font-size: 0.9rem;
+        }
+
+        .back-button {
+            background: #333333;
+            color: #FFFFFF;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: #444444;
+            color: #00DD00;
+        }
+
+        @media (max-width: 768px) {
+            .payment-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .payment-container {
+                padding: 1rem;
+            }
+            
+            .payment-header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <div class="payment-header">
+            <h1><i class="fas fa-shield-alt"></i> Secure Payment</h1>
+            <p>Complete your order securely with our encrypted payment system</p>
+        </div>
+
+        <a href="/checkout/" class="back-button">
+            <i class="fas fa-arrow-left"></i> Back to Checkout
+        </a>
+
+        <div class="payment-content">
+            <div class="payment-methods">
+                <h2>Select Payment Method</h2>
+                
+                <div class="payment-option selected" data-method="card">
+                    <i class="fas fa-credit-card"></i>
+                    <div class="method-details">
+                        <div class="method-name">Credit/Debit Card</div>
+                        <div class="method-desc">Visa, Mastercard, Rupay, and more</div>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="payment-option" data-method="upi">
+                    <i class="fas fa-mobile-alt"></i>
+                    <div class="method-details">
+                        <div class="method-name">UPI Payment</div>
+                        <div class="method-desc">Google Pay, PhonePe, Paytm, BHIM, and more</div>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="payment-option" data-method="netbanking">
+                    <i class="fas fa-university"></i>
+                    <div class="method-details">
+                        <div class="method-name">Net Banking</div>
+                        <div class="method-desc">All major Indian banks</div>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+
+            <div class="order-summary">
+                <h2><i class="fas fa-receipt"></i> Order Summary</h2>
+                
+                <div class="order-item">
+                    <span>Order #:</span>
+                    <span>{{ order.order_number }}</span>
+                </div>
+                
+                <div class="order-item">
+                    <span>Subtotal:</span>
+                    <span>₹{{ order.subtotal|floatformat:2 }}</span>
+                </div>
+                
+                <div class="order-item">
+                    <span>Tax (18%):</span>
+                    <span>₹{{ order.tax|floatformat:2 }}</span>
+                </div>
+                
+                <div class="order-item">
+                    <span>Shipping:</span>
+                    <span>₹{{ order.shipping_cost|floatformat:2 }}</span>
+                </div>
+                
+                <div class="order-total">
+                    <div class="order-item">
+                        <span>Total Amount:</span>
+                        <span class="total-amount">₹{{ order.total_amount|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        // Payment method selection
+        document.querySelectorAll('.payment-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+
+        // Razorpay payment
+        // Initialize Razorpay with all payment methods
+        function initializeRazorpay() {
+            const options = {
+                'key': '{{ razorpay_key_id }}',
+                'amount': parseInt('{{ amount }}'),
+                'currency': '{{ currency }}',
+                'name': 'KV Store',
+                'description': 'Order #{{ order.order_number }}',
+                'order_id': '{{ razorpay_order_id }}',
+                'handler': function(response) {
+                    // Send payment details to server
+                    fetch('/payment/callback/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_signature: response.razorpay_signature,
+                            payment_method: document.querySelector('.payment-option.selected').dataset.method
+                        })
+                    }).then(function(response) { return response.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            window.location.href = data.redirect_url || '/payment/success/';
+                        } else {
+                            showError(data.error || 'Payment verification failed. Please try again.');
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Payment verification error:', error);
+                        showError('An error occurred while processing your payment.');
+                    });
+                },
+                'prefill': {
+                    'name': '{{ customer.user.first_name }} {{ customer.user.last_name }}',
+                    'email': '{{ customer.user.email }}',
+                    'contact': '{{ customer.phone }}',
+                    'method': 'card' // Default to card
+                },
+                'theme': {
+                    'color': '#00DD00',
+                    'hide_topbar': false
+                },
+                'modal': {
+                    'ondismiss': function() {
+                        console.log('Payment modal dismissed');
+                    },
+                    'escape': true,
+                    'backdropclose': true
+                },
+                'retry': {
+                    'enabled': true,
+                    'max_count': 3
+                },
+                'notes': {
+                    'order_id': '{{ order.id }}',
+                    'customer_id': '{{ customer.id }}'
+                },
+                'config': {
+                    'display': {
+                        'blocks': {
+                            'banks': {    // Display banks section for netbanking
+                                'name': 'Pay using Net Banking',
+                                'instruments': [
+                                    { 'method': 'netbanking' }
+                                ]
+                            },
+                            'upi': {      // Display UPI section
+                                'name': 'Pay using UPI',
+                                'instruments': [
+                                    { 'method': 'upi' },
+                                    { 'method': 'upi_qr' },
+                                    { 'method': 'upi_intent' }
+                                ]
+                            },
+                            'card': {     // Display card section
+                                'name': 'Pay using Credit/Debit Card',
+                                'instruments': [
+                                    { 'method': 'card' }
+                                ]
+                            },
+                            'wallet': {   // Display wallet section
+                                'name': 'Pay using Wallets',
+                                'instruments': [
+                                    { 'method': 'wallet' }
+                                ]
+                            }
+                        },
+                        'sequence': ['block.banks', 'block.upi', 'block.card', 'block.wallet'],
+                        'preferences': {
+                            'show_default_blocks': true
+                        }
+                    }
+                }
+            };
+            
+            return new Razorpay(options);
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.style.color = '#ff4444';
+            errorDiv.style.marginTop = '1rem';
+            errorDiv.style.padding = '0.5rem';
+            errorDiv.style.border = '1px solid #ff4444';
+            errorDiv.style.borderRadius = '4px';
+            errorDiv.style.backgroundColor = '#ffeeee';
+            errorDiv.textContent = message;
+            
+            const container = document.querySelector('.payment-container');
+            container.insertBefore(errorDiv, container.firstChild);
+            
+            // Scroll to error
+            errorDiv.scrollIntoView({ behavior: 'smooth' });
+            
+            // Remove error after 5 seconds
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        // Handle payment button click
+        document.getElementById('pay-now-btn').addEventListener('click', function() {
+            const selectedMethod = document.querySelector('.payment-option.selected');
+            
+            if (!selectedMethod) {
+                showError('Please select a payment method');
+                return;
+            }
+            
+            const method = selectedMethod.dataset.method;
+            
+            if (method === 'cod') {
+                // Handle Cash on Delivery
+                window.location.href = '/payment/cod/';
+            } else {
+                // Handle online payments
+                const rzp = initializeRazorpay();
+                
+                // Set preferred payment method if selected
+                if (method === 'card') {
+                    rzp._options.prefill.method = 'card';
+                } else if (method === 'upi') {
+                    rzp._options.prefill.method = 'upi';
+                } else if (method === 'netbanking') {
+                    rzp._options.prefill.method = 'netbanking';
+                }
+                
+                rzp.open();
+            }
+        });
+        
+        // Initialize payment method selection
+        document.querySelectorAll('.payment-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.payment-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+            });
+        });
+    </script>
+</body>
+</html>
