@@ -1,0 +1,8 @@
+.env
+*.pyc
+__pycache__/
+artifacts/
+*.joblib
+*.h5
+*.keras
+.DS_Store

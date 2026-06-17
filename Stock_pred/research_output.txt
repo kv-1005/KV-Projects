@@ -1,0 +1,21 @@
+﻿=== DEEP RESEARCH: TEMPORAL ALPHA ===
+
+[HOURLY PNL]
+           sum  count
+hour                 
+11   -15284.88    570
+
+[DAILY PNL]
+              sum  count
+weekday                 
+Sunday  -15284.88    570
+
+[TICKER AVG PNL (EFFICIENCY)]
+2
+LT          -54.399137
+TCS          -9.772059
+INFY         89.071111
+RELIANCE    446.400000
+Name: 5, dtype: float64
+
+[MAX LOSS STREAK]: 16

@@ -1,0 +1,30 @@
+{
+    "universe": [
+        "RELIANCE",
+        "INFY",
+        "ICICIBANK",
+        "HDFCBANK",
+        "TCS",
+        "SBIN",
+        "BHARTIARTL",
+        "AXISBANK",
+        "MARUTI",
+        "KOTAKBANK",
+        "WIPRO",
+        "HCLTECH"
+    ],
+    "exchange": "NSE",
+    "interval": "5minute",
+    "lookback_days": 30,
+    "horizon_candles": 10,
+    "transaction_cost": 0.0013,
+    "expectancy_threshold": 1.20,
+    "stop_loss_atr_mult": 2.5,
+    "take_profit_atr_mult": 6.0,
+    "max_positions": 2,
+    "risk_per_trade_pct": 0.05,
+    "max_daily_loss_pct": 0.10,
+    "require_above_vwap": true,
+    "min_supertrend_dir": 0,
+    "paper_capital": 20000
+}
