@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Delivery Challan {{ challan.challan_number }} - Invoice Generator{% endblock %}
+
+{% block page_title %}Delivery Challan {{ challan.challan_number }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <a href="{{ url_for('delivery_challans') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Delivery Challans
+    </a>
+    <a href="{{ url_for('edit_delivery_challan', challan_id=challan.id) }}" class="btn btn-primary">
+        <i class="fas fa-edit"></i> Edit
+    </a>
+    <a href="{{ url_for('delivery_challan_print', challan_id=challan.id) }}" class="btn btn-outline-success"
+        target="_blank">
+        <i class="fas fa-print"></i> Print (HTML)
+    </a>
+    <a href="{{ url_for('delivery_challan_pdf', challan_id=challan.id) }}" class="btn btn-success" target="_blank">
+        <i class="fas fa-file-pdf"></i> Download Signed PDF
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Delivery Challan Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Delivery Challan Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Challan Number:</strong></td>
+                                <td>{{ challan.challan_number }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Challan Date:</strong></td>
+                                <td>{{ challan.challan_date.strftime('%d/%m/%Y') }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Delivery Date:</strong></td>
+                                <td>{{ challan.delivery_date.strftime('%d/%m/%Y') if challan.delivery_date else '-' }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Reference No:</strong></td>
+                                <td>{{ challan.reference_no if challan.reference_no and challan.reference_no != '-' else
+                                    '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Place of Supply:</strong></td>
+                                <td>{{ challan.place_of_supply }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    <span class="badge 
+                                        {% if challan.status == 'pending' %}bg-warning
+                                        {% elif challan.status == 'sent' %}bg-info
+                                        {% elif challan.status == 'delivered' %}bg-success
+                                        {% elif challan.status == 'cancelled' %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ challan.status.title() }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Consignee Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Consignee Name:</strong></td>
+                                <td>{{ challan.consignee_name }}</td>
+                            </tr>
+                            {% if challan.consignee_details %}
+                            <tr>
+                                <td><strong>Consignee Details:</strong></td>
+                                <td>{{ challan.consignee_details }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td><strong>Consignee Address:</strong></td>
+                                <td>{{ challan.consignee_address }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if challan.items %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Items</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>HSN Code</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Tax Rate</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in challan.items %}
+                            <tr>
+                                <td>{{ item.description }}</td>
+                                <td>{{ item.hsn_code }}</td>
+                                <td>
+                                    {% if item.unit_price == 0 %}
+                                    -
+                                    {% else %}
+                                    {{ "%.2f"|format(item.quantity) }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.unit_price == 0 %}
+                                    <span class="badge bg-secondary">N/A</span>
+                                    {% else %}
+                                    ₹ {{ "{:,.2f}".format(item.unit_price|float) }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.unit_price == 0 %}
+                                    <span class="badge bg-secondary">N/A</span>
+                                    {% else %}
+                                    {{ "%.1f"|format(item.tax_rate) }}%
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.unit_price == 0 %}
+                                    <span class="badge bg-warning">Not for Sale</span>
+                                    {% else %}
+                                    ₹ {{ "{:,.2f}".format(item.amount|float) }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <th colspan="5">Subtotal:</th>
+                                <th>₹ {{ "{:,.2f}".format(challan.subtotal|float) }}</th>
+                            </tr>
+                            <tr>
+                                <td colspan="5">Taxable Amount:</td>
+                                <th>₹ {{ "{:,.2f}".format(challan.subtotal|float) }}</th>
+                            </tr>
+                            <tr>
+                                <td colspan="5">Taxable Amount:</td>
+                                <td>₹ {{ "{:,.2f}".format(challan.subtotal|float) }}</td>
+                            </tr>
+                            {% if challan.cgst_amount > 0 %}
+                            <tr>
+                                <td colspan="5">CGST:</td>
+                                <td>₹ {{ "{:,.2f}".format(challan.cgst_amount|float) }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if challan.sgst_amount > 0 %}
+                            <tr>
+                                <td colspan="5">SGST:</td>
+                                <td>₹ {{ "{:,.2f}".format(challan.sgst_amount|float) }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if challan.igst_amount > 0 %}
+                            <tr>
+                                <td colspan="5">IGST:</td>
+                                <td>₹ {{ "{:,.2f}".format(challan.igst_amount|float) }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if challan.shipping_charges > 0 %}
+                            <tr>
+                                <td colspan="5">Shipping Charges:</td>
+                                <td>₹ {{ "{:,.2f}".format(challan.shipping_charges|float) }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr class="table-success">
+                                <th colspan="5">Total Amount:</th>
+                                <th>₹ {{ "{:,.2f}".format(challan.total_amount|float) }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card mt-3">
+            <div class="card-body text-center">
+                <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No Items Added</h5>
+                <p class="text-muted">This delivery challan doesn't have any items yet.</p>
+                <a href="{{ url_for('edit_delivery_challan', challan_id=challan.id) }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Items
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        {% if challan.notes %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Notes</h5>
+            </div>
+            <div class="card-body">
+                <p class="small">{{ challan.notes }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function updateStatus(status) {
+        if (confirm(`Are you sure you want to ${status} this delivery challan?`)) {
+            fetch(`/api/delivery-challans/{{ challan.id }}/status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: status })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error updating status');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating status');
+                });
+        }
+    }
+</script>
+{% endblock %}

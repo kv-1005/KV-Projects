@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Ledger - {{ customer.name }}{% endblock %}
+{% block page_title %}Customer Ledger / Statement{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ledger-container {
+        background: #fff;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.05);
+    }
+
+    .ledger-header {
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 30px;
+        margin-bottom: 40px;
+    }
+
+    .customer-info h3 {
+        color: #000000 !important;
+        font-weight: 850;
+        margin-bottom: 10px;
+    }
+
+    .customer-info p {
+        color: #1e293b !important;
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+
+    .balance-card {
+        background: #0f172a !important;
+        color: #ffffff !important;
+        padding: 30px;
+        border-radius: 12px;
+        text-align: right;
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .balance-card h6 {
+        color: #94a3b8 !important;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-size: 0.75rem;
+        margin-bottom: 10px;
+    }
+
+    .balance-card h2 {
+        font-weight: 900;
+        margin-bottom: 0;
+        letter-spacing: -1px;
+        font-size: 2.5rem;
+    }
+
+    .table-ledger thead th {
+        background: #0f172a !important;
+        color: #ffffff !important;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        padding: 20px 12px;
+        border: none;
+    }
+
+    .table-ledger td {
+        vertical-align: middle;
+        padding: 18px 12px;
+        color: #000000 !important;
+        border-bottom: 2px solid #f1f5f9;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .type-badge {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+
+    .type-invoice {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+    }
+
+    .type-payment {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .text-debit {
+        color: #991b1b;
+        font-weight: 700;
+    }
+
+    .text-credit {
+        color: #166534;
+        font-weight: 700;
+    }
+
+    .text-balance {
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .table-ledger tbody tr:hover {
+        background-color: #f8fafc;
+        transition: background-color 0.2s ease;
+    }
+
+    tfoot th,
+    tfoot td {
+        background: #1e293b !important;
+        color: #ffffff !important;
+        font-weight: 800 !important;
+        padding: 20px 12px !important;
+        border: none !important;
+    }
+
+    .detailed-split {
+        font-size: 0.8rem;
+        color: #475569 !important;
+        font-weight: 600;
+        margin-top: 6px;
+        line-height: 1.4;
+        display: block;
+        padding: 8px;
+        background: #f8fafc;
+        border-radius: 4px;
+        border-left: 3px solid #cbd5e1;
+    }
+
+    .ledger-total-cell {
+        color: #ffffff !important;
+    }
+
+    /* Filter Styles */
+    .filter-bar {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .filter-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .filter-input {
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+        width: 100%;
+        font-weight: 600;
+    }
+
+    .filter-btn {
+        padding: 8px 20px;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+
+    .opening-balance-row {
+        background: #f1f5f9;
+        font-style: italic;
+    }
+
+    .print-header {
+        display: none;
+    }
+
+    @media print {
+        @page {
+            margin: 1cm;
+        }
+
+        body {
+            background: white !important;
+            color: black !important;
+            font-size: 10pt;
+        }
+
+        .ledger-container {
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .print-header {
+            display: flex !important;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 3px solid #000;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .print-header-left h1 {
+            margin: 0;
+            color: #000;
+            font-size: 24pt;
+            font-weight: 900;
+        }
+
+        .print-header-right {
+            text-align: right;
+        }
+
+        .balance-card,
+        .ledger-header {
+            border: 1px solid #000 !important;
+            background: white !important;
+            color: black !important;
+            box-shadow: none !important;
+        }
+
+        .balance-card h2,
+        .balance-card h6 {
+            color: black !important;
+            opacity: 1 !important;
+        }
+
+        .table-ledger thead th {
+            background: #eee !important;
+            color: black !important;
+            border: 1px solid #000 !important;
+        }
+
+        .table-ledger td {
+            color: black !important;
+            border: 1px solid #ddd !important;
+        }
+
+        .type-badge {
+            border: 1px solid #000 !important;
+            background: transparent !important;
+            color: black !important;
+        }
+
+        tfoot th,
+        tfoot td {
+            background: #eee !important;
+            color: black !important;
+            border-top: 2px solid #000 !important;
+            font-weight: bold !important;
+        }
+
+        .sidebar,
+        .btn,
+        .ledger-total-cell {
+            color: #000000 !important;
+            background: #eeeeee !important;
+        }
+
+        .sidebar,
+        .btn,
+        .navbar,
+        .page-title,
+        .mobile-nav-toggle,
+        #chatbot-widget {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_actions %}
+<button onclick="window.print()" class="btn btn-outline-secondary">
+    <i class="fas fa-print"></i> Print Statement
+</button>
+<a href="{{ url_for('customers') }}" class="btn btn-outline-primary ms-2">
+    <i class="fas fa-arrow-left"></i> Back to Customers
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="ledger-container">
+    <div class="print-header">
+        <div class="print-header-left">
+            {% if company.logo_path %}
+            <img src="{{ url_for('static', filename=company.logo_path.split('static/')[-1]) if 'static/' in company.logo_path else url_for('static', filename='uploads/md_logo.jpg') }}"
+                alt="Logo" style="max-height: 80px; margin-bottom: 10px;">
+            {% else %}
+            <img src="{{ url_for('static', filename='uploads/md_logo.jpg') }}" alt="Logo"
+                style="max-height: 80px; margin-bottom: 10px;">
+            {% endif %}
+            <h1>Statement of Account</h1>
+            <p class="text-muted">Generated on {{ now.strftime('%d %b %Y %H:%M') }}</p>
+        </div>
+        <div class="print-header-right">
+            <h3>{{ company_address.name if company_address else (company.name or 'MAHADEVI & CO') }}</h3>
+            <p>{{ company_address.address | safe if company_address else (company.address or '1/462-1, National Nagar,
+                Alangar Thetre Back side, Salem') }}</p>
+            <p>GSTIN: {{ company.gstin or '33AAMFM2845D1ZG' }}</p>
+            <p>{{ company_address.phone if company_address else ('Phone: ' ~ company.phone) }}</p>
+        </div>
+    </div>
+
+    <div class="row ledger-header align-items-center">
+        <div class="col-md-7">
+            <div class="customer-info">
+                <h3>{{ customer.name }}</h3>
+                <p><i class="fas fa-id-card me-2"></i>GSTIN: {{ customer.gstin or 'N/A' }}</p>
+                <p><i class="fas fa-map-marker-alt me-2"></i>{{ customer.city }}, {{ customer.state }}</p>
+                <p><i class="fas fa-phone me-2"></i>{{ customer.phone }}</p>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="balance-card">
+                <h6>Current Outstanding Balance</h6>
+                <h2>₹{{ "{:,.2f}".format(outstanding_balance) }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-bar d-print-none">
+        <form method="GET" action="{{ url_for('customer_ledger', customer_id=customer.id) }}"
+            class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label class="filter-label">Start Date</label>
+                <input type="date" name="start_date" class="form-control filter-input"
+                    value="{{ filters.start_date or '' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="filter-label">End Date</label>
+                <input type="date" name="end_date" class="form-control filter-input"
+                    value="{{ filters.end_date or '' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="filter-label">Type</label>
+                <select name="type" class="form-select filter-input">
+                    <option value="all" {% if filters.type=='all' %}selected{% endif %}>All Transactions</option>
+                    <option value="invoice" {% if filters.type=='invoice' %}selected{% endif %}>Invoices Only</option>
+                    <option value="payment" {% if filters.type=='payment' %}selected{% endif %}>Payments Only</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="filter-label">Search Keywords</label>
+                <input type="text" name="search" class="form-control filter-input"
+                    placeholder="Invoice #, mode, notes..." value="{{ filters.search or '' }}">
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary filter-btn flex-grow-1">
+                    <i class="fas fa-filter me-1"></i> Filter
+                </button>
+                <a href="{{ url_for('customer_ledger', customer_id=customer.id) }}"
+                    class="btn btn-outline-secondary filter-btn">
+                    <i class="fas fa-undo"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-ledger hover">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th class="text-end">Debit (Invoiced)</th>
+                    <th class="text-end">Credit (Received)</th>
+                    <th class="text-end">Balance</th>
+                    <th class="text-center d-print-none">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if opening_balance != 0 %}
+                <tr class="opening-balance-row">
+                    <td>{% if filters.start_date %}{{ filters.start_date }}{% else %}-{% endif %}</td>
+                    <td><span class="type-badge bg-secondary text-white">OPENING</span></td>
+                    <td><strong>Forward Balance</strong> (from previous transactions)</td>
+                    <td class="text-end">-</td>
+                    <td class="text-end">-</td>
+                    <td class="text-end">₹{{ "{:,.2f}".format(opening_balance) }}</td>
+                    <td class="d-print-none text-center">-</td>
+                </tr>
+                {% endif %}
+                {% for entry in ledger_entries %}
+                <tr>
+                    <td>{{ entry.date.strftime('%d %b %Y') }}</td>
+                    <td>
+                        <span class="type-badge type-{{ entry.type }}">
+                            {{ entry.type.upper() }}
+                        </span>
+                    </td>
+                    <td>
+                        {{ entry.description }}
+                        {% if entry.type == 'payment' %}
+                        <span class="detailed-split">
+                            Against Invoice: {{ entry.invoice_no }}<br>
+                            Received: ₹{{ entry.obj.amount_received }} |
+                            {% if entry.obj.tds_amount > 0 %}TDS: ₹{{ entry.obj.tds_amount }} | {% endif %}
+                            {% if entry.obj.retention_amount > 0 %}Retention: ₹{{ entry.obj.retention_amount }} | {%
+                            endif %}
+                            {% if entry.obj.hold_amount > 0 %}Hold: ₹{{ entry.obj.hold_amount }} | {% endif %}
+                            {% if entry.obj.adjustment_amount > 0 %}Adj: ₹{{ entry.obj.adjustment_amount }} | {% endif
+                            %}
+                            {% if entry.obj.other_deductions > 0 %}Misc: ₹{{ entry.obj.other_deductions }}{% endif %}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end text-debit">
+                        {% if entry.debit > 0 %}₹{{ "{:,.2f}".format(entry.debit) }}{% else %}-{% endif %}
+                    </td>
+                    <td class="text-end text-credit">
+                        {% if entry.credit > 0 %}₹{{ "{:,.2f}".format(entry.credit) }}{% else %}-{% endif %}
+                    </td>
+                    <td class="text-end text-balance">
+                        ₹{{ "{:,.2f}".format(entry.balance) }}
+                    </td>
+                    <td class="d-print-none text-center">
+                        {% if entry.type == 'invoice' %}
+                        <a href="{{ url_for('invoice_history_print', invoice_id=entry.id) }}" target="_blank"
+                            class="btn btn-sm btn-outline-primary" title="Print Invoice History">
+                            <i class="fas fa-print"></i> History
+                        </a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">TOTALS</th>
+                    <th class="text-end text-debit ledger-total-cell">₹{{ "{:,.2f}".format(total_invoiced) }}</th>
+                    <th class="text-end text-credit ledger-total-cell">₹{{ "{:,.2f}".format(total_paid) }}</th>
+                    <th class="text-end text-balance ledger-total-cell">₹{{ "{:,.2f}".format(outstanding_balance) }}
+                    </th>
+                    <th class="d-print-none ledger-total-cell"></th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endblock %}

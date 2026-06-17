@@ -1,0 +1,409 @@
+<!-- Excel Mode Modal -->
+<div class="modal fade" id="excelModeModal" tabindex="-1" aria-labelledby="excelModeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content border-0" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+            <div class="modal-header border-0 bg-primary text-white p-4">
+                <div class="d-flex align-items-center">
+                    <div class="bg-white text-primary rounded-circle p-2 me-3" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-file-excel fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="excelModeModalLabel">Excel Quick Entry Mode</h5>
+                        <p class="mb-0 opacity-75 small">Paste, import, or type items directly. Use <strong>Ctrl+V</strong> to paste from desktop Excel.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 overflow-hidden d-flex flex-column">
+                <!-- Toolbar -->
+                <div class="p-3 bg-light border-bottom">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex gap-2 flex-wrap align-items-center">
+                            <div class="btn-group">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="safeSpreadsheetAction('insertRow')">
+                                    <i class="fas fa-plus me-1"></i> Add Row
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="safeSpreadsheetAction('deleteRow')">
+                                    <i class="fas fa-minus me-1"></i> Remove Row
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="safeSpreadsheetAction('undo')">
+                                    <i class="fas fa-undo me-1"></i> Undo
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="safeSpreadsheetAction('redo')">
+                                    <i class="fas fa-redo me-1"></i> Redo
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="clearSpreadsheet()">
+                                    <i class="fas fa-trash me-1"></i> Clear All
+                                </button>
+                            </div>
+                            <div class="vr"></div>
+                            <div class="btn-group">
+                                <button class="btn btn-success btn-sm" onclick="document.getElementById('excelFileInput').click()">
+                                    <i class="fas fa-file-import me-1"></i> Import Excel
+                                </button>
+                                <button class="btn btn-info btn-sm text-white" onclick="exportToExcel()">
+                                    <i class="fas fa-file-export me-1"></i> Export to Excel
+                                </button>
+                                <button class="btn btn-warning btn-sm" onclick="downloadTemplate()">
+                                    <i class="fas fa-download me-1"></i> Download Template
+                                </button>
+                            </div>
+                            <input type="file" id="excelFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(event)">
+                        </div>
+                        <div class="text-muted small">
+                            <i class="fas fa-info-circle me-1"></i> <strong>Ctrl+V</strong> to paste &nbsp;|&nbsp; <strong>Ctrl+Z</strong> to undo
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Spreadsheet Container -->
+                <div id="spreadsheet" class="flex-grow-1 overflow-auto bg-white" style="min-height: 400px;"></div>
+            </div>
+            <div class="modal-footer border-0 bg-light p-4 d-flex justify-content-between align-items-center">
+                <div class="text-muted small">
+                    <i class="fas fa-lightbulb text-warning me-1"></i>
+                    Rows with an empty <strong>Description</strong> are ignored on sync.
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-lg px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-lg px-5 shadow" id="saveBulkItemsBtn">
+                        <i class="fas fa-cloud-upload-alt me-2"></i> Sync to Document
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Jspreadsheet Custom Styling to match project */
+    .jexcel_content {
+        padding: 0 !important;
+    }
+    .jexcel {
+        border: none !important;
+        width: 100% !important;
+    }
+    .jexcel > thead > tr > td {
+        background-color: #f8f9fa !important;
+        color: #495057 !important;
+        font-weight: 600 !important;
+        padding: 12px !important;
+        border: 1px solid #dee2e6 !important;
+    }
+    .jexcel > tbody > tr > td {
+        padding: 10px !important;
+        font-size: 15px !important;
+        border: 1px solid #eee !important;
+    }
+    .jexcel_select {
+        padding: 8px !important;
+    }
+</style>
+
+<script>
+    let spreadsheetInstance = null;
+
+    // ── Clear all rows ────────────────────────────────────────────────────────
+    function clearSpreadsheet() {
+        if (!spreadsheetInstance) return;
+        const emptyData = Array(10).fill(null).map(() => ['', '', '', '', '', '', '']);
+        spreadsheetInstance.setData(emptyData);
+    }
+
+    // ── Import from Excel / CSV ───────────────────────────────────────────────
+    function importExcel(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+                // ── Auto-detect header row ──────────────────────────────────
+                // Scan first 10 rows for the column header "Description" or "Description *"
+                let dataStartIdx = 1; // default: skip row 0
+                for (let i = 0; i < Math.min(rows.length, 10); i++) {
+                    const firstCell = String(rows[i][0] || '').toLowerCase().trim();
+                    if (firstCell === 'description' || firstCell === 'description *') {
+                        dataStartIdx = i + 1; // data starts immediately after the header row
+                        break;
+                    }
+                }
+
+                // ── Filter: only real data rows ─────────────────────────────
+                // Skip: empty rows, NOTE: rows, IMPORT TIPS rows
+                const SKIP_PREFIXES = ['note:', 'import tips', 'fill in', 'column order'];
+                const dataRows = rows.slice(dataStartIdx).filter(r => {
+                    const desc = String(r[0] || '').trim();
+                    if (!desc) return false;
+                    const lower = desc.toLowerCase();
+                    return !SKIP_PREFIXES.some(p => lower.startsWith(p));
+                });
+
+                if (dataRows.length === 0) {
+                    alert('No data rows found. Make sure your file has a "Description" header row and data below it.');
+                    return;
+                }
+
+                const mapped = dataRows.map(r => [
+                    String(r[0] || ''),
+                    String(r[1] || '85044090'),
+                    parseFloat(r[2]) || 0,
+                    parseFloat(r[3]) || 0,
+                    parseFloat(r[4]) || 0,
+                    String(r[5] || 'amount'),
+                    parseFloat(r[6]) || 18
+                ]);
+
+                while (mapped.length < 10) mapped.push(['', '', '', '', '', '', '']);
+                spreadsheetInstance.setData(mapped);
+                console.log(`Imported ${dataRows.length} row(s) from "${file.name}" (data started at row ${dataStartIdx + 1})`);
+            } catch(err) {
+                console.error('Import error:', err);
+                alert('Failed to read file: ' + err.message);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+        event.target.value = ''; // reset so same file can be re-imported
+    }
+
+    // ── Export current grid to Excel ──────────────────────────────────────────
+    function exportToExcel() {
+        if (!spreadsheetInstance) { alert('Spreadsheet not ready.'); return; }
+        const headers = ['Description', 'HSN Code', 'Qty', 'Rate (INR)', 'Disc. Value', 'Disc. Type', 'Tax Rate (%)'];
+        const rows = [headers, ...spreadsheetInstance.getData()];
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws['!cols'] = [{ wch: 40 }, { wch: 14 }, { wch: 8 }, { wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 14 }];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Items');
+        const docTitle = document.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        XLSX.writeFile(wb, `items_${docTitle}_export.xlsx`);
+    }
+
+    // ── Download blank template (pre-built server file) ───────────────────────
+    function downloadTemplate() {
+        // Detect doc type from URL and set a meaningful filename
+        const path = window.location.pathname;
+        let filename = 'Invoice_Items_Template.xlsx';
+        if (path.includes('/purchase-orders/'))    filename = 'Purchase_Order_Items_Template.xlsx';
+        else if (path.includes('/delivery-challans/')) filename = 'Delivery_Challan_Items_Template.xlsx';
+        else if (path.includes('/offers/'))        filename = 'Offer_Items_Template.xlsx';
+
+        const a = document.createElement('a');
+        a.href = '/static/vendor/MD_Invoice_Items_Template.xlsx';
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+
+    function safeSpreadsheetAction(action) {
+        if (spreadsheetInstance && typeof spreadsheetInstance[action] === 'function') {
+            spreadsheetInstance[action]();
+        } else {
+            console.warn(`Spreadsheet action "${action}" not available or instance not initialized.`);
+        }
+    }
+
+    function initSpreadsheet() {
+        console.log("Initializing spreadsheet...");
+        if (spreadsheetInstance) {
+            spreadsheetInstance.destroy();
+            spreadsheetInstance = null;
+        }
+
+        const container = document.getElementById('spreadsheet');
+        if (!container) {
+            console.error("Spreadsheet container not found!");
+            return;
+        }
+        container.innerHTML = '';
+
+        // Jspreadsheet CE can be registered under different global names depending on version
+        const jexcelFn = window.jspreadsheet || window.jexcel;
+        
+        if (typeof jexcelFn !== 'function') {
+            console.error("Jspreadsheet/Jexcel library not loaded! Check CDN links.");
+            container.innerHTML = '<div class="alert alert-danger m-3">Excel library failed to load. Please refresh the page or check your connection.</div>';
+            return;
+        }
+
+        // Check for Jsuites (dependency for context menu and other features)
+        if (!window.jSuites) {
+            console.warn("jSuites not found. Context menu may be disabled.");
+        }
+
+        try {
+            spreadsheetInstance = jexcelFn(container, {
+                data: [
+                    ['yaskawa', '85044090', '1', '0', '0', 'percentage', '18'],
+                    ['', '', '', '', '', '', ''],
+                    ['', '', '', '', '', '', ''],
+                    ['', '', '', '', '', '', ''],
+                    ['', '', '', '', '', '', ''],
+                ],
+                columns: [
+                    { type: 'text', title: 'Description*', width: 450 },
+                    { type: 'text', title: 'HSN Code', width: 120 },
+                    { type: 'numeric', title: 'Qty*', width: 100, mask: '#,##.00' },
+                    { type: 'numeric', title: 'Rate (₹)*', width: 150, mask: '₹ #,##.00' },
+                    { type: 'numeric', title: 'Disc. Value', width: 120, mask: '#,##.00' },
+                    { 
+                        type: 'dropdown', 
+                        title: 'Disc. Type', 
+                        width: 120, 
+                        source: [
+                            { id: 'amount', name: 'Amount (₹)' },
+                            { id: 'percentage', name: 'Percentage (%)' }
+                        ]
+                    },
+                    { 
+                        type: 'dropdown', 
+                        title: 'Tax Rate (%)', 
+                        width: 120, 
+                        source: ['0', '5', '12', '18', '28']
+                    },
+                ],
+                minDimensions: [7, 10],
+                allowInsertRow: true,
+                allowDeleteRow: true,
+                columnSorting: false,
+                contextMenu: window.jSuites ? true : false,
+                onpaste: function(instance, data) {
+                    console.log('Data pasted into spreadsheet');
+                }
+            });
+            console.log("Spreadsheet initialized successfully.");
+        } catch (err) {
+            console.error("Error initializing Jspreadsheet:", err);
+            container.innerHTML = `<div class="alert alert-danger m-3">Error initializing Excel mode: ${err.message}</div>`;
+        }
+    }
+
+    // Modal show event - using both events to be sure
+    const excelModalEl = document.getElementById('excelModeModal');
+    if (excelModalEl) {
+        excelModalEl.addEventListener('shown.bs.modal', function () {
+            // Short delay to ensure DOM is ready and visible
+            setTimeout(initSpreadsheet, 100);
+        });
+    }
+
+    document.getElementById('saveBulkItemsBtn').addEventListener('click', function() {
+        if (!spreadsheetInstance) {
+            alert('Spreadsheet not initialized. Please try opening the modal again.');
+            return;
+        }
+
+        // Helper: strip currency symbols, commas, spaces → parse as float
+        function cleanNumber(val) {
+            if (val === null || val === undefined || val === '') return 0;
+            // Remove ₹, commas, spaces, and any other non-numeric chars except . and -
+            const cleaned = String(val).replace(/[^0-9.\-]/g, '');
+            return parseFloat(cleaned) || 0;
+        }
+
+        const data = spreadsheetInstance.getData();
+        const items = [];
+
+        data.forEach((row, idx) => {
+            const description = (row[0] || '').toString().trim();
+            if (!description) return; // skip empty rows
+
+            const qty  = cleanNumber(row[2]);
+            const rate = cleanNumber(row[3]);
+            const disc = cleanNumber(row[4]);
+            const discType = (row[5] || 'amount').toString().trim();
+            const taxRate  = cleanNumber(row[6]) || 18;
+
+            console.log(`Row ${idx}: desc=${description}, qty=${qty}, rate=${rate}, disc=${disc}, discType=${discType}, tax=${taxRate}`);
+
+            items.push({
+                description: description,
+                hsn_code: (row[1] || '85044090').toString().trim(),
+                quantity: qty,
+                unit_price: rate,
+                discount_value: disc,
+                discount_type: discType,
+                tax_rate: taxRate
+            });
+        });
+
+        if (items.length === 0) {
+            if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                window.InvoiceApp.showToast('Please enter at least one item with a description', 'warning');
+            } else {
+                alert('Please enter at least one item with a description');
+            }
+            return;
+        }
+
+        // Show loading state
+        const btn = this;
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Syncing...';
+
+        // Detect document type from URL
+        let docType = '';
+        let docId = '';
+
+        const path = window.location.pathname;
+        if (path.includes('/invoices/')) docType = 'invoices';
+        else if (path.includes('/purchase-orders/')) docType = 'purchase_orders';
+        else if (path.includes('/delivery-challans/')) docType = 'delivery_challans';
+        else if (path.includes('/offers/')) docType = 'offers';
+
+        // Extract ID from URL /edit or /<id>
+        const matches = path.match(/\/(\d+)(\/edit)?/);
+        if (matches) docId = matches[1];
+
+        if (!docType || !docId) {
+            alert('Could not determine document type or ID. Please save the document header first.');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            return;
+        }
+
+        fetch(`/api/${docType}/${docId}/items/bulk`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ items: items })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                const modalInstance = bootstrap.Modal.getInstance(excelModalEl);
+                if (modalInstance) modalInstance.hide();
+                
+                if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                    window.InvoiceApp.showToast(`Successfully added ${result.count} items!`, 'success');
+                }
+                
+                setTimeout(() => window.location.reload(), 500);
+            } else {
+                throw new Error(result.error || 'Failed to sync items');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                window.InvoiceApp.showToast(error.message, 'danger');
+            } else {
+                alert(error.message);
+            }
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        });
+    });
+</script>

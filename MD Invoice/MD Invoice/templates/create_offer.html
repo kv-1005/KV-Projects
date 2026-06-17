@@ -1,0 +1,679 @@
+{% extends "base.html" %}
+
+{% block title %}Create Offer - offer Generator{% endblock %}
+{% block page_title %}Create Offer{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('offers') }}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> Back to Offers
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-invoice"></i> Create New Offer
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="customer_id" class="form-label">Customer *</label>
+                            {{ form.customer_id(class="form-select") }}
+                            {% if form.customer_id.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.customer_id.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <a href="{{ url_for('add_customer') }}" target="_blank">Add new customer</a>
+                            </div>
+                            <!-- Customer Location Display -->
+                            <div id="customer-location" class="mt-2" style="display: none;">
+                                <div class="alert alert-info">
+                                    <small>
+                                        <strong>Selected Customer Location:</strong><br>
+                                        <span id="customer-address"></span><br>
+                                        <span id="customer-city-state"></span><br>
+                                        <span id="customer-pincode"></span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="offer_date" class="form-label">Offer Date *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                {{ form.offer_date(class="form-control date-picker", type="date") }}
+                            </div>
+                            {% if form.offer_date.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.offer_date.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="offer_number" class="form-label">Offer No. *</label>
+                            {{ form.offer_number(class="form-control", placeholder="e.g., QT" ~ business_year ~ "-001") }}
+                            <small class="text-muted">Suggested: <span id="suggested-number">{{ next_offer_number }}</span> (you can edit this)</small>
+                            {% if form.offer_number.errors %}
+                            <div class="text-danger">
+                                {% for error in form.offer_number.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="valid_until" class="form-label">Valid Until</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
+                                {{ form.valid_until(class="form-control date-picker", type="date") }}
+                            </div>
+                            <div class="form-text">Leave empty to set 30 days from Offer Date</div>
+                            {% if form.valid_until.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.valid_until.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="shipping_charges" class="form-label">Shipping Charges</label>
+                            {{ form.shipping_charges(class="form-control", step="0.01", placeholder="0.00") }}
+                            {% if form.shipping_charges.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.shipping_charges.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="reference_no" class="form-label">Reference No.</label>
+                            {{ form.reference_no(class="form-control", placeholder="-" ) }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="subject" class="form-label">Subject</label>
+                            {{ form.subject(class="form-control", placeholder="e.g. Quotation for web development
+                            services" ) }}
+                            {% if form.subject.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.subject.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="extra_billing_info" class="form-label">Shipping Address Information</label>
+                            {{ form.extra_billing_info(class="form-control", rows="3", placeholder="Shipping address
+                            details (e.g., Floor, Building, Landmark, Special Instructions)") }}
+                            <div class="form-text">
+                                <strong>Tip:</strong> This field will auto-populate with customer address when you
+                                select a customer. You can then edit it to add shipping-specific details.
+                            </div>
+                            {% if form.extra_billing_info.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.extra_billing_info.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="terms_text" class="form-label">
+                            <i class="fas fa-file-contract"></i> Terms & Conditions (Default Text Provided)
+                        </label>
+                        {{ form.terms_text(class="form-control", rows="3") }}
+                        <div class="form-text">
+                            <strong>Default text is pre-filled below:</strong> You can add extra terms or modify this
+                            text as needed for this offer.
+                        </div>
+                        {% if form.terms_text.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.terms_text.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="payment_text" class="form-label">
+                            <i class="fas fa-credit-card"></i> Payment / Warranty / Only For (Default Text Provided)
+                        </label>
+                        {{ form.payment_text(class="form-control", rows="2") }}
+                        <div class="form-text">
+                            <strong>Default text is pre-filled below:</strong> You can add extra payment terms or modify
+                            this text as needed for this offer.
+                        </div>
+                        {% if form.payment_text.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.payment_text.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Address Selection Section -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-map-marker-alt"></i> Company Address Selection</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="main_address" class="form-label">Main Address (Header) *</label>
+                                    {{ form.main_address(class="form-select") }}
+                                    <div class="form-text">This address will appear in the offer header</div>
+                                    {% if form.main_address.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.main_address.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="branch_address" class="form-label">Branch Address (Footer) *</label>
+                                    {{ form.branch_address(class="form-select") }}
+                                    <div class="form-text">This address will appear in the footer section</div>
+                                    {% if form.branch_address.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.branch_address.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="alert alert-info">
+                                <small>
+                                    <strong>Salem Office:</strong> I/462-1, National Nagar, Alangar Theatre Back side,
+                                    Omalur (T.K), Salem (D.T) 636 455<br>
+                                    <strong>Chennai Branch:</strong> #16, 2nd floor, A-Pravesh "A", 19th street, Annai
+                                    Therasa Nagar, Puzhuthivakkam, Chennai-600091
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="selected_signature" class="form-label">
+                                <i class="fas fa-signature"></i> offer Signature (Optional)
+                            </label>
+                            {{ form.selected_signature(class="form-select") }}
+                            <div class="form-text">
+                                Choose which signature to use on this offer. If none selected, no signature will appear.
+                                <a href="{{ url_for('upload_signature') }}" target="_blank">Manage signatures</a>
+                            </div>
+                            {% if form.selected_signature.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.selected_signature.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Digital Signature Option -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="form-check form-switch border p-3 rounded bg-light">
+                                {{ form.require_digital_signature(class="form-check-input ms-0",
+                                id="require_digital_signature") }}
+                                <label class="form-check-label fw-bold ms-2" for="require_digital_signature">
+                                    <i class="fas fa-certificate text-primary me-1"></i> Require Cryptographic Digital
+                                    Signature
+                                </label>
+                                <div class="form-text ms-2">
+                                    If enabled, this document will be cryptographically signed using a .pfx certificate.
+                                    Adobe Acrobat will show "Signed and all signatures are valid".
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('offers') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+
+                    <script>
+                        // Prevent selecting same address for main and branch
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const mainAddress = document.getElementById('main_address');
+                            const branchAddress = document.getElementById('branch_address');
+
+                            function updateBranchOptions() {
+                                const mainValue = mainAddress.value;
+                                const branchValue = branchAddress.value;
+
+                                // If main and branch are the same, change branch to the other option
+                                if (mainValue === branchValue) {
+                                    branchAddress.value = mainValue === 'salem' ? 'chennai' : 'salem';
+                                }
+                            }
+
+                            function updateMainOptions() {
+                                const mainValue = mainAddress.value;
+                                const branchValue = branchAddress.value;
+
+                                // If main and branch are the same, change main to the other option
+                                if (mainValue === branchValue) {
+                                    mainAddress.value = branchValue === 'salem' ? 'chennai' : 'salem';
+                                }
+                            }
+
+                            mainAddress.addEventListener('change', updateBranchOptions);
+                            branchAddress.addEventListener('change', updateMainOptions);
+                        });
+                    </script>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle"></i> offer Creation Process
+                </h6>
+            </div>
+            <div class="card-body">
+                <ol class="mb-0">
+                    <li><strong>Basic Details:</strong> Select customer and set Offer Date</li>
+                    <li><strong>Add Items:</strong> After creating, you'll add products/services</li>
+                    <li><strong>GST Calculation:</strong> Automatically calculated based on customer state</li>
+                    <li><strong>Generate PDF:</strong> Download or print the final invoice</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Enhanced Date Picker Styling */
+    .date-picker {
+        border: 2px solid #e9ecef;
+        border-radius: 0.375rem;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .date-picker:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    .input-group.focused .input-group-text {
+        background-color: #0d6efd;
+        color: white;
+        border-color: #0d6efd;
+    }
+
+    .input-group-text {
+        background-color: #f8f9fa;
+        border: 2px solid #e9ecef;
+        transition: all 0.15s ease-in-out;
+    }
+
+    /* Custom date picker styling for better appearance */
+    .date-picker::-webkit-calendar-picker-indicator {
+        background: transparent;
+        bottom: 0;
+        color: transparent;
+        cursor: pointer;
+        height: auto;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: auto;
+        opacity: 0;
+    }
+
+    .date-picker::-webkit-calendar-picker-indicator:hover {
+        background: transparent;
+    }
+
+    /* Firefox date picker styling */
+    .date-picker::-moz-calendar-picker-indicator {
+        background: transparent;
+        color: transparent;
+        cursor: pointer;
+        height: auto;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: auto;
+        opacity: 0;
+    }
+
+    /* Enhanced input group styling */
+    .input-group {
+        position: relative;
+    }
+
+    .input-group-text {
+        border-right: none;
+    }
+
+    .input-group .form-control {
+        border-left: none;
+    }
+
+    .input-group .form-control:focus {
+        border-left: none;
+        box-shadow: none;
+    }
+
+    /* Hover effects */
+    .input-group:hover .input-group-text {
+        background-color: #e9ecef;
+    }
+
+    .input-group:hover .date-picker {
+        border-color: #ced4da;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set default dates and add validation
+    document.addEventListener('DOMContentLoaded', function () {
+        // Customer selection handler
+        const customerSelect = document.getElementById('customer_id');
+        const customerLocationDiv = document.getElementById('customer-location');
+        const customerAddress = document.getElementById('customer-address');
+        const customerCityState = document.getElementById('customer-city-state');
+        const customerPincode = document.getElementById('customer-pincode');
+
+        customerSelect.addEventListener('change', function () {
+            const customerId = this.value;
+
+            if (customerId) {
+                // Fetch customer details
+                fetch(`/api/customers/${customerId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        customerAddress.textContent = data.address;
+                        customerCityState.textContent = `${data.city}, ${data.state}`;
+                        customerPincode.textContent = `Pincode: ${data.pincode}`;
+                        customerLocationDiv.style.display = 'block';
+
+                        // Auto-populate shipping address info field with customer address
+                        const extraBillingField = document.getElementById('extra_billing_info');
+                        if (extraBillingField && !extraBillingField.value.trim()) {
+                            // Create a formatted address string
+                            let formattedAddress = data.address;
+                            if (data.city) {
+                                formattedAddress += `, ${data.city}`;
+                            }
+                            if (data.state) {
+                                formattedAddress += `, ${data.state}`;
+                            }
+                            if (data.pincode) {
+                                formattedAddress += ` - ${data.pincode}`;
+                            }
+
+                            extraBillingField.value = formattedAddress;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching customer details:', error);
+                        customerLocationDiv.style.display = 'none';
+                    });
+            } else {
+                customerLocationDiv.style.display = 'none';
+
+                // Clear shipping address info field when no customer is selected
+                const extraBillingField = document.getElementById('extra_billing_info');
+                if (extraBillingField) {
+                    extraBillingField.value = '';
+                }
+            }
+        });
+
+        // Show customer location if a customer is already selected (for form validation errors)
+        if (customerSelect.value) {
+            customerSelect.dispatchEvent(new Event('change'));
+        }
+
+        // Date picker functionality
+        const today = new Date().toISOString().split('T')[0];
+        const invoiceDateField = document.getElementById('offer_date');
+        const dueDateField = document.getElementById('valid_until');
+
+        // Set default Offer Date to today if not set
+        if (!invoiceDateField.value) {
+            invoiceDateField.value = today;
+        }
+
+        // Auto-calculate Valid Until when Offer Date changes
+        function updateDueDate() {
+            const invoiceDate = new Date(invoiceDateField.value);
+            if (invoiceDate && !isNaN(invoiceDate.getTime())) {
+                const dueDate = new Date(invoiceDate);
+                dueDate.setDate(dueDate.getDate() + 30);
+
+                // Only auto-set Valid Until if it's currently empty or matches the old auto-calculated value
+                if (!dueDateField.value || dueDateField.value === calculateAutoDueDate(invoiceDateField.value)) {
+                    dueDateField.value = dueDate.toISOString().split('T')[0];
+                }
+            }
+        }
+
+        // Helper function to calculate what the auto Valid Until should be
+        function calculateAutoDueDate(invoiceDateValue) {
+            const invoiceDate = new Date(invoiceDateValue);
+            if (invoiceDate && !isNaN(invoiceDate.getTime())) {
+                const dueDate = new Date(invoiceDate);
+                dueDate.setDate(dueDate.getDate() + 30);
+                return dueDate.toISOString().split('T')[0];
+            }
+            return '';
+        }
+
+        // Set initial Valid Until if not set
+        if (!dueDateField.value && invoiceDateField.value) {
+            updateDueDate();
+        }
+
+        // Listen for Offer Date changes
+        invoiceDateField.addEventListener('change', function() {
+            updateDueDate();
+            
+            // Also update the suggested offer number based on the new date
+            const newDate = this.value;
+            if (newDate) {
+                fetch(`/api/next_document_number?type=offer&date=${newDate}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const suggestedSpan = document.getElementById('suggested-number');
+                            if (suggestedSpan) {
+                                suggestedSpan.textContent = data.next_number;
+                            }
+                            
+                            // If the offer number field is empty or still has the OLD suggested number, update it
+                            const invoiceNumberField = document.getElementById('offer_number');
+                            if (invoiceNumberField && (!invoiceNumberField.value || invoiceNumberField.dataset.isAuto === 'true' || invoiceNumberField.value === '')) {
+                                invoiceNumberField.value = data.next_number;
+                                invoiceNumberField.dataset.isAuto = 'true';
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error fetching next offer number:', error));
+            }
+        });
+
+        // Mark offer number as NOT auto if user edits it manually
+        const invoiceNumberField = document.getElementById('offer_number');
+        if (invoiceNumberField) {
+            invoiceNumberField.dataset.isAuto = 'true';
+            invoiceNumberField.addEventListener('input', function() {
+                this.dataset.isAuto = 'false';
+            });
+        }
+
+        // Add form validation
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const customerId = document.getElementById('customer_id');
+                const invoiceDate = document.getElementById('offer_date');
+                const invoiceNumber = document.getElementById('offer_number');
+
+                // Validate required fields
+                if (!customerId.value) {
+                    e.preventDefault();
+                    alert('Please select a customer.');
+                    customerId.focus();
+                    return false;
+                }
+
+                if (!invoiceNumber.value.trim()) {
+                    e.preventDefault();
+                    alert('Please enter an offer number.');
+                    invoiceNumber.focus();
+                    return false;
+                }
+
+                if (!invoiceDate.value) {
+                    e.preventDefault();
+                    alert('Please select Offer Date.');
+                    invoiceDate.focus();
+                    return false;
+                }
+
+
+                // Validate date is not more than 7 days in the future (allows for some flexibility)
+                const dateParts = invoiceDate.value.split('-');
+                const invoiceDateObj = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                const today = new Date();
+                const maxFutureDate = new Date(today);
+                maxFutureDate.setDate(today.getDate() + 7); // Allow up to 7 days in future
+
+                if (invoiceDateObj > maxFutureDate) {
+                    e.preventDefault();
+                    alert('Offer Date cannot be more than 7 days in the future.');
+                    invoiceDate.focus();
+                    return false;
+                }
+
+                // Validate Valid Until is not before Offer Date
+                if (dueDateField.value && invoiceDate.value && dueDateField.value < invoiceDate.value) {
+                    e.preventDefault();
+                    alert('Valid Until cannot be before Offer Date.');
+                    dueDateField.focus();
+                    return false;
+                }
+            });
+        }
+
+        // Add helpful functionality for Terms & Payment text fields
+        document.addEventListener('DOMContentLoaded', function () {
+            const termsField = document.getElementById('terms_text');
+            const paymentField = document.getElementById('payment_text');
+
+            if (termsField) {
+                // Add double-click to select all functionality
+                termsField.addEventListener('dblclick', function () {
+                    this.select();
+                });
+
+                // Add character count helper
+                const termsHelper = document.createElement('small');
+                termsHelper.className = 'text-muted mt-1';
+                termsField.parentNode.appendChild(termsHelper);
+
+                function updateTermsCount() {
+                    const count = termsField.value.length;
+                    termsHelper.textContent = `${count} characters`;
+                    if (count > 300) {
+                        termsHelper.className = 'text-warning mt-1';
+                    } else {
+                        termsHelper.className = 'text-muted mt-1';
+                    }
+                }
+
+                termsField.addEventListener('input', updateTermsCount);
+                updateTermsCount(); // Initial count
+            }
+
+            if (paymentField) {
+                // Add double-click to select all functionality
+                paymentField.addEventListener('dblclick', function () {
+                    this.select();
+                });
+
+                // Add character count helper
+                const paymentHelper = document.createElement('small');
+                paymentHelper.className = 'text-muted mt-1';
+                paymentField.parentNode.appendChild(paymentHelper);
+
+                function updatePaymentCount() {
+                    const count = paymentField.value.length;
+                    paymentHelper.textContent = `${count} characters`;
+                    if (count > 200) {
+                        paymentHelper.className = 'text-warning mt-1';
+                    } else {
+                        paymentHelper.className = 'text-muted mt-1';
+                    }
+                }
+
+                paymentField.addEventListener('input', updatePaymentCount);
+                updatePaymentCount(); // Initial count
+            }
+        });
+
+        // Add custom styling for date pickers
+        const datePickers = document.querySelectorAll('.date-picker');
+        datePickers.forEach(function (picker) {
+            // Add focus effect
+            picker.addEventListener('focus', function () {
+                this.parentElement.classList.add('focused');
+            });
+
+            picker.addEventListener('blur', function () {
+                this.parentElement.classList.remove('focused');
+            });
+        });
+    });
+</script>
+{% endblock %}

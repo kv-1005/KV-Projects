@@ -1,0 +1,3915 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="format-detection" content="telephone=no">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Print Invoice {{ invoice.invoice_number }}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 1cm;
+    }
+
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #000;
+      font-size: 12px;
+    }
+
+    /* Optimize page width for maximum content */
+    .page {
+      width: 194mm;
+      min-height: 285mm;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+
+    /* Three copies layout */
+    .invoice-copy {
+      margin-bottom: 14mm;
+      page-break-inside: avoid;
+      border-bottom: 2px dashed #ccc;
+      padding-bottom: 6mm;
+    }
+
+    .invoice-copy:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .row {
+      display: flex;
+    }
+
+    .between {
+      justify-content: space-between;
+    }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title {
+      text-align: center;
+      font-weight: 700;
+      color: #d32f2f;
+      font-size: 28px;
+      margin: 2px 0 4px;
+    }
+
+    .company-name {
+      color: #d32f2f;
+      font-weight: 700;
+      font-size: 18px;
+      white-space: nowrap;
+    }
+
+    .muted {
+      color: #666;
+    }
+
+    .header {
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .logo {
+      width: 30mm;
+      height: 30mm;
+      object-fit: contain;
+    }
+
+    .logo-col {
+      align-items: center;
+      width: 38mm;
+      text-align: center;
+    }
+
+    .tagline {
+      margin-top: 1px;
+      text-align: center;
+      white-space: normal;
+      font-size: 11px;
+      line-height: 1.2;
+      word-wrap: break-word;
+    }
+
+    .address {
+      line-height: 1.5;
+      margin-top: 2px;
+      font-size: 11px;
+    }
+
+    .box {
+      border: 1px solid #000;
+      border-collapse: collapse;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto;
+    }
+
+    th,
+    td {
+      border: 1px solid #000;
+      padding: 4px 10px;
+      font-size: 12px;
+      vertical-align: middle;
+      line-height: 1.3;
+      box-sizing: border-box;
+    }
+
+    th {
+      background: #f2f2f2;
+      text-align: left;
+      font-weight: 700;
+    }
+
+    .items th {
+      background: #fff3bf;
+      text-align: center;
+      font-size: 9px;
+    }
+
+    .items td {
+      background: #ffffff;
+      font-size: 9px;
+    }
+
+    /* Prevent header overlapping */
+    .items th {
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    /* Compact spacing for A4 fit */
+    .items td,
+    .items th {
+      padding: 1px 2px;
+    }
+
+    /* Allow text wrapping in item column (now 2nd col with S.No added) */
+    .items td:nth-child(2) {
+      word-wrap: break-word;
+      word-break: break-word;
+      white-space: normal;
+    }
+
+    /* Allow line breaks in tax columns (shifted by one due to S.No) */
+    .items td:nth-child(8),
+    .items td:nth-child(9) {
+      white-space: normal;
+    }
+
+    /* Ensure all table cells can wrap text when needed */
+    .items td {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    /* Prevent truncation in numeric columns: show full values without ellipsis */
+    .items td.num {
+      white-space: nowrap;
+      overflow: visible;
+      text-overflow: clip;
+    }
+
+    /* --- General Table & Cell Styling --- */
+    .items {
+      table-layout: fixed;
+      /* Essential for predictable column widths */
+      width: 100%;
+      /* Uses 100% of its parent's width (e.g., 17cm) */
+      border-collapse: collapse;
+      /* Ensure borders collapse properly */
+      font-size: 12px;
+    }
+
+    /* Base styles for all table cells for consistent behavior */
+    .items th,
+    .items td {
+      padding: 4px 6px;
+      /* Slightly increased padding for better spacing */
+      vertical-align: top;
+      /* Align content to the top of the cell */
+      border: 1px solid #000;
+      /* Solid black borders */
+      /* Ensure content wraps naturally by default, prioritizing word breaks */
+      word-break: normal;
+      overflow-wrap: break-word;
+      /* Allows long words to break if necessary to prevent overflow */
+      hyphens: auto;
+      /* Allow hyphenation for better text flow in narrow columns */
+    }
+
+    /* Header styling */
+    .items th {
+      background: #fff7d6;
+      color: #000;
+      font-weight: bold;
+      vertical-align: middle;
+    }
+
+    /* Text alignment classes */
+    .left {
+      text-align: left;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .right {
+      text-align: right;
+    }
+
+    .nowrap {
+      white-space: nowrap;
+    }
+
+    /* --- CRITICAL ITEM COLUMN FIXES --- */
+    /* Item column (2nd child): Force breaking of all text to ensure it fits the 30% width. */
+    .items td:nth-child(2) {
+      text-align: left;
+      white-space: normal !important;
+      word-break: break-all !important;
+      /* Forces unspaced text to break mid-word */
+      overflow-wrap: break-word;
+      hyphens: auto;
+      line-height: 1.3;
+    }
+
+    /* Numeric columns: Ensure they can contain large numbers without overlapping */
+    .items td:nth-child(5),
+    /* Rate */
+    .items td:nth-child(6),
+    /* Disc */
+    .items td:nth-child(7),
+    /* Taxable Value */
+    .items td.igst,
+    .items td.cgst-sgst,
+    /* Tax columns (8th, 9th) */
+    .items td:last-child
+
+    /* Total column */
+      {
+      text-align: right;
+      white-space: normal;
+      /* Allow numbers to wrap if *absolutely* necessary, but we'll try to prevent it with width */
+      word-break: normal;
+      /* Ensure numbers don't break in the middle */
+      overflow-wrap: normal;
+      /* Don't force breaking of numbers themselves */
+    }
+
+    /* Specifically for the two-line tax data: allow stacking, no horizontal overflow */
+    .items td.igst,
+    .items td.cgst-sgst {
+      white-space: normal !important;
+      /* This is crucial for the two-line format */
+      line-height: 1.2;
+      /* Slightly reduce line-height for compactness */
+      word-break: normal;
+      /* Ensure @Rate% doesn't break */
+      overflow-wrap: break-word;
+      /* If a number is too long, break it as a last resort */
+    }
+
+    /* Ensure the TOTAL row's numeric cells don't wrap *at all* horizontally, 
+       even if that means the column might slightly stretch. This is usually preferred for totals. */
+    .items tbody tr:last-child td:nth-child(n+6) {
+      /* From Disc Total onwards in the total row */
+      white-space: nowrap !important;
+      /* Keep numbers on one line, including total Disc, Taxable, Tax, Total */
+      word-break: normal;
+    }
+
+    .items tbody tr:last-child td:nth-child(n+6).igst,
+    .items tbody tr:last-child td:nth-child(n+6).cgst-sgst {
+      white-space: nowrap !important;
+      /* Even for the tax totals in the total row */
+    }
+
+    /* CRITICAL ALIGNMENT FIXES */
+    .items thead th {
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .items td {
+      text-align: left;
+    }
+
+    /* S.No column - center aligned */
+    .items td:first-child,
+    .items th:first-child {
+      text-align: center !important;
+      white-space: nowrap;
+    }
+
+    /* Item description column - left aligned */
+    .items td:nth-child(2),
+    .items th:nth-child(2) {
+      text-align: left !important;
+    }
+
+    /* HSN/SAC column - center aligned */
+    .items td:nth-child(3),
+    .items th:nth-child(3) {
+      text-align: center !important;
+    }
+
+    /* Quantity column - center aligned */
+    .items td:nth-child(4),
+    .items th:nth-child(4) {
+      text-align: center !important;
+    }
+
+    /* ALL NUMERIC COLUMNS - RIGHT ALIGNED */
+    .items td:nth-child(5),
+    .items th:nth-child(5),
+    /* Rate */
+    .items td:nth-child(6),
+    .items th:nth-child(6),
+    /* Discount */
+    .items td:nth-child(7),
+    .items th:nth-child(7),
+    /* Taxable */
+    .items td:nth-child(8),
+    .items th:nth-child(8),
+    /* Tax columns */
+    .items td:nth-child(9),
+    .items th:nth-child(9),
+    /* Tax columns */
+    .items td:last-child,
+    .items th:last-child
+
+    /* Total */
+      {
+      text-align: right !important;
+      padding-left: 12px;
+      padding-right: 12px;
+      font-weight: normal;
+    }
+
+
+    /* --- TOTAL ROW PROTECTION (Resolves Content Going Beyond Box) --- */
+    /* Ensures the final bold figures never wrap horizontally, protecting the right border. */
+    .items tbody tr:last-child td {
+      font-weight: bold;
+      background-color: #fff7d6;
+      border-top: 2px solid #000;
+      text-align: right;
+      white-space: nowrap !important;
+      /* The large column width allocation combined with nowrap here guarantees fit. */
+    }
+
+    /* Total row label styling */
+    .items tbody tr:last-child td:first-child {
+      text-align: left;
+    }
+
+    /* Content rows - white background (except total row) */
+    .items tbody tr:not(:last-child) {
+      background: #ffffff;
+    }
+
+    /* ALIGNMENT HELPERS */
+    .right {
+      text-align: right;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .nowrap {
+      white-space: nowrap;
+    }
+
+    /* Override nowrap for description column */
+    .items td:first-child.nowrap {
+      white-space: normal !important;
+    }
+
+    .num {
+      font-size: 11px;
+    }
+
+    .summary td {
+      border: none;
+      padding: 3px 0;
+      font-size: 12px;
+    }
+
+    .summary .total {
+      color: #000000;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .bank th {
+      background: #d32f2f;
+      color: #fff;
+      border-color: #d32f2f;
+    }
+
+    .bank td {
+      border-color: #d32f2f;
+    }
+
+    .sign {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 3mm;
+    }
+
+    .sign .line {
+      width: 35mm;
+      border-bottom: 1px solid #000;
+      height: 15mm;
+    }
+
+    .small {
+      font-size: 11px;
+    }
+
+    .top-stamp {
+      border: 2px dashed #999;
+      padding: 4px 8px;
+      font-weight: 700;
+      color: #555;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .red-sep {
+      height: 2px;
+      background: #e53935;
+      margin: 4px 0;
+    }
+
+    @media print {
+      .no-print {
+        display: none;
+      }
+
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        margin: 1cm;
+      }
+
+      .page-break {
+        page-break-before: always;
+      }
+
+      /* Hide URLs from printing */
+      a[href]:after {
+        content: none !important;
+      }
+
+      a:after {
+        content: none !important;
+      }
+
+      *:after {
+        content: none !important;
+      }
+
+      /* Prevent browser from adding URLs to print */
+      @page {
+        margin: 1cm;
+
+        @top-right {
+          content: none;
+        }
+
+        @bottom-right {
+          content: none;
+        }
+
+        @bottom-left {
+          content: none;
+        }
+
+        @top-left {
+          content: none;
+        }
+      }
+
+      /* Additional URL hiding */
+      body::before,
+      body::after,
+      html::before,
+      html::after {
+        content: none !important;
+      }
+
+      /* Hide any text containing URLs */
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      /* Prevent browser from adding headers/footers */
+      @page {
+        margin: 1cm !important;
+
+        @top-center {
+          content: none !important;
+        }
+
+        @top-right {
+          content: none !important;
+        }
+
+        @bottom-center {
+          content: none !important;
+        }
+
+        @bottom-right {
+          content: none !important;
+        }
+
+        @bottom-left {
+          content: none !important;
+        }
+
+        @top-left {
+          content: none !important;
+        }
+      }
+
+      /* Additional browser-specific print fixes */
+      @media print {
+        @page {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        body {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        /* Hide any browser-generated content */
+        html::before,
+        html::after,
+        body::before,
+        body::after {
+          display: none !important;
+          content: none !important;
+        }
+      }
+
+      /* Print mode adjustments for maximum compactness */
+      /* Global cell padding reduction for maximum space */
+      .items th,
+      .items td {
+        padding: 2px 3px;
+        font-size: 10px;
+        line-height: 1.1;
+        /* Tighter line spacing */
+      }
+
+      /* Total figures are protected */
+      .items tbody tr:last-child td {
+        white-space: nowrap !important;
+      }
+
+      /* Two-line tax content must allow stacking, protected from total */
+      .items td.igst,
+      .items td.cgst-sgst,
+      .items td:nth-child(8),
+      .items td:nth-child(9) {
+        white-space: normal !important;
+        text-align: right;
+        word-break: normal;
+      }
+
+      /* Ensure header repeats on each printed page */
+      .items thead {
+        display: table-header-group;
+      }
+
+      /* Ultra-compact print styling */
+      html,
+      body {
+        font-size: 10px;
+      }
+
+      .title {
+        font-size: 22px;
+        margin: 1px 0 1px;
+      }
+
+      .logo {
+        width: 24mm;
+        height: 24mm;
+      }
+
+      .sign {
+        margin-top: 2mm;
+      }
+
+      .sign .line {
+        height: 12mm;
+      }
+
+      .small {
+        font-size: 9px;
+      }
+
+      .red-sep {
+        margin: 2px 0;
+      }
+    }
+
+    /* Page number styling */
+    .page-number {
+      margin-top: 6mm;
+      text-align: right;
+      font-size: 11px;
+      color: #555;
+    }
+
+    /* Hide overflow continuation pages by default; shown via JS only if needed */
+    .overflow-page {
+      display: none;
+    }
+
+    /* Dynamic column widths based on discount presence */
+    .items.with-discounts col:nth-child(2) {
+      width: 30%;
+    }
+
+    /* Item */
+    .items.with-discounts col:nth-child(5) {
+      width: 9%;
+    }
+
+    /* Rate */
+    .items.with-discounts col:nth-child(7) {
+      width: 10%;
+    }
+
+    /* Taxable Value */
+    .items.with-discounts col:nth-child(8) {
+      width: 12%;
+    }
+
+    /* CGST/IGST */
+    .items.with-discounts col:nth-child(9) {
+      width: 12%;
+    }
+
+    /* SGST */
+    .items.with-discounts col:nth-child(10) {
+      width: 11%;
+    }
+
+    /* Total */
+
+    .items.without-discounts col:nth-child(2) {
+      width: 34%;
+    }
+
+    /* Item */
+    .items.without-discounts col:nth-child(5) {
+      width: 13%;
+    }
+
+    /* Rate */
+    .items.without-discounts col:nth-child(6) {
+      width: 14%;
+    }
+
+    /* Taxable Value */
+    .items.without-discounts col:nth-child(7) {
+      width: 13%;
+    }
+
+    /* CGST */
+    .items.without-discounts col:nth-child(8) {
+      width: 13%;
+    }
+
+    /* SGST */
+    .items.without-discounts col:nth-child(9) {
+      width: 12%;
+    }
+
+    /* Total */
+
+    /* Interstate without discounts */
+    .items.without-discounts.interstate col:nth-child(6) {
+      width: 26%;
+    }
+
+    /* IGST */
+    .items.without-discounts.interstate col:nth-child(7) {
+      width: 12%;
+    }
+
+    /* Total */
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <!-- ORIGINAL COPY -->
+    <div class="invoice-copy" id="original-copy">
+      <br>
+      <div class="title">TAX INVOICE</div>
+      <br><br>
+      <div class="row between header" style="margin-bottom:6px;">
+        <div class="row" style="gap:10px; flex:1; min-width: 110mm;">
+          <div class="col logo-col">
+            <img class="logo" src="{{ logo_path }}" alt="Logo">
+            <div class="muted tagline">{{ company_details.tagline }}</div>
+          </div>
+          <div class="col" style="min-width: 80mm;">
+            <div class="company-name">{{ addresses[main_address_key].name if addresses and main_address_key in addresses
+              else 'Company Name' }}</div>
+            <div class="small address">
+              {{ addresses[main_address_key].address|safe if addresses and main_address_key in addresses else 'Address'
+              }}<br>
+              {{ addresses[main_address_key].phone if addresses and main_address_key in addresses else 'Phone' }}<br>
+              {{ addresses[main_address_key].email if addresses and main_address_key in addresses else 'Email' }}<br>
+
+              <strong>GSTIN:</strong> {{ company_details.gstin }}<br>
+              <strong>State:</strong> {{ company_details.state }}<br>
+              <strong>PAN:</strong> {{ company_details.pan }}
+            </div>
+          </div>
+        </div>
+        <!-- Narrow the right panel so total width stays inside page -->
+        <div class="col" style="gap:6px; text-align:right; min-width: 56mm; max-width: 60mm;">
+          <div class="top-stamp">ORIGINAL<br><span class="small">For Recipient</span></div>
+          <table style="margin-top:6px; font-size:10px; border-color:#cfcfcf;">
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">Invoice Date</td>
+              <td style="border:0; padding:2px 0;" class="nowrap">{% if invoice.invoice_date %}{% if
+                invoice.invoice_date is string %}{{ invoice.invoice_date }}{% else %}{{
+                invoice.invoice_date.strftime('%d/%m/%Y') }}{% endif %}{% else %}N/A{% endif %}</td>
+            </tr>
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">Invoice No.</td>
+              <td style="border:0; padding:2px 0;" class="nowrap">{{ invoice.invoice_number }}</td>
+            </tr>
+            {% if meta.reference_no and meta.reference_no.strip() and meta.reference_no != '-' %}
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">Reference No.</td>
+              <td style="border:0; padding:2px 0;">{{ meta.reference_no }}</td>
+            </tr>
+            {% endif %}
+            {% if meta.eway_bill and meta.eway_bill.strip() and meta.eway_bill != '-' %}
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">E-way Bill</td>
+              <td style="border:0; padding:2px 0;">{{ meta.eway_bill }}</td>
+            </tr>
+            {% if meta.eway_bill_date and meta.eway_bill_date.strip() %}
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">E-way Bill Date</td>
+              <td style="border:0; padding:2px 0;">{{ meta.eway_bill_date }}</td>
+            </tr>
+            {% endif %}
+            {% endif %}
+          </table>
+
+        </div>
+      </div>
+
+      <div class="red-sep"></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th class="nowrap">Customer Details</th>
+            <th class="nowrap">Billing Information</th>
+            <th class="nowrap">Shipping Information</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{% if meta.extra_billing_info and
+              meta.extra_billing_info.strip() %}{{ meta.extra_billing_info }}{% else %}{{ invoice.customer.address }}{%
+              if invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% endif %}{% if invoice.customer.gstin %}<br>GSTIN: {{
+              invoice.customer.gstin }}{% endif %}</td>
+          </tr>
+          <tr>
+            <td class="nowrap"><strong>Place of Supply:</strong> {{ customer_state }}</td>
+            <td class="nowrap">{% if invoice.customer.gstin %}<strong>GSTIN:</strong> {{ invoice.customer.gstin }}{%
+              else %}<em>No GSTIN</em>{% endif %}</td>
+            <td class="nowrap"><strong>Due Date:</strong> {% if invoice.due_date %}{% if invoice.due_date is string %}{{
+              invoice.due_date }}{% else %}{{ invoice.due_date.strftime('%d/%m/%Y') }}{% endif %}{% else %}Not
+              specified{% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ORIGINAL TABLE STRUCTURE - PERCENTAGE OPTIMIZED -->
+      {% set has_discounts = item_details|selectattr('item.discount_value', 'gt', 0)|list|length > 0 %}
+      <table
+        class="items {% if has_discounts %}with-discounts{% else %}without-discounts{% endif %}{% if is_interstate %} interstate{% endif %}"
+        style="margin-top:4px; width: 100%;">
+        <colgroup>
+          <col style="width: 3%;"> <!-- Sl. No. -->
+          <col> <!-- Item -->
+          <col style="width: 8%;"> <!-- HSN -->
+          <col style="width: 5%;"> <!-- Qty -->
+          <col> <!-- Rate -->
+          {% if has_discounts %}
+          <col style="width: 4%;"> <!-- Disc -->
+          {% endif %}
+          <col> <!-- Taxable Value -->
+          {% if not is_interstate %}
+          <col> <!-- CGST -->
+          <col> <!-- SGST -->
+          {% else %}
+          <col> <!-- IGST -->
+          {% endif %}
+          <col> <!-- Total -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="center nowrap">Sl. No.</th>
+            <th class="left">Item</th>
+            <th class="center nowrap">HSN/SAC</th>
+            <th class="center nowrap">Qty</th>
+            <th class="right nowrap">Rate</th>
+            {% if has_discounts %}
+            <th class="center nowrap">Disc</th>
+            {% endif %}
+            <th class="right nowrap">Taxable Value</th>
+            {% if not is_interstate %}
+            <th class="right nowrap">CGST</th>
+            <th class="right nowrap">SGST</th>
+            {% else %}
+            <th class="right nowrap igst">IGST</th>
+            {% endif %}
+            <th class="right nowrap">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for detail in item_details %}
+          <tr>
+            <td class="center">{{ loop.index }}</td>
+            <td>{{ detail.item.description }}</td>
+            <td class="nowrap center">{{ detail.item.hsn_code or company_details.default_hsn }}</td>
+            <td class="nowrap">{{ "%.2f"|format(detail.item.quantity) }}</td>
+            <td class="nowrap">{{ "{:,.2f}".format(detail.item.unit_price|float) }}</td>
+            {% if has_discounts %}
+            <td class="nowrap">
+              {% if detail.item.discount_value > 0 %}
+              {% if detail.item.discount_type == 'percentage' %}
+              {{ "%.1f"|format(detail.item.discount_value) }}%
+              {% else %}
+              {{ "{:,.2f}".format(detail.item.discount_value|float) }}
+              {% endif %}
+              {% else %}
+              0.00
+              {% endif %}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.taxable) }}</td>
+            {% if not is_interstate %}
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.cgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.sgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            {% else %}
+            <td class="nowrap igst">{{ "{:,.2f}<br>@{:.0f}%".format(detail.igst, detail.item.tax_rate|float)|safe }}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.total) }}</td>
+          </tr>
+          {% endfor %}
+          <tr>
+            <td colspan="5"><b>Total</b></td>
+            {% if has_discounts %}
+            <td class="nowrap" style="white-space: nowrap;"><b>{{
+                "{:,.2f}".format(item_details|sum(attribute='discount')) }}</b></td>
+            {% endif %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.subtotal|float) }}</b></td>
+            {% if not is_interstate %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.cgst_amount|float) }}</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.sgst_amount|float) }}</b></td>
+            {% else %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.igst_amount|float) }}</b></td>
+            {% endif %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.total_amount|float) }}</b></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Optimized two-column layout for better space utilization -->
+      <div style="margin-top:12px; padding-top: 8px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px;">
+        <!-- Left column: Bank Details and Terms -->
+        <div style="flex: 1; max-width: 48%;">
+          <table class="bank" style="width: 100%; margin-bottom: 6px;">
+            <thead>
+              <tr>
+                <th colspan="2">Bank Details:</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width:40%;" class="nowrap">Account Number:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_number }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Account Type:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_type }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">IFSC:</td>
+                <td class="nowrap">{{ company_details.bank_details.ifsc }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Bank Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.bank_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Branch Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.branch_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Virtual Payment:</td>
+                <td class="nowrap">{{ company_details.bank_details.virtual_payment }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="small" style="margin-top:2px;">
+            <b>Terms & Conditions:</b><br>
+            {{ meta.terms_text or company_details.default_terms }}
+            <br><br>
+            <b>Branch Office:</b><br>
+            {{ addresses[branch_address_key].address|safe if addresses and branch_address_key in addresses else 'Branch
+            Address' }}<br>
+            {{ addresses[branch_address_key].email if addresses and branch_address_key in addresses else 'Branch Email'
+            }}<br><br>
+            {{ meta.payment_text or company_details.default_payment_terms }}
+          </div>
+        </div>
+
+        <!-- Right column: Summary and Total in Words -->
+        <div style="flex: 1; max-width: 52%;">
+          <table class="summary" style="width: 100%; margin-bottom: 6px;">
+            <tr>
+              <td class="right nowrap" style="width:65%;">Subtotal</td>
+              <td class="right nowrap" style="width:35%;">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Taxable Amount</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Total Tax</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format((invoice.cgst_amount|float) + (invoice.sgst_amount|float) +
+                (invoice.igst_amount|float)) }}</td>
+            </tr>
+            {% if invoice.shipping_charges > 0 %}
+            <tr>
+              <td class="right nowrap">Shipping Charges</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.shipping_charges|float) }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="right total nowrap">Total Value</td>
+              <td class="right total nowrap">₹ {{ "{:,.2f}".format(invoice.total_amount|float) }}</td>
+            </tr>
+          </table>
+
+          <div class="small" style="margin-top:2px; padding: 4px; border: 1px solid #ddd; background: #f9f9f9;">
+            <b style="font-size: 14px; font-weight: 800;">Total amount (in words):</b><br>
+            <span style="font-size: 13px; font-weight: 600;">{{ number_to_words(invoice.total_amount|float) }}</span>
+          </div>
+
+          {% if qr_code %}
+          <div style="margin-top:8px; padding: 6px; border: 1px solid #ddd; background: #f9f9f9; text-align: center;">
+            <b style="font-size: 12px; font-weight: 700;">Scan to Pay</b><br>
+            <img src="{{ qr_code }}" alt="Payment QR Code" style="width: 80px; height: 80px; margin: 4px 0;">
+            <div style="font-size: 10px; color: #666; margin-top: 2px;">
+              Amount: ₹{{ "{:,.2f}".format(invoice.total_amount|float) }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="sign small">
+        <div></div>
+        <div style="text-align:center;">
+          <div><b>For {{ company_details.signature_name }}</b></div>
+          {% if signature_data %}
+          <div style="margin: 8px 0;">
+            <img src="{{ signature_data }}" alt="Signature"
+              style="max-width: 150px; max-height: 50px; border-bottom: 1px solid #000;">
+          </div>
+          {% if invoice.signed_at %}
+          <div class="digital-seal"
+            style="border: 1.5px solid #2e7d32; padding: 4px 8px; border-radius: 4px; display: inline-block; text-align: left; background-color: #f1f8e9; margin-top: 4px;">
+            <div
+              style="color: #2e7d32; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 14px;">✓</span> DIGITALLY SIGNED
+            </div>
+            <div style="font-size: 9px; line-height: 1.3; color: #333; margin-top: 2px;">
+              <strong>By:</strong> {{ invoice.signed_by.username if invoice.signed_by else 'Authorized User' }}<br>
+              <strong>Date:</strong> {{ invoice.signed_at.strftime('%d-%b-%Y %H:%M UTC') }}<br>
+              <span style="color: #666; font-family: 'Courier New', Courier, monospace; font-size: 8px;">ID: {{
+                invoice.signature_hash[:16] if invoice.signature_hash else 'VERIFIED' }}</span>
+            </div>
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="line"></div>
+          {% endif %}
+          <div style="margin-top: 4px;">Authorised Signatory</div>
+        </div>
+      </div>
+      <div class="page-number" id="original-page-number">ORG 1/1</div>
+    </div>
+
+    <!-- ORIGINAL COPY OVERFLOW PAGE (Shown only if needed) -->
+    <div class="invoice-copy overflow-page page-break" id="original-copy-cont">
+      <br>
+      <div class="title">TAX INVOICE</div>
+      <br><br>
+      <div class="row between header" style="margin-bottom:6px;">
+        <div class="row" style="gap:10px; flex:1; min-width: 110mm;">
+          <div class="col logo-col">
+            <img class="logo" src="{{ logo_path }}" alt="Logo">
+            <div class="muted tagline">{{ company_details.tagline }}</div>
+          </div>
+          <div class="col" style="min-width: 80mm;">
+            <div class="company-name">{{ addresses[main_address_key].name if addresses and main_address_key in addresses
+              else 'Company Name' }}</div>
+            <div class="small address">
+              {{ addresses[main_address_key].address|safe if addresses and main_address_key in addresses else 'Address'
+              }}<br>
+              {{ addresses[main_address_key].phone if addresses and main_address_key in addresses else 'Phone' }}<br>
+              {{ addresses[main_address_key].email if addresses and main_address_key in addresses else 'Email' }}<br>
+              <strong>GSTIN:</strong> {{ company_details.gstin }}<br>
+              <strong>State:</strong> {{ company_details.state }}<br>
+              <strong>PAN:</strong> {{ company_details.pan }}
+            </div>
+          </div>
+        </div>
+        <div class="col" style="gap:6px; text-align:right; min-width: 56mm; max-width: 60mm;">
+          <div class="top-stamp">ORIGINAL<br><span class="small">For Recipient</span></div>
+        </div>
+      </div>
+
+      <div class="red-sep"></div>
+
+      <!-- Customer Information Table -->
+      <table>
+        <thead>
+          <tr>
+            <th class="nowrap">Customer Details</th>
+            <th class="nowrap">Billing Information</th>
+            <th class="nowrap">Shipping Information</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{% if meta.extra_billing_info and
+              meta.extra_billing_info.strip() %}{{ meta.extra_billing_info }}{% else %}{{ invoice.customer.address }}{%
+              if invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% endif %}{% if invoice.customer.gstin %}<br>GSTIN: {{
+              invoice.customer.gstin }}{% endif %}</td>
+          </tr>
+          <tr>
+            <td class="nowrap"><strong>Place of Supply:</strong> {{ customer_state }}</td>
+            <td class="nowrap">{% if invoice.customer.gstin %}<strong>GSTIN:</strong> {{ invoice.customer.gstin }}{%
+              else %}<em>No GSTIN</em>{% endif %}</td>
+            <td class="nowrap"><strong>Due Date:</strong> {% if invoice.due_date %}{% if invoice.due_date is string %}{{
+              invoice.due_date }}{% else %}{{ invoice.due_date.strftime('%d/%m/%Y') }}{% endif %}{% else %}Not
+              specified{% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Items table continuation for page 2 -->
+      {% set has_discounts = item_details|selectattr('item.discount_value', 'gt', 0)|list|length > 0 %}
+      <table
+        class="items {% if has_discounts %}with-discounts{% else %}without-discounts{% endif %}{% if is_interstate %} interstate{% endif %}"
+        style="margin-top:4px; width: 100%;">
+        <colgroup>
+          <col style="width: 3%;"> <!-- Sl. No. -->
+          <col> <!-- Item -->
+          <col style="width: 8%;"> <!-- HSN -->
+          <col style="width: 5%;"> <!-- Qty -->
+          <col> <!-- Rate -->
+          {% if has_discounts %}
+          <col style="width: 4%;"> <!-- Disc -->
+          {% endif %}
+          <col> <!-- Taxable Value -->
+          {% if not is_interstate %}
+          <col> <!-- CGST -->
+          <col> <!-- SGST -->
+          {% else %}
+          <col> <!-- IGST -->
+          {% endif %}
+          <col> <!-- Total -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="center nowrap">Sl. No.</th>
+            <th class="left">Item</th>
+            <th class="center nowrap">HSN/SAC</th>
+            <th class="center nowrap">Qty</th>
+            <th class="right nowrap">Rate</th>
+            {% if has_discounts %}
+            <th class="center nowrap">Disc</th>
+            {% endif %}
+            <th class="right nowrap">Taxable Value</th>
+            {% if not is_interstate %}
+            <th class="right nowrap">CGST</th>
+            <th class="right nowrap">SGST</th>
+            {% else %}
+            <th class="right nowrap igst">IGST</th>
+            {% endif %}
+            <th class="right nowrap">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for detail in item_details %}
+          <tr>
+            <td class="center">{{ loop.index }}</td>
+            <td>{{ detail.item.description }}</td>
+            <td class="nowrap center">{{ detail.item.hsn_code or company_details.default_hsn }}</td>
+            <td class="nowrap">{{ "%.2f"|format(detail.item.quantity) }}</td>
+            <td class="nowrap">{{ "{:,.2f}".format(detail.item.unit_price|float) }}</td>
+            {% if has_discounts %}
+            <td class="nowrap">
+              {% if detail.item.discount_value > 0 %}
+              {% if detail.item.discount_type == 'percentage' %}
+              {{ "%.1f"|format(detail.item.discount_value) }}%
+              {% else %}
+              {{ "{:,.2f}".format(detail.item.discount_value|float) }}
+              {% endif %}
+              {% else %}
+              0.00
+              {% endif %}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.taxable) }}</td>
+            {% if not is_interstate %}
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.cgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.sgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            {% else %}
+            <td class="nowrap igst">{{ "{:,.2f}<br>@{:.0f}%".format(detail.igst, detail.item.tax_rate|float)|safe }}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.total) }}</td>
+          </tr>
+          {% endfor %}
+          <tr class="total">
+            <td colspan="{% if has_discounts %}6{% else %}5{% endif %}" class="right"><b>Total</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.subtotal|float) }}</b></td>
+            {% if not is_interstate %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.cgst_amount|float) }}</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.sgst_amount|float) }}</b></td>
+            {% else %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.igst_amount|float) }}</b></td>
+            {% endif %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.total_amount|float) }}</b></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Complete two-column layout for page 2 -->
+      <div style="margin-top:12px; padding-top: 8px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px;">
+        <!-- Left column: Bank Details and Terms -->
+        <div style="flex: 1; max-width: 48%;">
+          <table class="bank" style="width: 100%; margin-bottom: 6px;">
+            <thead>
+              <tr>
+                <th colspan="2">Bank Details:</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width:40%;" class="nowrap">Account Number:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_number }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Account Type:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_type }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">IFSC:</td>
+                <td class="nowrap">{{ company_details.bank_details.ifsc }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Bank Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.bank_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Branch Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.branch_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Virtual Payment:</td>
+                <td class="nowrap">{{ company_details.bank_details.virtual_payment }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="small" style="margin-top:2px;">
+            <b>Terms & Conditions:</b><br>
+            {{ meta.terms_text or company_details.default_terms }}
+            <br><br>
+            <b>Branch Office:</b><br>
+            {{ addresses[branch_address_key].address|safe if addresses and branch_address_key in addresses else 'Branch
+            Address' }}<br>
+            {{ addresses[branch_address_key].email if addresses and branch_address_key in addresses else 'Branch Email'
+            }}<br><br>
+            {{ meta.payment_text or company_details.default_payment_terms }}
+          </div>
+        </div>
+
+        <!-- Right column: Summary and Total in Words -->
+        <div style="flex: 1; max-width: 52%;">
+          <table class="summary" style="width: 100%; margin-bottom: 6px;">
+            <tr>
+              <td class="right nowrap" style="width:65%;">Subtotal</td>
+              <td class="right nowrap" style="width:35%;">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Taxable Amount</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Total Tax</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format((invoice.cgst_amount|float) + (invoice.sgst_amount|float) +
+                (invoice.igst_amount|float)) }}</td>
+            </tr>
+            {% if invoice.shipping_charges > 0 %}
+            <tr>
+              <td class="right nowrap">Shipping Charges</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.shipping_charges|float) }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="right total nowrap">Total Value</td>
+              <td class="right total nowrap">₹ {{ "{:,.2f}".format(invoice.total_amount|float) }}</td>
+            </tr>
+          </table>
+
+          <div class="small" style="margin-top:2px; padding: 4px; border: 1px solid #ddd; background: #f9f9f9;">
+            <b style="font-size: 14px; font-weight: 800;">Total amount (in words):</b><br>
+            <span style="font-size: 13px; font-weight: 600;">{{ number_to_words(invoice.total_amount|float) }}</span>
+          </div>
+
+          {% if qr_code %}
+          <div style="margin-top:8px; padding: 6px; border: 1px solid #ddd; background: #f9f9f9; text-align: center;">
+            <b style="font-size: 12px; font-weight: 700;">Scan to Pay</b><br>
+            <img src="{{ qr_code }}" alt="Payment QR Code" style="width: 80px; height: 80px; margin: 4px 0;">
+            <div style="font-size: 10px; color: #666; margin-top: 2px;">
+              Amount: ₹{{ "{:,.2f}".format(invoice.total_amount|float) }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Signature Section -->
+      <div class="sign small">
+        <div></div>
+        <div style="text-align:center;">
+          <div><b>For {{ company_details.signature_name }}</b></div>
+          {% if signature_data %}
+          <div style="margin: 10px 0;">
+            <img src="{{ signature_data }}" alt="Signature"
+              style="max-width: 150px; max-height: 60px; border-bottom: 1px solid #000;">
+          </div>
+          {% if invoice.signed_at %}
+          <div class="digital-seal"
+            style="border: 1.5px solid #2e7d32; padding: 4px 8px; border-radius: 4px; display: inline-block; text-align: left; background-color: #f1f8e9; margin-top: 4px;">
+            <div
+              style="color: #2e7d32; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 14px;">✓</span> DIGITALLY SIGNED
+            </div>
+            <div style="font-size: 9px; line-height: 1.3; color: #333; margin-top: 2px;">
+              <strong>By:</strong> {{ invoice.signed_by.username if invoice.signed_by else 'Authorized User' }}<br>
+              <strong>Date:</strong> {{ invoice.signed_at.strftime('%d-%b-%Y %H:%M UTC') }}<br>
+              <span style="color: #666; font-family: 'Courier New', Courier, monospace; font-size: 8px;">ID: {{
+                invoice.signature_hash[:16] if invoice.signature_hash else 'VERIFIED' }}</span>
+            </div>
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="line"></div>
+          {% endif %}
+          <div>Authorised Signatory</div>
+        </div>
+      </div>
+
+      <div class="page-number" id="original-page-number-2">ORG 2/3</div>
+    </div>
+
+    <!-- ORIGINAL COPY THIRD PAGE (Shown only if needed) -->
+    <div class="invoice-copy overflow-page page-break" id="original-copy-cont-2">
+      <br>
+      <div class="title">TAX INVOICE</div>
+      <br><br>
+      <div class="row between header" style="margin-bottom:6px;">
+        <div class="row" style="gap:10px; flex:1; min-width: 110mm;">
+          <div class="col logo-col">
+            <img class="logo" src="{{ logo_path }}" alt="Logo">
+            <div class="muted tagline">{{ company_details.tagline }}</div>
+          </div>
+          <div class="col" style="min-width: 80mm;">
+            <div class="company-name">{{ addresses[main_address_key].name if addresses and main_address_key in addresses
+              else 'Company Name' }}</div>
+            <div class="small address">
+              {{ addresses[main_address_key].address|safe if addresses and main_address_key in addresses else 'Address'
+              }}<br>
+              {{ addresses[main_address_key].phone if addresses and main_address_key in addresses else 'Phone' }}<br>
+              {{ addresses[main_address_key].email if addresses and main_address_key in addresses else 'Email' }}<br>
+              <strong>GSTIN:</strong> {{ company_details.gstin }}<br>
+              <strong>State:</strong> {{ company_details.state }}<br>
+              <strong>PAN:</strong> {{ company_details.pan }}
+            </div>
+          </div>
+        </div>
+        <div class="col" style="gap:6px; text-align:right; min-width: 56mm; max-width: 60mm;">
+          <div class="top-stamp">ORIGINAL<br><span class="small">For Recipient</span></div>
+        </div>
+      </div>
+
+      <div class="red-sep"></div>
+
+      <!-- Customer Information Table -->
+      <table>
+        <thead>
+          <tr>
+            <th class="nowrap">Customer Details</th>
+            <th class="nowrap">Billing Information</th>
+            <th class="nowrap">Shipping Information</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{% if meta.extra_billing_info and
+              meta.extra_billing_info.strip() %}{{ meta.extra_billing_info }}{% else %}{{ invoice.customer.address }}{%
+              if invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% endif %}{% if invoice.customer.gstin %}<br>GSTIN: {{
+              invoice.customer.gstin }}{% endif %}</td>
+          </tr>
+          <tr>
+            <td class="nowrap"><strong>Place of Supply:</strong> {{ customer_state }}</td>
+            <td class="nowrap">{% if invoice.customer.gstin %}<strong>GSTIN:</strong> {{ invoice.customer.gstin }}{%
+              else %}<em>No GSTIN</em>{% endif %}</td>
+            <td class="nowrap"><strong>Due Date:</strong> {% if invoice.due_date %}{% if invoice.due_date is string %}{{
+              invoice.due_date }}{% else %}{{ invoice.due_date.strftime('%d/%m/%Y') }}{% endif %}{% else %}Not
+              specified{% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Items table continuation for page 3 -->
+      {% set has_discounts = item_details|selectattr('item.discount_value', 'gt', 0)|list|length > 0 %}
+      <table
+        class="items {% if has_discounts %}with-discounts{% else %}without-discounts{% endif %}{% if is_interstate %} interstate{% endif %}"
+        style="margin-top:4px; width: 100%;">
+        <colgroup>
+          <col style="width: 3%;"> <!-- Sl. No. -->
+          <col> <!-- Item -->
+          <col style="width: 8%;"> <!-- HSN -->
+          <col style="width: 5%;"> <!-- Qty -->
+          <col> <!-- Rate -->
+          {% if has_discounts %}
+          <col style="width: 4%;"> <!-- Disc -->
+          {% endif %}
+          <col> <!-- Taxable Value -->
+          {% if not is_interstate %}
+          <col> <!-- CGST -->
+          <col> <!-- SGST -->
+          {% else %}
+          <col> <!-- IGST -->
+          {% endif %}
+          <col> <!-- Total -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="center nowrap">Sl. No.</th>
+            <th class="left">Item</th>
+            <th class="center nowrap">HSN/SAC</th>
+            <th class="center nowrap">Qty</th>
+            <th class="right nowrap">Rate</th>
+            {% if has_discounts %}
+            <th class="center nowrap">Disc</th>
+            {% endif %}
+            <th class="right nowrap">Taxable Value</th>
+            {% if not is_interstate %}
+            <th class="right nowrap">CGST</th>
+            <th class="right nowrap">SGST</th>
+            {% else %}
+            <th class="right nowrap igst">IGST</th>
+            {% endif %}
+            <th class="right nowrap">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for detail in item_details %}
+          <tr>
+            <td class="center">{{ loop.index }}</td>
+            <td>{{ detail.item.description }}</td>
+            <td class="nowrap center">{{ detail.item.hsn_code or company_details.default_hsn }}</td>
+            <td class="nowrap">{{ "%.2f"|format(detail.item.quantity) }}</td>
+            <td class="nowrap">{{ "{:,.2f}".format(detail.item.unit_price|float) }}</td>
+            {% if has_discounts %}
+            <td class="nowrap">
+              {% if detail.item.discount_value > 0 %}
+              {% if detail.item.discount_type == 'percentage' %}
+              {{ "%.1f"|format(detail.item.discount_value) }}%
+              {% else %}
+              {{ "{:,.2f}".format(detail.item.discount_value|float) }}
+              {% endif %}
+              {% else %}
+              0.00
+              {% endif %}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.taxable) }}</td>
+            {% if not is_interstate %}
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.cgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.sgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            {% else %}
+            <td class="nowrap igst">{{ "{:,.2f}<br>@{:.0f}%".format(detail.igst, detail.item.tax_rate|float)|safe }}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.total) }}</td>
+          </tr>
+          {% endfor %}
+          <tr class="total">
+            <td colspan="{% if has_discounts %}6{% else %}5{% endif %}" class="right"><b>Total</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.subtotal|float) }}</b></td>
+            {% if not is_interstate %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.cgst_amount|float) }}</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.sgst_amount|float) }}</b></td>
+            {% else %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.igst_amount|float) }}</b></td>
+            {% endif %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.total_amount|float) }}</b></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Complete two-column layout for page 3 -->
+      <div style="margin-top:12px; padding-top: 8px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px;">
+        <!-- Left column: Bank Details and Terms -->
+        <div style="flex: 1; max-width: 48%;">
+          <table class="bank" style="width: 100%; margin-bottom: 6px;">
+            <thead>
+              <tr>
+                <th colspan="2">Bank Details:</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width:40%;" class="nowrap">Account Number:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_number }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Account Type:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_type }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">IFSC:</td>
+                <td class="nowrap">{{ company_details.bank_details.ifsc }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Bank Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.bank_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Branch Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.branch_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Virtual Payment:</td>
+                <td class="nowrap">{{ company_details.bank_details.virtual_payment }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="small" style="margin-top:2px;">
+            <b>Terms & Conditions:</b><br>
+            {{ meta.terms_text or company_details.default_terms }}
+            <br><br>
+            <b>Branch Office:</b><br>
+            {{ addresses[branch_address_key].address|safe if addresses and branch_address_key in addresses else 'Branch
+            Address' }}<br>
+            {{ addresses[branch_address_key].email if addresses and branch_address_key in addresses else 'Branch Email'
+            }}<br><br>
+            {{ meta.payment_text or company_details.default_payment_terms }}
+          </div>
+        </div>
+
+        <!-- Right column: Summary and Total in Words -->
+        <div style="flex: 1; max-width: 52%;">
+          <table class="summary" style="width: 100%; margin-bottom: 6px;">
+            <tr>
+              <td class="right nowrap" style="width:65%;">Subtotal</td>
+              <td class="right nowrap" style="width:35%;">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Taxable Amount</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Total Tax</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format((invoice.cgst_amount|float) + (invoice.sgst_amount|float) +
+                (invoice.igst_amount|float)) }}</td>
+            </tr>
+            {% if invoice.shipping_charges > 0 %}
+            <tr>
+              <td class="right nowrap">Shipping Charges</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.shipping_charges|float) }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="right total nowrap">Total Value</td>
+              <td class="right total nowrap">₹ {{ "{:,.2f}".format(invoice.total_amount|float) }}</td>
+            </tr>
+          </table>
+
+          <div class="small" style="margin-top:2px; padding: 4px; border: 1px solid #ddd; background: #f9f9f9;">
+            <b style="font-size: 14px; font-weight: 800;">Total amount (in words):</b><br>
+            <span style="font-size: 13px; font-weight: 600;">{{ number_to_words(invoice.total_amount|float) }}</span>
+          </div>
+
+          {% if qr_code %}
+          <div style="margin-top:8px; padding: 6px; border: 1px solid #ddd; background: #f9f9f9; text-align: center;">
+            <b style="font-size: 12px; font-weight: 700;">Scan to Pay</b><br>
+            <img src="{{ qr_code }}" alt="Payment QR Code" style="width: 80px; height: 80px; margin: 4px 0;">
+            <div style="font-size: 10px; color: #666; margin-top: 2px;">
+              Amount: ₹{{ "{:,.2f}".format(invoice.total_amount|float) }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Signature Section -->
+      <div class="sign small">
+        <div></div>
+        <div style="text-align:center;">
+          <div><b>For {{ company_details.signature_name }}</b></div>
+          {% if signature_data %}
+          <div style="margin: 10px 0;">
+            <img src="{{ signature_data }}" alt="Signature"
+              style="max-width: 150px; max-height: 60px; border-bottom: 1px solid #000;">
+          </div>
+          {% if invoice.signed_at %}
+          <div class="digital-seal"
+            style="border: 1.5px solid #2e7d32; padding: 4px 8px; border-radius: 4px; display: inline-block; text-align: left; background-color: #f1f8e9; margin-top: 4px;">
+            <div
+              style="color: #2e7d32; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 14px;">✓</span> DIGITALLY SIGNED
+            </div>
+            <div style="font-size: 9px; line-height: 1.3; color: #333; margin-top: 2px;">
+              <strong>By:</strong> {{ invoice.signed_by.username if invoice.signed_by else 'Authorized User' }}<br>
+              <strong>Date:</strong> {{ invoice.signed_at.strftime('%d-%b-%Y %H:%M UTC') }}<br>
+              <span style="color: #666; font-family: 'Courier New', Courier, monospace; font-size: 8px;">ID: {{
+                invoice.signature_hash[:16] if invoice.signature_hash else 'VERIFIED' }}</span>
+            </div>
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="line"></div>
+          {% endif %}
+          <div>Authorised Signatory</div>
+        </div>
+      </div>
+
+      <div class="page-number" id="original-page-number-3">ORG 3/3</div>
+    </div>
+
+    <!-- DUPLICATE COPY -->
+    <div class="invoice-copy" id="duplicate-copy">
+      <br>
+      <div class="title">TAX INVOICE</div>
+      <br><br>
+      <div class="row between header" style="margin-bottom:6px;">
+        <div class="row" style="gap:10px; flex:1; min-width: 110mm;">
+          <div class="col logo-col">
+            <img class="logo" src="{{ logo_path }}" alt="Logo">
+            <div class="muted tagline">{{ company_details.tagline }}</div>
+          </div>
+          <div class="col" style="min-width: 80mm;">
+            <div class="company-name">{{ addresses[main_address_key].name if addresses and main_address_key in addresses
+              else 'Company Name' }}</div>
+            <div class="small address">
+              {{ addresses[main_address_key].address|safe if addresses and main_address_key in addresses else 'Address'
+              }}<br>
+              {{ addresses[main_address_key].phone if addresses and main_address_key in addresses else 'Phone' }}<br>
+              {{ addresses[main_address_key].email if addresses and main_address_key in addresses else 'Email' }}<br>
+
+              <strong>GSTIN:</strong> {{ company_details.gstin }}<br>
+              <strong>State:</strong> {{ company_details.state }}<br>
+              <strong>PAN:</strong> {{ company_details.pan }}
+            </div>
+          </div>
+        </div>
+        <!-- Narrow the right panel so total width stays inside page -->
+        <div class="col" style="gap:6px; text-align:right; min-width: 56mm; max-width: 60mm;">
+          <div class="top-stamp">DUPLICATE<br><span class="small">{% if meta.is_sac|default(false) %}For the Supplier{%
+              else %}For Transporter{% endif %}</span></div>
+          <table style="margin-top:6px; font-size:10px; border-color:#cfcfcf;">
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">Invoice Date</td>
+              <td style="border:0; padding:2px 0;" class="nowrap">{% if invoice.invoice_date %}{% if
+                invoice.invoice_date is string %}{{ invoice.invoice_date }}{% else %}{{
+                invoice.invoice_date.strftime('%d/%m/%Y') }}{% endif %}{% else %}N/A{% endif %}</td>
+            </tr>
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">Invoice No.</td>
+              <td style="border:0; padding:2px 0;" class="nowrap">{{ invoice.invoice_number }}</td>
+            </tr>
+            {% if meta.reference_no and meta.reference_no.strip() and meta.reference_no != '-' %}
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">Reference No.</td>
+              <td style="border:0; padding:2px 0;">{{ meta.reference_no }}</td>
+            </tr>
+            {% endif %}
+            {% if meta.eway_bill and meta.eway_bill.strip() and meta.eway_bill != '-' %}
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">E-way Bill</td>
+              <td style="border:0; padding:2px 0;">{{ meta.eway_bill }}</td>
+            </tr>
+            {% if meta.eway_bill_date and meta.eway_bill_date.strip() %}
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">E-way Bill Date</td>
+              <td style="border:0; padding:2px 0;">{{ meta.eway_bill_date }}</td>
+            </tr>
+            {% endif %}
+            {% endif %}
+          </table>
+        </div>
+      </div>
+
+      <div class="red-sep"></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th class="nowrap">Customer Details</th>
+            <th class="nowrap">Billing Information</th>
+            <th class="nowrap">Shipping Information</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td>{% if meta.extra_billing_info and meta.extra_billing_info.strip() %}{{ meta.extra_billing_info }}{% else
+              %}{{ invoice.customer.address }}{% if invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{%
+              if invoice.customer.pincode %}, {{ invoice.customer.pincode }}{% endif %}{% endif %}{% if
+              invoice.customer.gstin %}<br>GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+          </tr>
+          <tr>
+            <td class="nowrap"><strong>Place of Supply:</strong> {{ customer_state }}</td>
+            <td class="nowrap">{% if invoice.customer.gstin %}<strong>GSTIN:</strong> {{ invoice.customer.gstin }}{%
+              else %}<em>No GSTIN</em>{% endif %}</td>
+            <td class="nowrap"><strong>Due Date:</strong> {% if invoice.due_date %}{% if invoice.due_date is string %}{{
+              invoice.due_date }}{% else %}{{ invoice.due_date.strftime('%d/%m/%Y') }}{% endif %}{% else %}Not
+              specified{% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- DUPLICATE TABLE STRUCTURE - PERCENTAGE OPTIMIZED -->
+      <table
+        class="items {% if has_discounts %}with-discounts{% else %}without-discounts{% endif %}{% if is_interstate %} interstate{% endif %}"
+        style="margin-top:4px; width: 100%;">
+        <colgroup>
+          <col style="width: 3%;"> <!-- Sl. No. -->
+          <col> <!-- Item -->
+          <col style="width: 8%;"> <!-- HSN -->
+          <col style="width: 5%;"> <!-- Qty -->
+          <col> <!-- Rate -->
+          {% if has_discounts %}
+          <col style="width: 4%;"> <!-- Disc -->
+          {% endif %}
+          <col> <!-- Taxable Value -->
+          {% if not is_interstate %}
+          <col> <!-- CGST -->
+          <col> <!-- SGST -->
+          {% else %}
+          <col> <!-- IGST -->
+          {% endif %}
+          <col> <!-- Total -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="center nowrap">Sl. No.</th>
+            <th class="left">Item</th>
+            <th class="center nowrap">HSN/SAC</th>
+            <th class="center nowrap">Qty</th>
+            <th class="right nowrap">Rate</th>
+            {% if has_discounts %}
+            <th class="center nowrap">Disc</th>
+            {% endif %}
+            <th class="right nowrap">Taxable Value</th>
+            {% if not is_interstate %}
+            <th class="right nowrap">CGST</th>
+            <th class="right nowrap">SGST</th>
+            {% else %}
+            <th class="right nowrap igst">IGST</th>
+            {% endif %}
+            <th class="right nowrap">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for detail in item_details %}
+          <tr>
+            <td class="center">{{ loop.index }}</td>
+            <td>{{ detail.item.description }}</td>
+            <td class="nowrap center">{{ detail.item.hsn_code or company_details.default_hsn }}</td>
+            <td class="nowrap">{{ "%.2f"|format(detail.item.quantity) }}</td>
+            <td class="nowrap">{{ "{:,.2f}".format(detail.item.unit_price|float) }}</td>
+            {% if has_discounts %}
+            <td class="nowrap">
+              {% if detail.item.discount_value > 0 %}
+              {% if detail.item.discount_type == 'percentage' %}
+              {{ "%.1f"|format(detail.item.discount_value) }}%
+              {% else %}
+              {{ "{:,.2f}".format(detail.item.discount_value|float) }}
+              {% endif %}
+              {% else %}
+              0.00
+              {% endif %}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.taxable) }}</td>
+            {% if not is_interstate %}
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.cgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.sgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            {% else %}
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.0f}%".format(detail.igst, detail.item.tax_rate|float)|safe }}</td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.total) }}</td>
+          </tr>
+          {% endfor %}
+          <tr>
+            <td colspan="5"><b>Total</b></td>
+            {% if has_discounts %}
+            <td class="nowrap" style="white-space: nowrap;"><b>{{
+                "{:,.2f}".format(item_details|sum(attribute='discount')) }}</b></td>
+            {% endif %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.subtotal|float) }}</b></td>
+            {% if not is_interstate %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.cgst_amount|float) }}</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.sgst_amount|float) }}</b></td>
+            {% else %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.igst_amount|float) }}</b></td>
+            {% endif %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.total_amount|float) }}</b></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Optimized two-column layout for better space utilization -->
+      <div style="margin-top:12px; padding-top: 8px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px;">
+        <!-- Left column: Bank Details and Terms -->
+        <div style="flex: 1; max-width: 48%;">
+          <table class="bank" style="width: 100%; margin-bottom: 6px;">
+            <thead>
+              <tr>
+                <th colspan="2">Bank Details:</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width:40%;" class="nowrap">Account Number:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_number }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">IFSC:</td>
+                <td class="nowrap">{{ company_details.bank_details.ifsc }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Bank Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.bank_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Branch Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.branch_name }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="small" style="margin-top:2px;">
+            <b>Terms & Conditions:</b><br>
+            {{ meta.terms_text or company_details.default_terms }}
+            <br><br>
+            <b>Branch Office:</b><br>
+            {{ addresses[branch_address_key].address|safe if addresses and branch_address_key in addresses else 'Branch
+            Address' }}<br>
+            {{ addresses[branch_address_key].email if addresses and branch_address_key in addresses else 'Branch Email'
+            }}<br><br>
+            {{ meta.payment_text or company_details.default_payment_terms }}
+          </div>
+        </div>
+
+        <!-- Right column: Summary and Total in Words -->
+        <div style="flex: 1; max-width: 52%;">
+          <table class="summary" style="width: 100%; margin-bottom: 6px;">
+            <tr>
+              <td class="right nowrap" style="width:65%;">Subtotal</td>
+              <td class="right nowrap" style="width:35%;">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Taxable Amount</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Total Tax</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format((invoice.cgst_amount|float) + (invoice.sgst_amount|float) +
+                (invoice.igst_amount|float)) }}</td>
+            </tr>
+            {% if invoice.shipping_charges > 0 %}
+            <tr>
+              <td class="right nowrap">Shipping Charges</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.shipping_charges|float) }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="right total nowrap">Total Value</td>
+              <td class="right total nowrap">₹ {{ "{:,.2f}".format(invoice.total_amount|float) }}</td>
+            </tr>
+          </table>
+
+          <div class="small" style="margin-top:2px; padding: 4px; border: 1px solid #ddd; background: #f9f9f9;">
+            <b style="font-size: 14px; font-weight: 800;">Total amount (in words):</b><br>
+            <span style="font-size: 13px; font-weight: 600;">{{ number_to_words(invoice.total_amount|float) }}</span>
+          </div>
+
+          {% if qr_code %}
+          <div style="margin-top:8px; padding: 6px; border: 1px solid #ddd; background: #f9f9f9; text-align: center;">
+            <b style="font-size: 12px; font-weight: 700;">Scan to Pay</b><br>
+            <img src="{{ qr_code }}" alt="Payment QR Code" style="width: 80px; height: 80px; margin: 4px 0;">
+            <div style="font-size: 10px; color: #666; margin-top: 2px;">
+              Amount: ₹{{ "{:,.2f}".format(invoice.total_amount|float) }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="sign small">
+        <div></div>
+        <div style="text-align:center;">
+          <div><b>For {{ company_details.signature_name }}</b></div>
+          {% if signature_data %}
+          <div style="margin: 10px 0;">
+            <img src="{{ signature_data }}" alt="Signature"
+              style="max-width: 150px; max-height: 60px; border-bottom: 1px solid #000;">
+          </div>
+          {% if invoice.signed_at %}
+          <div class="digital-seal"
+            style="border: 1.5px solid #2e7d32; padding: 4px 8px; border-radius: 4px; display: inline-block; text-align: left; background-color: #f1f8e9; margin-top: 4px;">
+            <div
+              style="color: #2e7d32; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 14px;">✓</span> DIGITALLY SIGNED
+            </div>
+            <div style="font-size: 9px; line-height: 1.3; color: #333; margin-top: 2px;">
+              <strong>By:</strong> {{ invoice.signed_by.username if invoice.signed_by else 'Authorized User' }}<br>
+              <strong>Date:</strong> {{ invoice.signed_at.strftime('%d-%b-%Y %H:%M UTC') }}<br>
+              <span style="color: #666; font-family: 'Courier New', Courier, monospace; font-size: 8px;">ID: {{
+                invoice.signature_hash[:16] if invoice.signature_hash else 'VERIFIED' }}</span>
+            </div>
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="line"></div>
+          {% endif %}
+          <div>Authorised Signatory</div>
+        </div>
+      </div>
+      <div class="page-number" id="duplicate-page-number">DUP 1/1</div>
+    </div>
+
+    <!-- DUPLICATE COPY OVERFLOW PAGE (Shown only if needed) -->
+    <div class="invoice-copy overflow-page page-break" id="duplicate-copy-cont">
+      <br>
+      <div class="title">TAX INVOICE</div>
+      <br><br>
+      <div class="row between header" style="margin-bottom:6px;">
+        <div class="row" style="gap:10px; flex:1; min-width: 110mm;">
+          <div class="col logo-col">
+            <img class="logo" src="{{ logo_path }}" alt="Logo">
+            <div class="muted tagline">{{ company_details.tagline }}</div>
+          </div>
+          <div class="col" style="min-width: 80mm;">
+            <div class="company-name">{{ addresses[main_address_key].name if addresses and main_address_key in addresses
+              else 'Company Name' }}</div>
+            <div class="small address">
+              {{ addresses[main_address_key].address|safe if addresses and main_address_key in addresses else 'Address'
+              }}<br>
+              {{ addresses[main_address_key].phone if addresses and main_address_key in addresses else 'Phone' }}<br>
+              {{ addresses[main_address_key].email if addresses and main_address_key in addresses else 'Email' }}<br>
+              <strong>GSTIN:</strong> {{ company_details.gstin }}<br>
+              <strong>State:</strong> {{ company_details.state }}<br>
+              <strong>PAN:</strong> {{ company_details.pan }}
+            </div>
+          </div>
+        </div>
+        <div class="col" style="gap:6px; text-align:right; min-width: 56mm; max-width: 60mm;">
+          <div class="top-stamp">DUPLICATE<br><span class="small">{% if meta.is_sac|default(false) %}For the Supplier{%
+              else %}For Transporter{% endif %}</span></div>
+        </div>
+      </div>
+
+      <div class="red-sep"></div>
+
+      <!-- Customer Information Table -->
+      <table>
+        <thead>
+          <tr>
+            <th class="nowrap">Customer Details</th>
+            <th class="nowrap">Billing Information</th>
+            <th class="nowrap">Shipping Information</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td>{% if meta.extra_billing_info and meta.extra_billing_info.strip() %}{{ meta.extra_billing_info }}{% else
+              %}{{ invoice.customer.address }}{% if invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{%
+              if invoice.customer.pincode %}, {{ invoice.customer.pincode }}{% endif %}{% endif %}{% if
+              invoice.customer.gstin %}<br>GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+          </tr>
+          <tr>
+            <td class="nowrap"><strong>Place of Supply:</strong> {{ customer_state }}</td>
+            <td class="nowrap">{% if invoice.customer.gstin %}<strong>GSTIN:</strong> {{ invoice.customer.gstin }}{%
+              else %}<em>No GSTIN</em>{% endif %}</td>
+            <td class="nowrap"><strong>Due Date:</strong> {% if invoice.due_date %}{% if invoice.due_date is string %}{{
+              invoice.due_date }}{% else %}{{ invoice.due_date.strftime('%d/%m/%Y') }}{% endif %}{% else %}Not
+              specified{% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Items table continuation for page 2 -->
+      <table
+        class="items {% if has_discounts %}with-discounts{% else %}without-discounts{% endif %}{% if is_interstate %} interstate{% endif %}"
+        style="margin-top:4px; width: 100%;">
+        <colgroup>
+          <col style="width: 3%;"> <!-- Sl. No. -->
+          <col> <!-- Item -->
+          <col style="width: 8%;"> <!-- HSN -->
+          <col style="width: 5%;"> <!-- Qty -->
+          <col> <!-- Rate -->
+          {% if has_discounts %}
+          <col style="width: 4%;"> <!-- Disc -->
+          {% endif %}
+          <col> <!-- Taxable Value -->
+          {% if not is_interstate %}
+          <col> <!-- CGST -->
+          <col> <!-- SGST -->
+          {% else %}
+          <col> <!-- IGST -->
+          {% endif %}
+          <col> <!-- Total -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="center nowrap">Sl. No.</th>
+            <th class="left">Item</th>
+            <th class="center nowrap">HSN/SAC</th>
+            <th class="center nowrap">Qty</th>
+            <th class="right nowrap">Rate</th>
+            {% if has_discounts %}
+            <th class="center nowrap">Disc</th>
+            {% endif %}
+            <th class="right nowrap">Taxable Value</th>
+            {% if not is_interstate %}
+            <th class="right nowrap">CGST</th>
+            <th class="right nowrap">SGST</th>
+            {% else %}
+            <th class="right nowrap igst">IGST</th>
+            {% endif %}
+            <th class="right nowrap">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for detail in item_details %}
+          <tr>
+            <td class="center">{{ loop.index }}</td>
+            <td>{{ detail.item.description }}</td>
+            <td class="nowrap center">{{ detail.item.hsn_code or company_details.default_hsn }}</td>
+            <td class="nowrap">{{ "%.2f"|format(detail.item.quantity) }}</td>
+            <td class="nowrap">{{ "{:,.2f}".format(detail.item.unit_price|float) }}</td>
+            {% if has_discounts %}
+            <td class="nowrap">
+              {% if detail.item.discount_value > 0 %}
+              {% if detail.item.discount_type == 'percentage' %}
+              {{ "%.1f"|format(detail.item.discount_value) }}%
+              {% else %}
+              {{ "{:,.2f}".format(detail.item.discount_value|float) }}
+              {% endif %}
+              {% else %}
+              0.00
+              {% endif %}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.taxable) }}</td>
+            {% if not is_interstate %}
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.cgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.sgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            {% else %}
+            <td class="nowrap igst">{{ "{:,.2f}<br>@{:.0f}%".format(detail.igst, detail.item.tax_rate|float)|safe }}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.total) }}</td>
+          </tr>
+          {% endfor %}
+          <tr class="total">
+            <td colspan="{% if has_discounts %}6{% else %}5{% endif %}" class="right"><b>Total</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.subtotal|float) }}</b></td>
+            {% if not is_interstate %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.cgst_amount|float) }}</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.sgst_amount|float) }}</b></td>
+            {% else %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.igst_amount|float) }}</b></td>
+            {% endif %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.total_amount|float) }}</b></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Complete two-column layout for page 2 -->
+      <div style="margin-top:12px; padding-top: 8px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px;">
+        <!-- Left column: Bank Details and Terms -->
+        <div style="flex: 1; max-width: 48%;">
+          <table class="bank" style="width: 100%; margin-bottom: 6px;">
+            <thead>
+              <tr>
+                <th colspan="2">Bank Details:</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width:40%;" class="nowrap">Account Number:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_number }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Account Type:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_type }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">IFSC:</td>
+                <td class="nowrap">{{ company_details.bank_details.ifsc }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Bank Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.bank_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Branch Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.branch_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Virtual Payment:</td>
+                <td class="nowrap">{{ company_details.bank_details.virtual_payment }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="small" style="margin-top:2px;">
+            <b>Terms & Conditions:</b><br>
+            {{ meta.terms_text or company_details.default_terms }}
+            <br><br>
+            <b>Branch Office:</b><br>
+            {{ addresses[branch_address_key].address|safe if addresses and branch_address_key in addresses else 'Branch
+            Address' }}<br>
+            {{ addresses[branch_address_key].email if addresses and branch_address_key in addresses else 'Branch Email'
+            }}<br><br>
+            {{ meta.payment_text or company_details.default_payment_terms }}
+          </div>
+        </div>
+
+        <!-- Right column: Summary and Total in Words -->
+        <div style="flex: 1; max-width: 52%;">
+          <table class="summary" style="width: 100%; margin-bottom: 6px;">
+            <tr>
+              <td class="right nowrap" style="width:65%;">Subtotal</td>
+              <td class="right nowrap" style="width:35%;">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Taxable Amount</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Total Tax</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format((invoice.cgst_amount|float) + (invoice.sgst_amount|float) +
+                (invoice.igst_amount|float)) }}</td>
+            </tr>
+            {% if invoice.shipping_charges > 0 %}
+            <tr>
+              <td class="right nowrap">Shipping Charges</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.shipping_charges|float) }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="right total nowrap">Total Value</td>
+              <td class="right total nowrap">₹ {{ "{:,.2f}".format(invoice.total_amount|float) }}</td>
+            </tr>
+          </table>
+
+          <div class="small" style="margin-top:2px; padding: 4px; border: 1px solid #ddd; background: #f9f9f9;">
+            <b style="font-size: 14px; font-weight: 800;">Total amount (in words):</b><br>
+            <span style="font-size: 13px; font-weight: 600;">{{ number_to_words(invoice.total_amount|float) }}</span>
+          </div>
+
+          {% if qr_code %}
+          <div style="margin-top:8px; padding: 6px; border: 1px solid #ddd; background: #f9f9f9; text-align: center;">
+            <b style="font-size: 12px; font-weight: 700;">Scan to Pay</b><br>
+            <img src="{{ qr_code }}" alt="Payment QR Code" style="width: 80px; height: 80px; margin: 4px 0;">
+            <div style="font-size: 10px; color: #666; margin-top: 2px;">
+              Amount: ₹{{ "{:,.2f}".format(invoice.total_amount|float) }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Signature Section -->
+      <div class="sign small">
+        <div></div>
+        <div style="text-align:center;">
+          <div><b>For {{ company_details.signature_name }}</b></div>
+          {% if signature_data %}
+          <div style="margin: 10px 0;">
+            <img src="{{ signature_data }}" alt="Signature"
+              style="max-width: 150px; max-height: 60px; border-bottom: 1px solid #000;">
+          </div>
+          {% if invoice.signed_at %}
+          <div class="digital-seal"
+            style="border: 1.5px solid #2e7d32; padding: 4px 8px; border-radius: 4px; display: inline-block; text-align: left; background-color: #f1f8e9; margin-top: 4px;">
+            <div
+              style="color: #2e7d32; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 14px;">✓</span> DIGITALLY SIGNED
+            </div>
+            <div style="font-size: 9px; line-height: 1.3; color: #333; margin-top: 2px;">
+              <strong>By:</strong> {{ invoice.signed_by.username if invoice.signed_by else 'Authorized User' }}<br>
+              <strong>Date:</strong> {{ invoice.signed_at.strftime('%d-%b-%Y %H:%M UTC') }}<br>
+              <span style="color: #666; font-family: 'Courier New', Courier, monospace; font-size: 8px;">ID: {{
+                invoice.signature_hash[:16] if invoice.signature_hash else 'VERIFIED' }}</span>
+            </div>
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="line"></div>
+          {% endif %}
+          <div>Authorised Signatory</div>
+        </div>
+      </div>
+
+      <div class="page-number" id="duplicate-page-number-2">DUP 2/3</div>
+    </div>
+
+    <!-- DUPLICATE COPY THIRD PAGE (Shown only if needed) -->
+    <div class="invoice-copy overflow-page page-break" id="duplicate-copy-cont-2">
+      <br>
+      <div class="title">TAX INVOICE</div>
+      <br><br>
+      <div class="row between header" style="margin-bottom:6px;">
+        <div class="row" style="gap:10px; flex:1; min-width: 110mm;">
+          <div class="col logo-col">
+            <img class="logo" src="{{ logo_path }}" alt="Logo">
+            <div class="muted tagline">{{ company_details.tagline }}</div>
+          </div>
+          <div class="col" style="min-width: 80mm;">
+            <div class="company-name">{{ addresses[main_address_key].name if addresses and main_address_key in addresses
+              else 'Company Name' }}</div>
+            <div class="small address">
+              {{ addresses[main_address_key].address|safe if addresses and main_address_key in addresses else 'Address'
+              }}<br>
+              {{ addresses[main_address_key].phone if addresses and main_address_key in addresses else 'Phone' }}<br>
+              {{ addresses[main_address_key].email if addresses and main_address_key in addresses else 'Email' }}<br>
+              <strong>GSTIN:</strong> {{ company_details.gstin }}<br>
+              <strong>State:</strong> {{ company_details.state }}<br>
+              <strong>PAN:</strong> {{ company_details.pan }}
+            </div>
+          </div>
+        </div>
+        <div class="col" style="gap:6px; text-align:right; min-width: 56mm; max-width: 60mm;">
+          <div class="top-stamp">DUPLICATE<br><span class="small">{% if meta.is_sac|default(false) %}For the Supplier{%
+              else %}For Transporter{% endif %}</span></div>
+        </div>
+      </div>
+
+      <div class="red-sep"></div>
+
+      <!-- Customer Information Table -->
+      <table>
+        <thead>
+          <tr>
+            <th class="nowrap">Customer Details</th>
+            <th class="nowrap">Billing Information</th>
+            <th class="nowrap">Shipping Information</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td>{% if meta.extra_billing_info and meta.extra_billing_info.strip() %}{{ meta.extra_billing_info }}{% else
+              %}{{ invoice.customer.address }}{% if invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{%
+              if invoice.customer.pincode %}, {{ invoice.customer.pincode }}{% endif %}{% endif %}{% if
+              invoice.customer.gstin %}<br>GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+          </tr>
+          <tr>
+            <td class="nowrap"><strong>Place of Supply:</strong> {{ customer_state }}</td>
+            <td class="nowrap">{% if invoice.customer.gstin %}<strong>GSTIN:</strong> {{ invoice.customer.gstin }}{%
+              else %}<em>No GSTIN</em>{% endif %}</td>
+            <td class="nowrap"><strong>Due Date:</strong> {% if invoice.due_date %}{% if invoice.due_date is string %}{{
+              invoice.due_date }}{% else %}{{ invoice.due_date.strftime('%d/%m/%Y') }}{% endif %}{% else %}Not
+              specified{% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Items table continuation for page 3 -->
+      {% set has_discounts = item_details|selectattr('item.discount_value', 'gt', 0)|list|length > 0 %}
+      <table
+        class="items {% if has_discounts %}with-discounts{% else %}without-discounts{% endif %}{% if is_interstate %} interstate{% endif %}"
+        style="margin-top:4px; width: 100%;">
+        <colgroup>
+          <col style="width: 3%;"> <!-- Sl. No. -->
+          <col> <!-- Item -->
+          <col style="width: 8%;"> <!-- HSN -->
+          <col style="width: 5%;"> <!-- Qty -->
+          <col> <!-- Rate -->
+          {% if has_discounts %}
+          <col style="width: 4%;"> <!-- Disc -->
+          {% endif %}
+          <col> <!-- Taxable Value -->
+          {% if not is_interstate %}
+          <col> <!-- CGST -->
+          <col> <!-- SGST -->
+          {% else %}
+          <col> <!-- IGST -->
+          {% endif %}
+          <col> <!-- Total -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="center nowrap">Sl. No.</th>
+            <th class="left">Item</th>
+            <th class="center nowrap">HSN/SAC</th>
+            <th class="center nowrap">Qty</th>
+            <th class="right nowrap">Rate</th>
+            {% if has_discounts %}
+            <th class="center nowrap">Disc</th>
+            {% endif %}
+            <th class="right nowrap">Taxable Value</th>
+            {% if not is_interstate %}
+            <th class="right nowrap">CGST</th>
+            <th class="right nowrap">SGST</th>
+            {% else %}
+            <th class="right nowrap igst">IGST</th>
+            {% endif %}
+            <th class="right nowrap">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for detail in item_details %}
+          <tr>
+            <td class="center">{{ loop.index }}</td>
+            <td>{{ detail.item.description }}</td>
+            <td class="nowrap center">{{ detail.item.hsn_code or company_details.default_hsn }}</td>
+            <td class="nowrap">{{ "%.2f"|format(detail.item.quantity) }}</td>
+            <td class="nowrap">{{ "{:,.2f}".format(detail.item.unit_price|float) }}</td>
+            {% if has_discounts %}
+            <td class="nowrap">
+              {% if detail.item.discount_value > 0 %}
+              {% if detail.item.discount_type == 'percentage' %}
+              {{ "%.1f"|format(detail.item.discount_value) }}%
+              {% else %}
+              {{ "{:,.2f}".format(detail.item.discount_value|float) }}
+              {% endif %}
+              {% else %}
+              0.00
+              {% endif %}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.taxable) }}</td>
+            {% if not is_interstate %}
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.cgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.sgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            {% else %}
+            <td class="nowrap igst">{{ "{:,.2f}<br>@{:.0f}%".format(detail.igst, detail.item.tax_rate|float)|safe }}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.total) }}</td>
+          </tr>
+          {% endfor %}
+          <tr class="total">
+            <td colspan="{% if has_discounts %}6{% else %}5{% endif %}" class="right"><b>Total</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.subtotal|float) }}</b></td>
+            {% if not is_interstate %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.cgst_amount|float) }}</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.sgst_amount|float) }}</b></td>
+            {% else %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.igst_amount|float) }}</b></td>
+            {% endif %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.total_amount|float) }}</b></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Complete two-column layout for page 3 -->
+      <div style="margin-top:12px; padding-top: 8px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px;">
+        <!-- Left column: Bank Details and Terms -->
+        <div style="flex: 1; max-width: 48%;">
+          <table class="bank" style="width: 100%; margin-bottom: 6px;">
+            <thead>
+              <tr>
+                <th colspan="2">Bank Details:</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width:40%;" class="nowrap">Account Number:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_number }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Account Type:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_type }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">IFSC:</td>
+                <td class="nowrap">{{ company_details.bank_details.ifsc }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Bank Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.bank_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Branch Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.branch_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Virtual Payment:</td>
+                <td class="nowrap">{{ company_details.bank_details.virtual_payment }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="small" style="margin-top:2px;">
+            <b>Terms & Conditions:</b><br>
+            {{ meta.terms_text or company_details.default_terms }}
+            <br><br>
+            <b>Branch Office:</b><br>
+            {{ addresses[branch_address_key].address|safe if addresses and branch_address_key in addresses else 'Branch
+            Address' }}<br>
+            {{ addresses[branch_address_key].email if addresses and branch_address_key in addresses else 'Branch Email'
+            }}<br><br>
+            {{ meta.payment_text or company_details.default_payment_terms }}
+          </div>
+        </div>
+
+        <!-- Right column: Summary and Total in Words -->
+        <div style="flex: 1; max-width: 52%;">
+          <table class="summary" style="width: 100%; margin-bottom: 6px;">
+            <tr>
+              <td class="right nowrap" style="width:65%;">Subtotal</td>
+              <td class="right nowrap" style="width:35%;">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Taxable Amount</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Total Tax</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format((invoice.cgst_amount|float) + (invoice.sgst_amount|float) +
+                (invoice.igst_amount|float)) }}</td>
+            </tr>
+            {% if invoice.shipping_charges > 0 %}
+            <tr>
+              <td class="right nowrap">Shipping Charges</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.shipping_charges|float) }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="right total nowrap">Total Value</td>
+              <td class="right total nowrap">₹ {{ "{:,.2f}".format(invoice.total_amount|float) }}</td>
+            </tr>
+          </table>
+
+          <div class="small" style="margin-top:2px; padding: 4px; border: 1px solid #ddd; background: #f9f9f9;">
+            <b style="font-size: 14px; font-weight: 800;">Total amount (in words):</b><br>
+            <span style="font-size: 13px; font-weight: 600;">{{ number_to_words(invoice.total_amount|float) }}</span>
+          </div>
+
+          {% if qr_code %}
+          <div style="margin-top:8px; padding: 6px; border: 1px solid #ddd; background: #f9f9f9; text-align: center;">
+            <b style="font-size: 12px; font-weight: 700;">Scan to Pay</b><br>
+            <img src="{{ qr_code }}" alt="Payment QR Code" style="width: 80px; height: 80px; margin: 4px 0;">
+            <div style="font-size: 10px; color: #666; margin-top: 2px;">
+              Amount: ₹{{ "{:,.2f}".format(invoice.total_amount|float) }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Signature Section -->
+      <div class="sign small">
+        <div></div>
+        <div style="text-align:center;">
+          <div><b>For {{ company_details.signature_name }}</b></div>
+          {% if signature_data %}
+          <div style="margin: 10px 0;">
+            <img src="{{ signature_data }}" alt="Signature"
+              style="max-width: 150px; max-height: 60px; border-bottom: 1px solid #000;">
+          </div>
+          {% if invoice.signed_at %}
+          <div class="digital-seal"
+            style="border: 1.5px solid #2e7d32; padding: 4px 8px; border-radius: 4px; display: inline-block; text-align: left; background-color: #f1f8e9; margin-top: 4px;">
+            <div
+              style="color: #2e7d32; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 14px;">✓</span> DIGITALLY SIGNED
+            </div>
+            <div style="font-size: 9px; line-height: 1.3; color: #333; margin-top: 2px;">
+              <strong>By:</strong> {{ invoice.signed_by.username if invoice.signed_by else 'Authorized User' }}<br>
+              <strong>Date:</strong> {{ invoice.signed_at.strftime('%d-%b-%Y %H:%M UTC') }}<br>
+              <span style="color: #666; font-family: 'Courier New', Courier, monospace; font-size: 8px;">ID: {{
+                invoice.signature_hash[:16] if invoice.signature_hash else 'VERIFIED' }}</span>
+            </div>
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="line"></div>
+          {% endif %}
+          <div>Authorised Signatory</div>
+        </div>
+      </div>
+
+      <div class="page-number" id="duplicate-page-number-3">DUP 3/3</div>
+    </div>
+
+    <!-- TRIPLICATE COPY -->
+    <div class="invoice-copy" id="triplicate-copy">
+      <br>
+      <div class="title">TAX INVOICE</div>
+      <br><br>
+      <div class="row between header" style="margin-bottom:6px;">
+        <div class="row" style="gap:10px; flex:1; min-width: 110mm;">
+          <div class="col logo-col">
+            <img class="logo" src="{{ logo_path }}" alt="Logo">
+            <div class="muted tagline">{{ company_details.tagline }}</div>
+          </div>
+          <div class="col" style="min-width: 80mm;">
+            <div class="company-name">{{ addresses[main_address_key].name if addresses and main_address_key in addresses
+              else 'Company Name' }}</div>
+            <div class="small address">
+              {{ addresses[main_address_key].address|safe if addresses and main_address_key in addresses else 'Address'
+              }}<br>
+              {{ addresses[main_address_key].phone if addresses and main_address_key in addresses else 'Phone' }}<br>
+              {{ addresses[main_address_key].email if addresses and main_address_key in addresses else 'Email' }}<br>
+
+              <strong>GSTIN:</strong> {{ company_details.gstin }}<br>
+              <strong>State:</strong> {{ company_details.state }}<br>
+              <strong>PAN:</strong> {{ company_details.pan }}
+            </div>
+          </div>
+        </div>
+        <!-- Narrow the right panel so total width stays inside page -->
+        <div class="col" style="gap:6px; text-align:right; min-width: 56mm; max-width: 60mm;">
+          <div class="top-stamp">TRIPLICATE<br><span class="small">For Supplier</span></div>
+          <table style="margin-top:6px; font-size:10px; border-color:#cfcfcf;">
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">Invoice Date</td>
+              <td style="border:0; padding:2px 0;" class="nowrap">{% if invoice.invoice_date %}{% if
+                invoice.invoice_date is string %}{{ invoice.invoice_date }}{% else %}{{
+                invoice.invoice_date.strftime('%d/%m/%Y') }}{% endif %}{% else %}N/A{% endif %}</td>
+            </tr>
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">Invoice No.</td>
+              <td style="border:0; padding:2px 0;" class="nowrap">{{ invoice.invoice_number }}</td>
+            </tr>
+            {% if meta.reference_no and meta.reference_no.strip() and meta.reference_no != '-' %}
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">Reference No.</td>
+              <td style="border:0; padding:2px 0;">{{ meta.reference_no }}</td>
+            </tr>
+            {% endif %}
+            {% if meta.eway_bill and meta.eway_bill.strip() and meta.eway_bill != '-' %}
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">E-way Bill</td>
+              <td style="border:0; padding:2px 0;">{{ meta.eway_bill }}</td>
+            </tr>
+            {% if meta.eway_bill_date and meta.eway_bill_date.strip() %}
+            <tr>
+              <td style="border:0; padding:2px 0;" class="nowrap">E-way Bill Date</td>
+              <td style="border:0; padding:2px 0;">{{ meta.eway_bill_date }}</td>
+            </tr>
+            {% endif %}
+            {% endif %}
+          </table>
+        </div>
+      </div>
+
+      <div class="red-sep"></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th class="nowrap">Customer Details</th>
+            <th class="nowrap">Billing Information</th>
+            <th class="nowrap">Shipping Information</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td>{% if meta.extra_billing_info and meta.extra_billing_info.strip() %}{{ meta.extra_billing_info }}{% else
+              %}{{ invoice.customer.address }}{% if invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{%
+              if invoice.customer.pincode %}, {{ invoice.customer.pincode }}{% endif %}{% endif %}{% if
+              invoice.customer.gstin %}<br>GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+          </tr>
+          <tr>
+            <td class="nowrap"><strong>Place of Supply:</strong> {{ customer_state }}</td>
+            <td class="nowrap">{% if invoice.customer.gstin %}<strong>GSTIN:</strong> {{ invoice.customer.gstin }}{%
+              else %}<em>No GSTIN</em>{% endif %}</td>
+            <td class="nowrap"><strong>Due Date:</strong> {% if invoice.due_date %}{% if invoice.due_date is string %}{{
+              invoice.due_date }}{% else %}{{ invoice.due_date.strftime('%d/%m/%Y') }}{% endif %}{% else %}Not
+              specified{% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- TRIPLICATE TABLE STRUCTURE - PERCENTAGE OPTIMIZED -->
+      <table
+        class="items {% if has_discounts %}with-discounts{% else %}without-discounts{% endif %}{% if is_interstate %} interstate{% endif %}"
+        style="margin-top:4px; width: 100%;">
+        <colgroup>
+          <col style="width: 3%;"> <!-- Sl. No. -->
+          <col> <!-- Item -->
+          <col style="width: 8%;"> <!-- HSN -->
+          <col style="width: 5%;"> <!-- Qty -->
+          <col> <!-- Rate -->
+          {% if has_discounts %}
+          <col style="width: 4%;"> <!-- Disc -->
+          {% endif %}
+          <col> <!-- Taxable Value -->
+          {% if not is_interstate %}
+          <col> <!-- CGST -->
+          <col> <!-- SGST -->
+          {% else %}
+          <col> <!-- IGST -->
+          {% endif %}
+          <col> <!-- Total -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="center nowrap">Sl. No.</th>
+            <th class="left">Item</th>
+            <th class="center nowrap">HSN/SAC</th>
+            <th class="center nowrap">Qty</th>
+            <th class="right nowrap">Rate</th>
+            {% if has_discounts %}
+            <th class="center nowrap">Disc</th>
+            {% endif %}
+            <th class="right nowrap">Taxable Value</th>
+            {% if not is_interstate %}
+            <th class="right nowrap">CGST</th>
+            <th class="right nowrap">SGST</th>
+            {% else %}
+            <th class="right nowrap igst">IGST</th>
+            {% endif %}
+            <th class="right nowrap">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for detail in item_details %}
+          <tr>
+            <td class="center">{{ loop.index }}</td>
+            <td>{{ detail.item.description }}</td>
+            <td class="nowrap center">{{ detail.item.hsn_code or company_details.default_hsn }}</td>
+            <td class="nowrap">{{ "%.2f"|format(detail.item.quantity) }}</td>
+            <td class="nowrap">{{ "{:,.2f}".format(detail.item.unit_price|float) }}</td>
+            {% if has_discounts %}
+            <td class="nowrap">
+              {% if detail.item.discount_value > 0 %}
+              {% if detail.item.discount_type == 'percentage' %}
+              {{ "%.1f"|format(detail.item.discount_value) }}%
+              {% else %}
+              {{ "{:,.2f}".format(detail.item.discount_value|float) }}
+              {% endif %}
+              {% else %}
+              0.00
+              {% endif %}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.taxable) }}</td>
+            {% if not is_interstate %}
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.cgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.sgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            {% else %}
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.0f}%".format(detail.igst, detail.item.tax_rate|float)|safe }}</td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.total) }}</td>
+          </tr>
+          {% endfor %}
+          <tr>
+            <td colspan="5"><b>Total</b></td>
+            {% if has_discounts %}
+            <td class="nowrap" style="white-space: nowrap;"><b>{{
+                "{:,.2f}".format(item_details|sum(attribute='discount')) }}</b></td>
+            {% endif %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.subtotal|float) }}</b></td>
+            {% if not is_interstate %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.cgst_amount|float) }}</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.sgst_amount|float) }}</b></td>
+            {% else %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.igst_amount|float) }}</b></td>
+            {% endif %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.total_amount|float) }}</b></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Optimized two-column layout for better space utilization -->
+      <div style="margin-top:12px; padding-top: 8px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px;">
+        <!-- Left column: Bank Details and Terms -->
+        <div style="flex: 1; max-width: 48%;">
+          <table class="bank" style="width: 100%; margin-bottom: 6px;">
+            <thead>
+              <tr>
+                <th colspan="2">Bank Details:</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width:40%;" class="nowrap">Account Number:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_number }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">IFSC:</td>
+                <td class="nowrap">{{ company_details.bank_details.ifsc }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Bank Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.bank_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Branch Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.branch_name }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="small" style="margin-top:2px;">
+            <b>Terms & Conditions:</b><br>
+            {{ meta.terms_text or company_details.default_terms }}
+            <br><br>
+            <b>Branch Office:</b><br>
+            {{ addresses[branch_address_key].address|safe if addresses and branch_address_key in addresses else 'Branch
+            Address' }}<br>
+            {{ addresses[branch_address_key].email if addresses and branch_address_key in addresses else 'Branch Email'
+            }}<br><br>
+            {{ meta.payment_text or company_details.default_payment_terms }}
+          </div>
+        </div>
+
+        <!-- Right column: Summary and Total in Words -->
+        <div style="flex: 1; max-width: 52%;">
+          <table class="summary" style="width: 100%; margin-bottom: 6px;">
+            <tr>
+              <td class="right nowrap" style="width:65%;">Subtotal</td>
+              <td class="right nowrap" style="width:35%;">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Taxable Amount</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Total Tax</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format((invoice.cgst_amount|float) + (invoice.sgst_amount|float) +
+                (invoice.igst_amount|float)) }}</td>
+            </tr>
+            {% if invoice.shipping_charges > 0 %}
+            <tr>
+              <td class="right nowrap">Shipping Charges</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.shipping_charges|float) }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="right total nowrap">Total Value</td>
+              <td class="right total nowrap">₹ {{ "{:,.2f}".format(invoice.total_amount|float) }}</td>
+            </tr>
+          </table>
+
+          <div class="small" style="margin-top:2px; padding: 4px; border: 1px solid #ddd; background: #f9f9f9;">
+            <b style="font-size: 14px; font-weight: 800;">Total amount (in words):</b><br>
+            <span style="font-size: 13px; font-weight: 600;">{{ number_to_words(invoice.total_amount|float) }}</span>
+          </div>
+
+          {% if qr_code %}
+          <div style="margin-top:8px; padding: 6px; border: 1px solid #ddd; background: #f9f9f9; text-align: center;">
+            <b style="font-size: 12px; font-weight: 700;">Scan to Pay</b><br>
+            <img src="{{ qr_code }}" alt="Payment QR Code" style="width: 80px; height: 80px; margin: 4px 0;">
+            <div style="font-size: 10px; color: #666; margin-top: 2px;">
+              Amount: ₹{{ "{:,.2f}".format(invoice.total_amount|float) }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="sign small">
+        <div></div>
+        <div style="text-align:center;">
+          <div><b>For {{ company_details.signature_name }}</b></div>
+          {% if signature_data %}
+          <div style="margin: 10px 0;">
+            <img src="{{ signature_data }}" alt="Signature"
+              style="max-width: 150px; max-height: 60px; border-bottom: 1px solid #000;">
+          </div>
+          {% if invoice.signed_at %}
+          <div class="digital-seal"
+            style="border: 1.5px solid #2e7d32; padding: 4px 8px; border-radius: 4px; display: inline-block; text-align: left; background-color: #f1f8e9; margin-top: 4px;">
+            <div
+              style="color: #2e7d32; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 14px;">✓</span> DIGITALLY SIGNED
+            </div>
+            <div style="font-size: 9px; line-height: 1.3; color: #333; margin-top: 2px;">
+              <strong>By:</strong> {{ invoice.signed_by.username if invoice.signed_by else 'Authorized User' }}<br>
+              <strong>Date:</strong> {{ invoice.signed_at.strftime('%d-%b-%Y %H:%M UTC') }}<br>
+              <span style="color: #666; font-family: 'Courier New', Courier, monospace; font-size: 8px;">ID: {{
+                invoice.signature_hash[:16] if invoice.signature_hash else 'VERIFIED' }}</span>
+            </div>
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="line"></div>
+          {% endif %}
+          <div>Authorised Signatory</div>
+        </div>
+      </div>
+      <div class="page-number" id="triplicate-page-number">TRI 1/1</div>
+    </div>
+
+    <!-- TRIPLICATE COPY OVERFLOW PAGE (Shown only if needed) -->
+    <div class="invoice-copy overflow-page page-break" id="triplicate-copy-cont">
+      <br>
+      <div class="title">TAX INVOICE</div>
+      <br><br>
+      <div class="row between header" style="margin-bottom:6px;">
+        <div class="row" style="gap:10px; flex:1; min-width: 110mm;">
+          <div class="col logo-col">
+            <img class="logo" src="{{ logo_path }}" alt="Logo">
+            <div class="muted tagline">{{ company_details.tagline }}</div>
+          </div>
+          <div class="col" style="min-width: 80mm;">
+            <div class="company-name">{{ addresses[main_address_key].name if addresses and main_address_key in addresses
+              else 'Company Name' }}</div>
+            <div class="small address">
+              {{ addresses[main_address_key].address|safe if addresses and main_address_key in addresses else 'Address'
+              }}<br>
+              {{ addresses[main_address_key].phone if addresses and main_address_key in addresses else 'Phone' }}<br>
+              {{ addresses[main_address_key].email if addresses and main_address_key in addresses else 'Email' }}<br>
+              <strong>GSTIN:</strong> {{ company_details.gstin }}<br>
+              <strong>State:</strong> {{ company_details.state }}<br>
+              <strong>PAN:</strong> {{ company_details.pan }}
+            </div>
+          </div>
+        </div>
+        <div class="col" style="gap:6px; text-align:right; min-width: 56mm; max-width: 60mm;">
+          <div class="top-stamp">TRIPLICATE<br><span class="small">For Supplier</span></div>
+        </div>
+      </div>
+
+      <div class="red-sep"></div>
+
+      <!-- Customer Information Table -->
+      <table>
+        <thead>
+          <tr>
+            <th class="nowrap">Customer Details</th>
+            <th class="nowrap">Billing Information</th>
+            <th class="nowrap">Shipping Information</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{% if meta.extra_billing_info and
+              meta.extra_billing_info.strip() %}{{ meta.extra_billing_info }}{% else %}{{ invoice.customer.address }}{%
+              if invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% endif %}{% if invoice.customer.gstin %}<br>GSTIN: {{
+              invoice.customer.gstin }}{% endif %}</td>
+          </tr>
+          <tr>
+            <td class="nowrap"><strong>Place of Supply:</strong> {{ customer_state }}</td>
+            <td class="nowrap">{% if invoice.customer.gstin %}<strong>GSTIN:</strong> {{ invoice.customer.gstin }}{%
+              else %}<em>No GSTIN</em>{% endif %}</td>
+            <td class="nowrap"><strong>Due Date:</strong> {% if invoice.due_date %}{% if invoice.due_date is string %}{{
+              invoice.due_date }}{% else %}{{ invoice.due_date.strftime('%d/%m/%Y') }}{% endif %}{% else %}Not
+              specified{% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Items table continuation for page 2 -->
+      <table
+        class="items {% if has_discounts %}with-discounts{% else %}without-discounts{% endif %}{% if is_interstate %} interstate{% endif %}"
+        style="margin-top:4px; width: 100%;">
+        <colgroup>
+          <col style="width: 3%;"> <!-- Sl. No. -->
+          <col> <!-- Item -->
+          <col style="width: 8%;"> <!-- HSN -->
+          <col style="width: 5%;"> <!-- Qty -->
+          <col> <!-- Rate -->
+          {% if has_discounts %}
+          <col style="width: 4%;"> <!-- Disc -->
+          {% endif %}
+          <col> <!-- Taxable Value -->
+          {% if not is_interstate %}
+          <col> <!-- CGST -->
+          <col> <!-- SGST -->
+          {% else %}
+          <col> <!-- IGST -->
+          {% endif %}
+          <col> <!-- Total -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="center nowrap">Sl. No.</th>
+            <th class="left">Item</th>
+            <th class="center nowrap">HSN/SAC</th>
+            <th class="center nowrap">Qty</th>
+            <th class="right nowrap">Rate</th>
+            {% if has_discounts %}
+            <th class="center nowrap">Disc</th>
+            {% endif %}
+            <th class="right nowrap">Taxable Value</th>
+            {% if not is_interstate %}
+            <th class="right nowrap">CGST</th>
+            <th class="right nowrap">SGST</th>
+            {% else %}
+            <th class="right nowrap igst">IGST</th>
+            {% endif %}
+            <th class="right nowrap">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for detail in item_details %}
+          <tr>
+            <td class="center">{{ loop.index }}</td>
+            <td>{{ detail.item.description }}</td>
+            <td class="nowrap center">{{ detail.item.hsn_code or company_details.default_hsn }}</td>
+            <td class="nowrap">{{ "%.2f"|format(detail.item.quantity) }}</td>
+            <td class="nowrap">{{ "{:,.2f}".format(detail.item.unit_price|float) }}</td>
+            {% if has_discounts %}
+            <td class="nowrap">
+              {% if detail.item.discount_value > 0 %}
+              {% if detail.item.discount_type == 'percentage' %}
+              {{ "%.1f"|format(detail.item.discount_value) }}%
+              {% else %}
+              {{ "{:,.2f}".format(detail.item.discount_value|float) }}
+              {% endif %}
+              {% else %}
+              0.00
+              {% endif %}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.taxable) }}</td>
+            {% if not is_interstate %}
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.cgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.sgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            {% else %}
+            <td class="nowrap igst">{{ "{:,.2f}<br>@{:.0f}%".format(detail.igst, detail.item.tax_rate|float)|safe }}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.total) }}</td>
+          </tr>
+          {% endfor %}
+          <tr class="total">
+            <td colspan="{% if has_discounts %}6{% else %}5{% endif %}" class="right"><b>Total</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.subtotal|float) }}</b></td>
+            {% if not is_interstate %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.cgst_amount|float) }}</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.sgst_amount|float) }}</b></td>
+            {% else %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.igst_amount|float) }}</b></td>
+            {% endif %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.total_amount|float) }}</b></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Complete two-column layout for page 2 -->
+      <div style="margin-top:12px; padding-top: 8px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px;">
+        <!-- Left column: Bank Details and Terms -->
+        <div style="flex: 1; max-width: 48%;">
+          <table class="bank" style="width: 100%; margin-bottom: 6px;">
+            <thead>
+              <tr>
+                <th colspan="2">Bank Details:</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width:40%;" class="nowrap">Account Number:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_number }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Account Type:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_type }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">IFSC:</td>
+                <td class="nowrap">{{ company_details.bank_details.ifsc }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Bank Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.bank_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Branch Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.branch_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Virtual Payment:</td>
+                <td class="nowrap">{{ company_details.bank_details.virtual_payment }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="small" style="margin-top:2px;">
+            <b>Terms & Conditions:</b><br>
+            {{ meta.terms_text or company_details.default_terms }}
+            <br><br>
+            <b>Branch Office:</b><br>
+            {{ addresses[branch_address_key].address|safe if addresses and branch_address_key in addresses else 'Branch
+            Address' }}<br>
+            {{ addresses[branch_address_key].email if addresses and branch_address_key in addresses else 'Branch Email'
+            }}<br><br>
+            {{ meta.payment_text or company_details.default_payment_terms }}
+          </div>
+        </div>
+
+        <!-- Right column: Summary and Total in Words -->
+        <div style="flex: 1; max-width: 52%;">
+          <table class="summary" style="width: 100%; margin-bottom: 6px;">
+            <tr>
+              <td class="right nowrap" style="width:65%;">Subtotal</td>
+              <td class="right nowrap" style="width:35%;">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Taxable Amount</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Total Tax</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format((invoice.cgst_amount|float) + (invoice.sgst_amount|float) +
+                (invoice.igst_amount|float)) }}</td>
+            </tr>
+            {% if invoice.shipping_charges > 0 %}
+            <tr>
+              <td class="right nowrap">Shipping Charges</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.shipping_charges|float) }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="right total nowrap">Total Value</td>
+              <td class="right total nowrap">₹ {{ "{:,.2f}".format(invoice.total_amount|float) }}</td>
+            </tr>
+          </table>
+
+          <div class="small" style="margin-top:2px; padding: 4px; border: 1px solid #ddd; background: #f9f9f9;">
+            <b style="font-size: 14px; font-weight: 800;">Total amount (in words):</b><br>
+            <span style="font-size: 13px; font-weight: 600;">{{ number_to_words(invoice.total_amount|float) }}</span>
+          </div>
+
+          {% if qr_code %}
+          <div style="margin-top:8px; padding: 6px; border: 1px solid #ddd; background: #f9f9f9; text-align: center;">
+            <b style="font-size: 12px; font-weight: 700;">Scan to Pay</b><br>
+            <img src="{{ qr_code }}" alt="Payment QR Code" style="width: 80px; height: 80px; margin: 4px 0;">
+            <div style="font-size: 10px; color: #666; margin-top: 2px;">
+              Amount: ₹{{ "{:,.2f}".format(invoice.total_amount|float) }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Signature Section -->
+      <div class="sign small">
+        <div></div>
+        <div style="text-align:center;">
+          <div><b>For {{ company_details.signature_name }}</b></div>
+          {% if signature_data %}
+          <div style="margin: 10px 0;">
+            <img src="{{ signature_data }}" alt="Signature"
+              style="max-width: 150px; max-height: 60px; border-bottom: 1px solid #000;">
+          </div>
+          {% if invoice.signed_at %}
+          <div class="digital-seal"
+            style="border: 1.5px solid #2e7d32; padding: 4px 8px; border-radius: 4px; display: inline-block; text-align: left; background-color: #f1f8e9; margin-top: 4px;">
+            <div
+              style="color: #2e7d32; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 14px;">✓</span> DIGITALLY SIGNED
+            </div>
+            <div style="font-size: 9px; line-height: 1.3; color: #333; margin-top: 2px;">
+              <strong>By:</strong> {{ invoice.signed_by.username if invoice.signed_by else 'Authorized User' }}<br>
+              <strong>Date:</strong> {{ invoice.signed_at.strftime('%d-%b-%Y %H:%M UTC') }}<br>
+              <span style="color: #666; font-family: 'Courier New', Courier, monospace; font-size: 8px;">ID: {{
+                invoice.signature_hash[:16] if invoice.signature_hash else 'VERIFIED' }}</span>
+            </div>
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="line"></div>
+          {% endif %}
+          <div>Authorised Signatory</div>
+        </div>
+      </div>
+
+      <div class="page-number" id="triplicate-page-number-2">TRI 2/3</div>
+    </div>
+
+    <!-- TRIPLICATE COPY THIRD PAGE (Shown only if needed) -->
+    <div class="invoice-copy overflow-page page-break" id="triplicate-copy-cont-2">
+      <br>
+      <div class="title">TAX INVOICE</div>
+      <br><br>
+      <div class="row between header" style="margin-bottom:6px;">
+        <div class="row" style="gap:10px; flex:1; min-width: 110mm;">
+          <div class="col logo-col">
+            <img class="logo" src="{{ logo_path }}" alt="Logo">
+            <div class="muted tagline">{{ company_details.tagline }}</div>
+          </div>
+          <div class="col" style="min-width: 80mm;">
+            <div class="company-name">{{ addresses[main_address_key].name if addresses and main_address_key in addresses
+              else 'Company Name' }}</div>
+            <div class="small address">
+              {{ addresses[main_address_key].address|safe if addresses and main_address_key in addresses else 'Address'
+              }}<br>
+              {{ addresses[main_address_key].phone if addresses and main_address_key in addresses else 'Phone' }}<br>
+              {{ addresses[main_address_key].email if addresses and main_address_key in addresses else 'Email' }}<br>
+              <strong>GSTIN:</strong> {{ company_details.gstin }}<br>
+              <strong>State:</strong> {{ company_details.state }}<br>
+              <strong>PAN:</strong> {{ company_details.pan }}
+            </div>
+          </div>
+        </div>
+        <div class="col" style="gap:6px; text-align:right; min-width: 56mm; max-width: 60mm;">
+          <div class="top-stamp">TRIPLICATE<br><span class="small">For Supplier</span></div>
+        </div>
+      </div>
+
+      <div class="red-sep"></div>
+
+      <!-- Customer Information Table -->
+      <table>
+        <thead>
+          <tr>
+            <th class="nowrap">Customer Details</th>
+            <th class="nowrap">Billing Information</th>
+            <th class="nowrap">Shipping Information</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{{ invoice.customer.address }}{% if
+              invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% if invoice.customer.phone %}<br>Phone: {{ invoice.customer.phone
+              }}{% endif %}{% if invoice.customer.email %}<br>Email: {{ invoice.customer.email }}{% endif %}{% if
+              invoice.customer.gstin %}<br>Customer GSTIN: {{ invoice.customer.gstin }}{% endif %}</td>
+            <td><strong>{{ invoice.customer.name }}</strong><br>{% if meta.extra_billing_info and
+              meta.extra_billing_info.strip() %}{{ meta.extra_billing_info }}{% else %}{{ invoice.customer.address }}{%
+              if invoice.customer.city %}, {{ invoice.customer.city }}{% endif %}{% if invoice.customer.pincode %}, {{
+              invoice.customer.pincode }}{% endif %}{% endif %}{% if invoice.customer.gstin %}<br>GSTIN: {{
+              invoice.customer.gstin }}{% endif %}</td>
+          </tr>
+          <tr>
+            <td class="nowrap"><strong>Place of Supply:</strong> {{ customer_state }}</td>
+            <td class="nowrap">{% if invoice.customer.gstin %}<strong>GSTIN:</strong> {{ invoice.customer.gstin }}{%
+              else %}<em>No GSTIN</em>{% endif %}</td>
+            <td class="nowrap"><strong>Due Date:</strong> {% if invoice.due_date %}{% if invoice.due_date is string %}{{
+              invoice.due_date }}{% else %}{{ invoice.due_date.strftime('%d/%m/%Y') }}{% endif %}{% else %}Not
+              specified{% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Items table continuation for page 3 -->
+      {% set has_discounts = item_details|selectattr('item.discount_value', 'gt', 0)|list|length > 0 %}
+      <table
+        class="items {% if has_discounts %}with-discounts{% else %}without-discounts{% endif %}{% if is_interstate %} interstate{% endif %}"
+        style="margin-top:4px; width: 100%;">
+        <colgroup>
+          <col style="width: 3%;"> <!-- Sl. No. -->
+          <col> <!-- Item -->
+          <col style="width: 8%;"> <!-- HSN -->
+          <col style="width: 5%;"> <!-- Qty -->
+          <col> <!-- Rate -->
+          {% if has_discounts %}
+          <col style="width: 4%;"> <!-- Disc -->
+          {% endif %}
+          <col> <!-- Taxable Value -->
+          {% if not is_interstate %}
+          <col> <!-- CGST -->
+          <col> <!-- SGST -->
+          {% else %}
+          <col> <!-- IGST -->
+          {% endif %}
+          <col> <!-- Total -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="center nowrap">Sl. No.</th>
+            <th class="left">Item</th>
+            <th class="center nowrap">HSN/SAC</th>
+            <th class="center nowrap">Qty</th>
+            <th class="right nowrap">Rate</th>
+            {% if has_discounts %}
+            <th class="center nowrap">Disc</th>
+            {% endif %}
+            <th class="right nowrap">Taxable Value</th>
+            {% if not is_interstate %}
+            <th class="right nowrap">CGST</th>
+            <th class="right nowrap">SGST</th>
+            {% else %}
+            <th class="right nowrap igst">IGST</th>
+            {% endif %}
+            <th class="right nowrap">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for detail in item_details %}
+          <tr>
+            <td class="center">{{ loop.index }}</td>
+            <td>{{ detail.item.description }}</td>
+            <td class="nowrap center">{{ detail.item.hsn_code or company_details.default_hsn }}</td>
+            <td class="nowrap">{{ "%.2f"|format(detail.item.quantity) }}</td>
+            <td class="nowrap">{{ "{:,.2f}".format(detail.item.unit_price|float) }}</td>
+            {% if has_discounts %}
+            <td class="nowrap">
+              {% if detail.item.discount_value > 0 %}
+              {% if detail.item.discount_type == 'percentage' %}
+              {{ "%.1f"|format(detail.item.discount_value) }}%
+              {% else %}
+              {{ "{:,.2f}".format(detail.item.discount_value|float) }}
+              {% endif %}
+              {% else %}
+              0.00
+              {% endif %}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.taxable) }}</td>
+            {% if not is_interstate %}
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.cgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            <td class="nowrap">{{ "{:,.2f}<br>@{:.1f}%".format(detail.sgst, (detail.item.tax_rate|float) / 2)|safe }}
+            </td>
+            {% else %}
+            <td class="nowrap igst">{{ "{:,.2f}<br>@{:.0f}%".format(detail.igst, detail.item.tax_rate|float)|safe }}
+            </td>
+            {% endif %}
+            <td class="nowrap">{{ "{:,.2f}".format(detail.total) }}</td>
+          </tr>
+          {% endfor %}
+          <tr class="total">
+            <td colspan="{% if has_discounts %}6{% else %}5{% endif %}" class="right"><b>Total</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.subtotal|float) }}</b></td>
+            {% if not is_interstate %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.cgst_amount|float) }}</b></td>
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.sgst_amount|float) }}</b></td>
+            {% else %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.igst_amount|float) }}</b></td>
+            {% endif %}
+            <td class="nowrap"><b>{{ "{:,.2f}".format(invoice.total_amount|float) }}</b></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Complete two-column layout for page 3 -->
+      <div style="margin-top:12px; padding-top: 8px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px;">
+        <!-- Left column: Bank Details and Terms -->
+        <div style="flex: 1; max-width: 48%;">
+          <table class="bank" style="width: 100%; margin-bottom: 6px;">
+            <thead>
+              <tr>
+                <th colspan="2">Bank Details:</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width:40%;" class="nowrap">Account Number:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_number }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Account Type:</td>
+                <td class="nowrap">{{ company_details.bank_details.account_type }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">IFSC:</td>
+                <td class="nowrap">{{ company_details.bank_details.ifsc }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Bank Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.bank_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Branch Name:</td>
+                <td class="nowrap">{{ company_details.bank_details.branch_name }}</td>
+              </tr>
+              <tr>
+                <td class="nowrap">Virtual Payment:</td>
+                <td class="nowrap">{{ company_details.bank_details.virtual_payment }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="small" style="margin-top:2px;">
+            <b>Terms & Conditions:</b><br>
+            {{ meta.terms_text or company_details.default_terms }}
+            <br><br>
+            <b>Branch Office:</b><br>
+            {{ addresses[branch_address_key].address|safe if addresses and branch_address_key in addresses else 'Branch
+            Address' }}<br>
+            {{ addresses[branch_address_key].email if addresses and branch_address_key in addresses else 'Branch Email'
+            }}<br><br>
+            {{ meta.payment_text or company_details.default_payment_terms }}
+          </div>
+        </div>
+
+        <!-- Right column: Summary and Total in Words -->
+        <div style="flex: 1; max-width: 52%;">
+          <table class="summary" style="width: 100%; margin-bottom: 6px;">
+            <tr>
+              <td class="right nowrap" style="width:65%;">Subtotal</td>
+              <td class="right nowrap" style="width:35%;">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Taxable Amount</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.subtotal|float) }}</td>
+            </tr>
+            <tr>
+              <td class="right nowrap">Total Tax</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format((invoice.cgst_amount|float) + (invoice.sgst_amount|float) +
+                (invoice.igst_amount|float)) }}</td>
+            </tr>
+            {% if invoice.shipping_charges > 0 %}
+            <tr>
+              <td class="right nowrap">Shipping Charges</td>
+              <td class="right nowrap">₹ {{ "{:,.2f}".format(invoice.shipping_charges|float) }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="right total nowrap">Total Value</td>
+              <td class="right total nowrap">₹ {{ "{:,.2f}".format(invoice.total_amount|float) }}</td>
+            </tr>
+          </table>
+
+          <div class="small" style="margin-top:2px; padding: 4px; border: 1px solid #ddd; background: #f9f9f9;">
+            <b style="font-size: 14px; font-weight: 800;">Total amount (in words):</b><br>
+            <span style="font-size: 13px; font-weight: 600;">{{ number_to_words(invoice.total_amount|float) }}</span>
+          </div>
+
+          {% if qr_code %}
+          <div style="margin-top:8px; padding: 6px; border: 1px solid #ddd; background: #f9f9f9; text-align: center;">
+            <b style="font-size: 12px; font-weight: 700;">Scan to Pay</b><br>
+            <img src="{{ qr_code }}" alt="Payment QR Code" style="width: 80px; height: 80px; margin: 4px 0;">
+            <div style="font-size: 10px; color: #666; margin-top: 2px;">
+              Amount: ₹{{ "{:,.2f}".format(invoice.total_amount|float) }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Signature Section -->
+      <div class="sign small">
+        <div></div>
+        <div style="text-align:center;">
+          <div><b>For {{ company_details.signature_name }}</b></div>
+          {% if signature_data %}
+          <div style="margin: 10px 0;">
+            <img src="{{ signature_data }}" alt="Signature"
+              style="max-width: 150px; max-height: 60px; border-bottom: 1px solid #000;">
+          </div>
+          {% if invoice.signed_at %}
+          <div class="digital-seal"
+            style="border: 1.5px solid #2e7d32; padding: 4px 8px; border-radius: 4px; display: inline-block; text-align: left; background-color: #f1f8e9; margin-top: 4px;">
+            <div
+              style="color: #2e7d32; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 14px;">✓</span> DIGITALLY SIGNED
+            </div>
+            <div style="font-size: 9px; line-height: 1.3; color: #333; margin-top: 2px;">
+              <strong>By:</strong> {{ invoice.signed_by.username if invoice.signed_by else 'Authorized User' }}<br>
+              <strong>Date:</strong> {{ invoice.signed_at.strftime('%d-%b-%Y %H:%M UTC') }}<br>
+              <span style="color: #666; font-family: 'Courier New', Courier, monospace; font-size: 8px;">ID: {{
+                invoice.signature_hash[:16] if invoice.signature_hash else 'VERIFIED' }}</span>
+            </div>
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="line"></div>
+          {% endif %}
+          <div>Authorised Signatory</div>
+        </div>
+      </div>
+
+      <div class="page-number" id="triplicate-page-number-3">TRI 3/3</div>
+    </div>
+
+    <div class="no-print print-controls"
+      style="margin-top:20px; padding:20px; background:#f8f9fa; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+      <div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;">
+        <button onclick="cleanPrint()" class="print-btn primary" style="
+          background: linear-gradient(135deg, #007bff, #0056b3);
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,123,255,0.4)'"
+          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,123,255,0.3)'">
+          <span style="font-size:16px;">🖨️</span>
+          Print Invoice
+        </button>
+
+        <button onclick="downloadPDF()" class="print-btn secondary" style="
+          background: linear-gradient(135deg, #28a745, #1e7e34);
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 4px rgba(40,167,69,0.3);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(40,167,69,0.4)'"
+          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(40,167,69,0.3)'">
+          <span style="font-size:16px;">📄</span>
+          Save as PDF
+        </button>
+
+        <button onclick="window.close()" class="print-btn danger" style="
+          background: linear-gradient(135deg, #dc3545, #c82333);
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 4px rgba(220,53,69,0.3);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(220,53,69,0.4)'"
+          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(220,53,69,0.3)'">
+          <span style="font-size:16px;">❌</span>
+          Close Window
+        </button>
+      </div>
+
+      <div style="text-align:center; margin-top:15px; color:#6c757d; font-size:13px;">
+        <p style="margin:0;">💡 <strong>Tip:</strong> Use Ctrl+P (Windows) or Cmd+P (Mac) for quick printing</p>
+      </div>
+    </div>
+  </div>
+</body>
+
+<script>
+  // Enhanced print functionality using server-side generation
+  function downloadPDF() {
+    const noPrintElements = document.querySelectorAll('.no-print');
+    
+    // Hide controls so they aren't in the generated PDF
+    noPrintElements.forEach(el => el.style.display = 'none');
+    
+    const htmlContent = document.documentElement.outerHTML;
+    
+    // Show controls again
+    noPrintElements.forEach(el => el.style.display = '');
+
+    // Create a hidden form to submit the HTML content
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/download_pdf_from_html';
+    form.enctype = 'multipart/form-data';
+    
+    // Send HTML as a file to bypass form memory limits
+    const file = new File([htmlContent], 'content.html', {type: 'text/html'});
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.name = 'html_file';
+    fileInput.files = dataTransfer.files;
+    
+    const filenameInput = document.createElement('input');
+    filenameInput.type = 'hidden';
+    filenameInput.name = 'filename';
+    filenameInput.value = document.title + '.pdf';
+    
+    form.appendChild(fileInput);
+    form.appendChild(filenameInput);
+    document.body.appendChild(form);
+    
+    // Submit form to trigger native download
+    form.submit();
+    
+    setTimeout(() => {
+      if (document.body.contains(form)) {
+        document.body.removeChild(form);
+      }
+    }, 1000);
+  }
+
+  // Override the default print behavior
+  window.addEventListener('beforeprint', function () {
+    // Remove any URLs or page numbers that might appear
+    const body = document.body;
+    const originalHTML = body.innerHTML;
+
+    // Clean URLs and page numbers
+    body.innerHTML = body.innerHTML.replace(/https?:\/\/[^\s]+/g, '');
+    body.innerHTML = body.innerHTML.replace(/127\.0\.0\.1:\d+/g, '');
+    body.innerHTML = body.innerHTML.replace(/localhost:\d+/g, '');
+    // Only remove very specific page number patterns that browsers add
+    body.innerHTML = body.innerHTML.replace(/Page\s+[0-9]+\/[0-9]+/g, '');
+
+    // Store original HTML for restoration
+    body.setAttribute('data-original-html', originalHTML);
+  });
+
+  window.addEventListener('afterprint', function () {
+    // Restore original content
+    const body = document.body;
+    const originalHTML = body.getAttribute('data-original-html');
+    if (originalHTML) {
+      body.innerHTML = originalHTML;
+      body.removeAttribute('data-original-html');
+    }
+  });
+
+  // Override print function to ensure clean printing
+  function cleanPrint() {
+    // Remove any potential URL elements before printing
+    const urlElements = document.querySelectorAll('a[href], [href]');
+    const originalDisplay = [];
+
+    urlElements.forEach((el, index) => {
+      originalDisplay[index] = el.style.display;
+      el.style.display = 'none';
+    });
+
+    // Clean any URL text from the document
+    const body = document.body;
+    const originalHTML = body.innerHTML;
+
+    // Remove URLs from content
+    body.innerHTML = body.innerHTML.replace(/https?:\/\/[^\s]+/g, '');
+    body.innerHTML = body.innerHTML.replace(/127\.0\.0\.1:\d+/g, '');
+    body.innerHTML = body.innerHTML.replace(/localhost:\d+/g, '');
+    // Only remove very specific page number patterns that browsers add
+    body.innerHTML = body.innerHTML.replace(/Page\s+[0-9]+\/[0-9]+/g, '');
+
+    // Add CSS to prevent browser headers/footers
+    const printCSS = `
+        <style>
+        @page {
+            margin: 0 !important;
+            @top-center { content: none !important; }
+            @top-right { content: none !important; }
+            @bottom-center { content: none !important; }
+            @bottom-right { content: none !important; }
+            @bottom-left { content: none !important; }
+            @top-left { content: none !important; }
+        }
+        </style>
+    `;
+
+    // Inject the CSS
+    const head = document.head;
+    const existingPrintCSS = head.querySelector('#print-cleanup-css');
+    if (existingPrintCSS) {
+      existingPrintCSS.remove();
+    }
+    head.insertAdjacentHTML('beforeend', printCSS.replace('<style>', '<style id="print-cleanup-css">'));
+
+    // Print
+    window.print();
+
+    // Restore original content
+    body.innerHTML = originalHTML;
+
+    // Restore original display styles
+    urlElements.forEach((el, index) => {
+      el.style.display = originalDisplay[index];
+    });
+
+    // Remove the injected CSS
+    const cleanupCSS = head.querySelector('#print-cleanup-css');
+    if (cleanupCSS) {
+      cleanupCSS.remove();
+    }
+  }
+
+  // Add keyboard shortcut support
+  document.addEventListener('keydown', function (e) {
+    // Ctrl+P or Cmd+P for printing
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+      e.preventDefault();
+      cleanPrint();
+    }
+    // Escape key to close window
+    if (e.key === 'Escape') {
+      window.close();
+    }
+  });
+
+  // Add some additional UX enhancements
+  document.addEventListener('DOMContentLoaded', function () {
+    // Immediately add CSS to prevent browser headers/footers
+    const preventHeadersCSS = `
+        <style id="prevent-headers-css">
+        @page {
+            margin: 0 !important;
+            @top-center { content: none !important; }
+            @top-right { content: none !important; }
+            @bottom-center { content: none !important; }
+            @bottom-right { content: none !important; }
+            @bottom-left { content: none !important; }
+            @top-left { content: none !important; }
+        }
+        </style>
+    `;
+    document.head.insertAdjacentHTML('beforeend', preventHeadersCSS);
+
+    // Add loading state to buttons
+    const buttons = document.querySelectorAll('.print-btn');
+    buttons.forEach(button => {
+      button.addEventListener('click', function () {
+        const originalText = this.innerHTML;
+        this.innerHTML = '<span style="font-size:16px;">⏳</span> Processing...';
+        this.style.pointerEvents = 'none';
+
+        setTimeout(() => {
+          this.innerHTML = originalText;
+          this.style.pointerEvents = 'auto';
+        }, 1000);
+      });
+    });
+
+    // Add tooltip functionality
+    buttons.forEach(button => {
+      button.title = button.textContent.trim();
+    });
+
+    // Hide URLs before printing
+    window.addEventListener('beforeprint', function () {
+      // Remove any potential URL elements
+      const urlElements = document.querySelectorAll('[href], a');
+      urlElements.forEach(el => {
+        el.style.display = 'none';
+      });
+
+      // Hide any elements that might contain URLs
+      const body = document.body;
+      if (body.innerHTML.includes('127.0.0.1') || body.innerHTML.includes('localhost')) {
+        body.innerHTML = body.innerHTML.replace(/127\.0\.0\.1:\d+/g, '');
+        body.innerHTML = body.innerHTML.replace(/localhost:\d+/g, '');
+      }
+    });
+
+    // Restore elements after printing
+    window.addEventListener('afterprint', function () {
+      const urlElements = document.querySelectorAll('[href], a');
+      urlElements.forEach(el => {
+        el.style.display = '';
+      });
+    });
+
+    // Smart overflow detection: Split items table when more than 5 items, support up to 3 pages
+    function handleOverflow(copyId, contId, pageLabelBase) {
+      const copyEl = document.getElementById(copyId);
+      const contEl = document.getElementById(contId);
+      const contEl2 = document.getElementById(contId + '-2'); // Third page
+      const pageNum1 = document.getElementById(pageLabelBase + '-page-number');
+      const pageNum2 = document.getElementById(pageLabelBase + '-page-number-2');
+      const pageNum3 = document.getElementById(pageLabelBase + '-page-number-3');
+
+      if (!copyEl || !contEl || !pageNum1 || !pageNum2) {
+        console.log('Missing elements for', copyId, ':', { copyEl: !!copyEl, contEl: !!contEl, pageNum1: !!pageNum1, pageNum2: !!pageNum2 });
+        return;
+      }
+
+      // Count the number of items in the table
+      const itemsTable = copyEl.querySelector('.items tbody');
+      const itemRows = itemsTable ? itemsTable.querySelectorAll('tr:not(:last-child)') : []; // Exclude total row
+      const itemCount = itemRows.length;
+
+      console.log('handleOverflow for', copyId, ':', itemCount, 'items found');
+
+      const label = pageLabelBase === 'original' ? 'ORG' : (pageLabelBase === 'duplicate' ? 'DUP' : 'TRI');
+
+      if (itemCount > 10) {
+        // Three pages: 1-5, 6-10, 11+
+        contEl.style.display = 'block';
+        if (contEl2) contEl2.style.display = 'block';
+
+        pageNum1.textContent = label + ' 1/3';
+        pageNum2.textContent = label + ' 2/3';
+        if (pageNum3) pageNum3.textContent = label + ' 3/3';
+
+        splitItemsTableThreePages(copyId, contId, contEl2, itemRows);
+      } else if (itemCount > 5) {
+        // Two pages: 1-5, 6+
+        contEl.style.display = 'block';
+        if (contEl2) contEl2.style.display = 'none';
+
+        pageNum1.textContent = label + ' 1/2';
+        pageNum2.textContent = label + ' 2/2';
+        if (pageNum3) pageNum3.textContent = '';
+
+        splitItemsTable(copyId, contId, itemRows);
+      } else {
+        // Single page - show all items
+        contEl.style.display = 'none';
+        if (contEl2) contEl2.style.display = 'none';
+
+        pageNum1.textContent = label + ' 1/1';
+        pageNum2.textContent = '';
+        if (pageNum3) pageNum3.textContent = '';
+
+        // Ensure all items are visible on page 1
+        itemRows.forEach(row => row.style.display = '');
+      }
+    }
+
+    // Split items table between pages
+    function splitItemsTable(copyId, contId, itemRows) {
+      const copyEl = document.getElementById(copyId);
+      const contEl = document.getElementById(contId);
+
+      // Hide all items on page 1 first
+      itemRows.forEach(row => row.style.display = 'none');
+
+      // Show first 5 items on page 1
+      for (let i = 0; i < Math.min(5, itemRows.length); i++) {
+        itemRows[i].style.display = '';
+      }
+
+      // Handle page 2 items
+      const page2ItemsTable = contEl.querySelector('.items');
+      if (page2ItemsTable) {
+        const page2Tbody = page2ItemsTable.querySelector('tbody');
+        if (page2Tbody) {
+          const page2Rows = page2Tbody.querySelectorAll('tr:not(:last-child)'); // Exclude total row
+
+          // Hide all items on page 2 first
+          page2Rows.forEach(row => row.style.display = 'none');
+
+          // Show remaining items (starting from item 6) on page 2
+          for (let i = 5; i < itemRows.length; i++) {
+            const page2RowIndex = i - 5; // Adjust index for page 2 array
+            if (page2Rows[page2RowIndex]) {
+              page2Rows[page2RowIndex].style.display = '';
+              // Update serial number to continue from 6
+              const serialCell = page2Rows[page2RowIndex].querySelector('td:first-child');
+              if (serialCell) {
+                serialCell.textContent = i + 1;
+              }
+            }
+          }
+        }
+      }
+
+      console.log('splitItemsTable called for', copyId, 'with', itemRows.length, 'items');
+      console.log('Page 1 shows items 1-5, Page 2 shows items 6+');
+    }
+
+    // Split items table across three pages
+    function splitItemsTableThreePages(copyId, contId, contId2, itemRows) {
+      const copyEl = document.getElementById(copyId);
+      const contEl = document.getElementById(contId);
+      const contEl2 = contId2; // Third page element
+
+      // Hide all items on page 1 first
+      itemRows.forEach(row => row.style.display = 'none');
+
+      // Show first 5 items on page 1
+      for (let i = 0; i < Math.min(5, itemRows.length); i++) {
+        itemRows[i].style.display = '';
+      }
+
+      // Handle page 2 items (6-10)
+      const page2ItemsTable = contEl.querySelector('.items');
+      if (page2ItemsTable) {
+        const page2Tbody = page2ItemsTable.querySelector('tbody');
+        if (page2Tbody) {
+          const page2Rows = page2Tbody.querySelectorAll('tr:not(:last-child)'); // Exclude total row
+
+          // Hide all items on page 2 first
+          page2Rows.forEach(row => row.style.display = 'none');
+
+          // Show items 6-10 on page 2
+          for (let i = 5; i < Math.min(10, itemRows.length); i++) {
+            const page2RowIndex = i - 5; // Adjust index for page 2 array
+            if (page2Rows[page2RowIndex]) {
+              page2Rows[page2RowIndex].style.display = '';
+              // Update serial number to continue from 6
+              const serialCell = page2Rows[page2RowIndex].querySelector('td:first-child');
+              if (serialCell) {
+                serialCell.textContent = i + 1;
+              }
+            }
+          }
+        }
+      }
+
+      // Handle page 3 items (11+)
+      if (contEl2) {
+        const page3ItemsTable = contEl2.querySelector('.items');
+        if (page3ItemsTable) {
+          const page3Tbody = page3ItemsTable.querySelector('tbody');
+          if (page3Tbody) {
+            const page3Rows = page3Tbody.querySelectorAll('tr:not(:last-child)'); // Exclude total row
+
+            // Hide all items on page 3 first
+            page3Rows.forEach(row => row.style.display = 'none');
+
+            // Show items 11+ on page 3
+            for (let i = 10; i < itemRows.length; i++) {
+              const page3RowIndex = i - 10; // Adjust index for page 3 array
+              if (page3Rows[page3RowIndex]) {
+                page3Rows[page3RowIndex].style.display = '';
+                // Update serial number to continue from 11
+                const serialCell = page3Rows[page3RowIndex].querySelector('td:first-child');
+                if (serialCell) {
+                  serialCell.textContent = i + 1;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      console.log('splitItemsTableThreePages called for', copyId, 'with', itemRows.length, 'items');
+      console.log('Page 1 shows items 1-5, Page 2 shows items 6-10, Page 3 shows items 11+');
+    }
+
+    // Apply overflow handling for all three copies
+    handleOverflow('original-copy', 'original-copy-cont', 'original');
+    handleOverflow('duplicate-copy', 'duplicate-copy-cont', 'duplicate');
+    handleOverflow('triplicate-copy', 'triplicate-copy-cont', 'triplicate');
+
+    // When overflow is detected (continuation visible), hide movable sections on page 1
+    function toggleMovableSections(copyId, contId) {
+      const copyEl = document.getElementById(copyId);
+      const contEl = document.getElementById(contId);
+      if (!copyEl || !contEl) return;
+      const movable = copyEl.querySelectorAll('.move-to-cont');
+      if (contEl.style.display === 'block') {
+        movable.forEach(el => { el.style.display = 'none'; });
+      } else {
+        movable.forEach(el => { el.style.display = ''; });
+      }
+    }
+
+    toggleMovableSections('original-copy', 'original-copy-cont');
+    toggleMovableSections('duplicate-copy', 'duplicate-copy-cont');
+    toggleMovableSections('triplicate-copy', 'triplicate-copy-cont');
+  });
+</script>
+
+</html>

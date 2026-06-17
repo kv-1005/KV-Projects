@@ -1,0 +1,422 @@
+{% extends "base.html" %}
+
+{% block title %}Delivery Challan - Invoice {{ invoice.invoice_number }}{% endblock %}
+{% block page_title %}Generate Delivery Challan{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <a href="{{ url_for('view_invoice', invoice_id=invoice.id) }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Invoice
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-box"></i> Delivery Challan Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('delivery_challan', invoice_id=invoice.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+                    <!-- Invoice Info Display -->
+                    <div class="alert alert-info">
+                        <strong>Invoice:</strong> {{ invoice.invoice_number }}<br>
+                        <strong>Customer:</strong> {{ invoice.customer.name }}<br>
+                        <strong>Date:</strong> {{ invoice.invoice_date.strftime('%d.%m.%Y') }}
+                    </div>
+
+                    <!-- Delivery Details -->
+                    <h6 class="mb-3"><i class="fas fa-file-alt"></i> Delivery Information</h6>
+
+                    <div class="mb-3">
+                        <label for="po_date" class="form-label fw-bold">Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="po_date" name="po_date"
+                            value="{{ form_data.get('po_date', invoice.invoice_date.strftime('%Y-%m-%d')) }}" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="po_type" class="form-label fw-bold">Type</label>
+                            <input type="text" class="form-control" id="po_type" name="po_type"
+                                placeholder="e.g., REV-DOM" value="{{ form_data.get('po_type', '') }}">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="dept" class="form-label fw-bold">Dept.</label>
+                            <input type="text" class="form-control" id="dept" name="dept"
+                                placeholder="e.g., SLM-ANN-ELEC" value="{{ form_data.get('dept', '') }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="contact" class="form-label fw-bold">Contact</label>
+                        <textarea class="form-control" id="contact" name="contact" rows="3"
+                            placeholder="e.g., Person Name&#10;Ph: +91-1234567890">{{ form_data.get('contact', '') }}</textarea>
+                        <small class="form-text text-muted">Enter contact person name and phone number (one per
+                            line)</small>
+                    </div>
+
+                    <!-- Number of Products -->
+                    <div class="mb-4">
+                        <label for="num_products" class="form-label fw-bold">
+                            <i class="fas fa-box"></i> Number of Products to Dispatch <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" class="form-control form-control-lg" id="num_products" name="num_products"
+                            min="1" max="100" value="{{ form_data.get('num_products', '1') }}" required
+                            style="font-size: 18px;">
+                        <small class="form-text text-muted mt-2">
+                            <i class="fas fa-info-circle"></i> This will generate the specified number of A4 landscape
+                            pages with individual labels for each product.
+                            <br>Example: Entering <strong>5</strong> will create 5 pages labeled as 1/5, 2/5, 3/5, 4/5,
+                            and 5/5.
+                        </small>
+                    </div>
+
+                    <!-- From/To Info Display -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <strong>To (Customer)</strong>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <label for="recipientSearch" class="form-label fw-bold">Quick Search</label>
+                                        <div class="position-relative" id="recipientSearchWrapper">
+                                            <input type="text" class="form-control" id="recipientSearch"
+                                                placeholder="Type name, city, state..." autocomplete="off">
+                                            <div class="list-group shadow-sm" id="recipientSearchResults"
+                                                style="position: absolute; top: 100%; left: 0; right: 0; z-index: 15; max-height: 260px; overflow-y: auto; display: none;">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Type to get instant matches, then hit Enter or click a
+                                            card to auto-fill.</small>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="to_recipient" class="form-label fw-bold">Select Address</label>
+                                        <select class="form-select" id="to_recipient" name="to_recipient">
+                                            <option value="">— Use custom address instead —</option>
+                                            {% set selected_to = form_data.get('to_recipient', current_customer_value or
+                                            '') %}
+                                            {% for opt in recipient_options %}
+                                            <option value="{{ opt.value }}" data-formatted="{{ opt.formatted|e }}" {% if
+                                                selected_to==opt.value %}selected{% endif %}>
+                                                {{ opt.label }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="to_override" class="form-label text-muted">Edit Address (or type
+                                            custom)</label>
+                                        <textarea class="form-control font-monospace" id="to_override"
+                                            name="to_override"
+                                            rows="6">{{ form_data.get('to_override', default_to_block) }}</textarea>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">Each new line becomes a new line on the
+                                        packing slip.</small>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2"
+                                        id="useRecipientContact">
+                                        <i class="fas fa-address-book"></i> Use recipient contact details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <strong>From (Company)</strong>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <label for="from_address" class="form-label fw-bold">Select Branch</label>
+                                        <select class="form-select" id="from_address" name="from_address">
+                                            {% set selected_from = form_data.get('from_address', main_address_key) %}
+                                            {% for key, info in company_addresses.items() %}
+                                            <option value="{{ key }}" data-name="{{ info.name|e }}"
+                                                data-address="{{ info.address }}" data-phone="{{ info.phone|e }}"
+                                                data-email="{{ info.email|e }}" {% if selected_from==key %}selected{%
+                                                endif %}>
+                                                {{ info.name }} • {{ key|title }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="from_override" class="form-label text-muted">Edit Address (or type
+                                            custom)</label>
+                                        <textarea class="form-control font-monospace" id="from_override"
+                                            name="from_override"
+                                            rows="6">{{ form_data.get('from_override', default_from_block) }}</textarea>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">Leave as-is for default Mahadevi branch
+                                        details.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Print Option -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="auto_print" name="auto_print" value="1"
+                                {% if form_data.get('auto_print') %}checked{% endif %}>
+                            <label class="form-check-label" for="auto_print">
+                                <i class="fas fa-print"></i> Open PDF for printing (automatically opens print dialog)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" id="generateBtn">
+                            <i class="fas fa-file-pdf"></i> Generate Delivery Challan PDF
+                        </button>
+                        <a href="{{ url_for('view_invoice', invoice_id=invoice.id) }}"
+                            class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const RECIPIENT_OPTIONS = JSON.parse('{{ recipient_options | tojson | safe }}');
+    const COMPANY_LOCATIONS = JSON.parse('{{ company_addresses | tojson | safe }}');
+
+    const recipientSelect = document.getElementById('to_recipient');
+    const recipientSearch = document.getElementById('recipientSearch');
+    const recipientSearchWrapper = document.getElementById('recipientSearchWrapper');
+    const recipientSearchResults = document.getElementById('recipientSearchResults');
+    const toOverrideTextarea = document.getElementById('to_override');
+    const fromSelect = document.getElementById('from_address');
+    const fromOverrideTextarea = document.getElementById('from_override');
+
+    const SEARCH_RESULT_LIMIT = 8;
+    let searchMatches = [];
+    let searchResultButtons = [];
+    let activeSearchIndex = -1;
+
+    function composeFromAddress(name, address, phone, email) {
+        const lines = [];
+        if (name) lines.push(name);
+        if (address) {
+            // Handle both escaped (&lt;br&gt;) and unescaped (<br>) HTML
+            let processedAddress = address
+                .replace(/&lt;br\s*\/?&gt;/gi, '\n')  // Handle escaped <br>
+                .replace(/<br\s*\/?>/gi, '\n')        // Handle unescaped <br>
+                .replace(/&nbsp;/gi, ' ');            // Handle non-breaking spaces
+            const addressLines = processedAddress.split('\n').map(l => l.trim()).filter(l => l);
+            lines.push(...addressLines);
+        }
+        if (phone) lines.push(phone);
+        if (email) lines.push(email);
+        return lines.join('\n');
+    }
+
+    function getSelectedRecipient() {
+        const value = recipientSelect.value;
+        return RECIPIENT_OPTIONS.find(opt => opt.value === value);
+    }
+
+    function updateToAddress() {
+        const selectedOption = getSelectedRecipient();
+        if (selectedOption) {
+            toOverrideTextarea.value = selectedOption.formatted;
+        }
+    }
+
+    function updateFromAddress() {
+        const selectedOption = fromSelect.options[fromSelect.selectedIndex];
+        if (selectedOption) {
+            const name = selectedOption.getAttribute('data-name') || '';
+            const address = selectedOption.getAttribute('data-address') || '';
+            const phone = selectedOption.getAttribute('data-phone') || '';
+            const email = selectedOption.getAttribute('data-email') || '';
+            fromOverrideTextarea.value = composeFromAddress(name, address, phone, email);
+        }
+    }
+
+    function hideSearchResults() {
+        recipientSearchResults.style.display = 'none';
+        recipientSearchResults.innerHTML = '';
+        searchMatches = [];
+        searchResultButtons = [];
+        activeSearchIndex = -1;
+    }
+
+    function renderSearchResults(matches) {
+        recipientSearchResults.innerHTML = '';
+        searchMatches = matches;
+        searchResultButtons = [];
+        activeSearchIndex = -1;
+        if (!matches.length) {
+            hideSearchResults();
+            return;
+        }
+        matches.forEach(opt => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'list-group-item list-group-item-action py-2';
+            button.innerHTML = `
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold">${opt.name}</span>
+                    <span class="badge bg-light text-dark">${opt.type}</span>
+                </div>
+                <div class="small text-muted">${[opt.city, opt.state].filter(Boolean).join(', ') || 'Address on file'}</div>
+            `;
+            button.addEventListener('click', () => selectRecipientFromSearch(opt));
+            recipientSearchResults.appendChild(button);
+            searchResultButtons.push(button);
+        });
+        recipientSearchResults.style.display = 'block';
+        highlightSearchResult(0);
+    }
+
+    function highlightSearchResult(index) {
+        if (!searchResultButtons.length) {
+            return;
+        }
+        if (index < 0) {
+            index = searchResultButtons.length - 1;
+        } else if (index >= searchResultButtons.length) {
+            index = 0;
+        }
+        searchResultButtons.forEach(btn => btn.classList.remove('active'));
+        searchResultButtons[index].classList.add('active');
+        const targetButton = searchResultButtons[index];
+        recipientSearchResults.scrollTop = targetButton.offsetTop - 10;
+        activeSearchIndex = index;
+    }
+
+    function selectRecipientFromSearch(option) {
+        recipientSelect.value = option.value;
+        recipientSearch.value = option.name;
+        hideSearchResults();
+        updateToAddress();
+        recipientSelect.dispatchEvent(new Event('change'));
+    }
+
+    function handleRecipientSearchInput() {
+        const query = recipientSearch.value.trim().toLowerCase();
+        if (!query) {
+            hideSearchResults();
+            return;
+        }
+        if (!RECIPIENT_OPTIONS || !Array.isArray(RECIPIENT_OPTIONS) || RECIPIENT_OPTIONS.length === 0) {
+            hideSearchResults();
+            return;
+        }
+        const matches = RECIPIENT_OPTIONS
+            .filter(opt => opt && opt.search_blob && opt.search_blob.includes(query))
+            .slice(0, SEARCH_RESULT_LIMIT);
+        renderSearchResults(matches);
+    }
+
+    function handleRecipientSearchKeydown(event) {
+        if (!searchResultButtons.length) {
+            return;
+        }
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            highlightSearchResult(activeSearchIndex + 1);
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            highlightSearchResult(activeSearchIndex - 1);
+        } else if (event.key === 'Enter') {
+            event.preventDefault();
+            const match = searchMatches[activeSearchIndex >= 0 ? activeSearchIndex : 0];
+            if (match) {
+                selectRecipientFromSearch(match);
+            }
+        } else if (event.key === 'Escape') {
+            hideSearchResults();
+        }
+    }
+
+    // Event listeners
+    recipientSelect.addEventListener('change', updateToAddress);
+    fromSelect.addEventListener('change', updateFromAddress);
+    recipientSearch.addEventListener('input', handleRecipientSearchInput);
+    recipientSearch.addEventListener('keydown', handleRecipientSearchKeydown);
+    document.addEventListener('click', (event) => {
+        if (!recipientSearchWrapper.contains(event.target)) {
+            hideSearchResults();
+        }
+    });
+
+    // Handle print option
+    document.querySelector('form').addEventListener('submit', function (e) {
+        const autoPrint = document.getElementById('auto_print').checked;
+        if (autoPrint) {
+            // Submit form and open in new window for printing
+            const form = this;
+            const formData = new FormData(form);
+            const formAction = form.action;
+
+            // Create a temporary form to submit with target="_blank"
+            const tempForm = document.createElement('form');
+            tempForm.method = 'POST';
+            tempForm.action = formAction;
+            tempForm.target = '_blank';
+
+            // Copy all form data
+            for (let [key, value] of formData.entries()) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                tempForm.appendChild(input);
+            }
+
+            document.body.appendChild(tempForm);
+            tempForm.submit();
+            document.body.removeChild(tempForm);
+
+            // Prevent default form submission
+            e.preventDefault();
+
+            // After a short delay, try to trigger print
+            setTimeout(function () {
+                // The print will be handled by the browser when PDF opens
+                // User can manually print or browser may auto-show print dialog
+            }, 500);
+        }
+    });
+
+    // Auto-fill contact info from selected recipient
+    const contactField = document.getElementById('contact');
+    const useContactBtn = document.getElementById('useRecipientContact');
+
+    if (useContactBtn) {
+        useContactBtn.addEventListener('click', () => {
+            const selectedOption = getSelectedRecipient();
+            if (selectedOption && selectedOption.contact_hint) {
+                contactField.value = selectedOption.contact_hint;
+            } else {
+                // Show a message if no recipient selected
+                if (!recipientSelect.value) {
+                    alert('Please select a recipient first to use their contact details.');
+                } else {
+                    alert('No contact information available for the selected recipient.');
+                }
+            }
+        });
+    }
+
+    // Initialize addresses on page load
+    updateFromAddress();
+    updateToAddress();
+</script>
+{% endblock %}

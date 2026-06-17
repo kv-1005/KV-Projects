@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=your-secret-key-change-this-in-production
+      - DATABASE_URL=sqlite:///invoice_generator.db
+    volumes:
+      - ./static/uploads:/app/static/uploads
+      - ./invoice_generator.db:/app/invoice_generator.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Add PostgreSQL database
+  # db:
+  #   image: postgres:13
+  #   environment:
+  #     POSTGRES_DB: invoice_generator
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: password
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+
+# volumes:
+#   postgres_data:

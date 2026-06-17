@@ -1,0 +1,26 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Databases
+instance/
+*.db
+
+# Environment
+.env
+venv/
+env/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+grep_out.txt
+temp_columns.txt
+verify_envelope_professional_v2.pdf

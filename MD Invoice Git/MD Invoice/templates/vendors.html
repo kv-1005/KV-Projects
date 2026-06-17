@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Vendors - Invoice Generator{% endblock %}
+
+{% block page_title %}Vendors{% endblock %}
+
+{% block page_actions %}
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('add_vendor') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Vendor
+        </a>
+        <a href="{{ url_for('vendor_performance') }}" class="btn btn-info">
+            <i class="fas fa-chart-line"></i> Performance Metrics
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+<!-- Search and Filter Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="vendorSearch" placeholder="Search vendors by name, city, or contact person...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="stateFilter">
+                            <option value="">All States</option>
+                            {% set states = vendors|map(attribute='state')|unique|sort %}
+                            {% for state in states %}
+                            <option value="{{ state }}">{{ state }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="gstinFilter">
+                            <option value="">All Vendors</option>
+                            <option value="with_gstin">With GSTIN</option>
+                            <option value="without_gstin">Without GSTIN</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ vendors|length }}</h4>
+                        <p class="mb-0">Total Vendors</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-truck fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ vendors|selectattr('gstin')|list|length }}</h4>
+                        <p class="mb-0">GST Registered</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-file-invoice fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ vendors|map(attribute='purchase_orders')|map('length')|sum }}</h4>
+                        <p class="mb-0">Total POs</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-shopping-cart fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ vendors|selectattr('payment_terms')|list|length }}</h4>
+                        <p class="mb-0">With Payment Terms</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-credit-card fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vendors Grid -->
+<div class="row" id="vendorsGrid">
+    {% if vendors %}
+        {% for vendor in vendors %}
+        <div class="col-lg-4 col-md-6 mb-4 vendor-card" 
+             data-name="{{ vendor.name|lower }}" 
+             data-city="{{ vendor.city|lower }}" 
+             data-contact="{{ (vendor.contact_person or '')|lower }}"
+             data-state="{{ vendor.state }}"
+             data-gstin="{{ 'with_gstin' if vendor.gstin else 'without_gstin' }}">
+            <div class="card h-100 shadow-sm vendor-card-inner">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-1 text-truncate" title="{{ vendor.name }}">
+                                <i class="fas fa-building text-primary me-2"></i>
+                                {{ vendor.name }}
+                            </h6>
+                            {% if vendor.contact_person %}
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>{{ vendor.contact_person }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('edit_vendor', vendor_id=vendor.id) }}">
+                                    <i class="fas fa-edit me-2"></i>Edit
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="POST" action="{{ url_for('delete_vendor', vendor_id=vendor.id) }}" 
+                                          onsubmit="return confirm('Are you sure you want to delete {{ vendor.name }}?')">
+                                        {{ csrf_token() }}
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-trash me-2"></i>Delete
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-12">
+                            <small class="text-muted d-block">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                {{ vendor.city }}, {{ vendor.state }}
+                            </small>
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted d-block">
+                                <i class="fas fa-phone me-1"></i>
+                                <a href="tel:{{ vendor.phone }}" class="text-decoration-none">{{ vendor.phone }}</a>
+                            </small>
+                        </div>
+                        {% if vendor.email %}
+                        <div class="col-12">
+                            <small class="text-muted d-block">
+                                <i class="fas fa-envelope me-1"></i>
+                                <a href="mailto:{{ vendor.email }}" class="text-decoration-none">{{ vendor.email }}</a>
+                            </small>
+                        </div>
+                        {% endif %}
+                        {% if vendor.gstin %}
+                        <div class="col-12">
+                            <small class="text-muted d-block">
+                                <i class="fas fa-file-invoice me-1"></i>
+                                <span class="badge bg-success">{{ vendor.gstin }}</span>
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if vendor.payment_terms %}
+                    <div class="alert alert-info py-2 px-3 mb-3">
+                        <small>
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Payment Terms:</strong> {{ vendor.payment_terms }}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-primary">{{ vendor.purchase_orders|length }} PO{{ 's' if vendor.purchase_orders|length != 1 else '' }}</span>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('edit_vendor', vendor_id=vendor.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-truck fa-4x text-muted opacity-50"></i>
+            </div>
+            <h4 class="text-muted mb-3">No Vendors Found</h4>
+            <p class="text-muted mb-4">Start building your vendor network by adding your first supplier.</p>
+            <a href="{{ url_for('add_vendor') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>Add Your First Vendor
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- No Results Message (Hidden by default) -->
+<div class="row d-none" id="noResults">
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No vendors match your search</h5>
+            <p class="text-muted">Try adjusting your search criteria or filters.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('vendorSearch');
+    const stateFilter = document.getElementById('stateFilter');
+    const gstinFilter = document.getElementById('gstinFilter');
+    const vendorCards = document.querySelectorAll('.vendor-card');
+    const noResults = document.getElementById('noResults');
+    const vendorsGrid = document.getElementById('vendorsGrid');
+
+    function filterVendors() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedState = stateFilter.value;
+        const selectedGstin = gstinFilter.value;
+        
+        let visibleCount = 0;
+        
+        vendorCards.forEach(card => {
+            const name = card.dataset.name;
+            const city = card.dataset.city;
+            const contact = card.dataset.contact;
+            const state = card.dataset.state;
+            const gstin = card.dataset.gstin;
+            
+            const matchesSearch = !searchTerm || 
+                name.includes(searchTerm) || 
+                city.includes(searchTerm) || 
+                contact.includes(searchTerm);
+            
+            const matchesState = !selectedState || state === selectedState;
+            const matchesGstin = !selectedGstin || gstin === selectedGstin;
+            
+            if (matchesSearch && matchesState && matchesGstin) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        // Show/hide no results message
+        if (visibleCount === 0) {
+            vendorsGrid.style.display = 'none';
+            noResults.classList.remove('d-none');
+        } else {
+            vendorsGrid.style.display = 'block';
+            noResults.classList.add('d-none');
+        }
+    }
+    
+    searchInput.addEventListener('input', filterVendors);
+    stateFilter.addEventListener('change', filterVendors);
+    gstinFilter.addEventListener('change', filterVendors);
+});
+</script>
+{% endblock %}

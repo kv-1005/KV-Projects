@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Convert PO to Invoice - Invoice Generator{% endblock %}
+
+{% block page_title %}Convert Purchase Order to Invoice{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url_for('view_purchase_order', po_id=po.id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Purchase Order
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Convert Purchase Order to Invoice</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Conversion Details:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>PO Number: <strong>{{ po.po_number }}</strong></li>
+                        <li>Vendor: <strong>{{ po.vendor.name }}</strong></li>
+                        <li>Total Amount: <strong>₹{{ "{:,.2f}".format(po.total_amount|float) }}</strong></li>
+                        <li>Items: <strong>{{ po.items|length }}</strong> items</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Important:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>A new invoice will be created with sequential numbering</li>
+                        <li>The vendor will be converted to a customer (or existing customer will be used)</li>
+                        <li>All PO items will be copied to the invoice</li>
+                        <li>The PO status will be updated to "completed"</li>
+                        <li>This action cannot be undone</li>
+                    </ul>
+                </div>
+                
+                <form method="POST">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-exchange-alt"></i> Convert to Invoice
+                        </button>
+                        <a href="{{ url_for('view_purchase_order', po_id=po.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Purchase Order Summary</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>PO Number:</strong></td>
+                        <td>{{ po.po_number }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Date:</strong></td>
+                        <td>{{ po.po_date.strftime('%d-%m-%Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Vendor:</strong></td>
+                        <td>{{ po.vendor.name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Type:</strong></td>
+                        <td>{{ po.po_type.title() }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Priority:</strong></td>
+                        <td>{{ po.priority.title() }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if po.status == 'completed' else 'warning' }}">
+                                {{ po.status.title() }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Subtotal:</strong></td>
+                        <td>₹{{ "{:,.2f}".format(po.subtotal|float) }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tax:</strong></td>
+                        <td>₹{{ "{:,.2f}".format((po.cgst_amount + po.sgst_amount + po.igst_amount)|float) }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Shipping:</strong></td>
+                        <td>₹{{ "{:,.2f}".format(po.shipping_charges|float) }}</td>
+                    </tr>
+                    <tr class="table-success">
+                        <td><strong>Total:</strong></td>
+                        <td><strong>₹{{ "{:,.2f}".format(po.total_amount|float) }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Items ({{ po.items|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% for item in po.items %}
+                <div class="border-bottom pb-2 mb-2">
+                    <div class="fw-bold">{{ item.description }}</div>
+                    <small class="text-muted">
+                        Qty: {{ item.quantity }} × ₹{{ "{:,.2f}".format(item.unit_price|float) }}
+                        {% if item.discount_value > 0 %}
+                            ({{ item.discount_type }}: ₹{{ "{:,.2f}".format(item.discount_value|float) }})
+                        {% endif %}
+                    </small>
+                    <div class="text-end">
+                        <strong>₹{{ "{:,.2f}".format(item.amount|float) }}</strong>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

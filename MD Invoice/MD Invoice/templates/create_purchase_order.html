@@ -1,0 +1,465 @@
+{% extends "base.html" %}
+
+{% block title %}Create Purchase Order - Invoice Generator{% endblock %}
+
+{% block page_title %}Create Purchase Order{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('purchase_orders') }}" class="btn btn-secondary">
+    <i class="fas fa-arrow-left"></i> Back to Purchase Orders
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Purchase Order Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.vendor_id.label(class="form-label") }}
+                                {{ form.vendor_id(class="form-select") }}
+                                {% if form.vendor_id.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.vendor_id.errors %}
+                                    <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                {% if not form.vendor_id.choices %}
+                                <div class="alert alert-warning mt-2">
+                                    <i class="fas fa-exclamation-triangle"></i> No vendors found.
+                                    <a href="{{ url_for('add_vendor') }}" class="alert-link">Add a vendor first</a> to
+                                    create purchase orders.
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    <a href="{{ url_for('add_vendor') }}" target="_blank">Add new vendor</a>
+                                </div>
+                                <!-- Vendor Location Display -->
+                                <div id="vendor-location" class="mt-2" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <small>
+                                            <strong>Selected Vendor Location:</strong><br>
+                                            <span id="vendor-address"></span><br>
+                                            <span id="vendor-city-state"></span><br>
+                                            <span id="vendor-pincode"></span><br>
+                                            <span id="vendor-contact"></span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="po_number" class="form-label">PO No. *</label>
+                                {{ form.po_number(class="form-control", placeholder="e.g., MD" ~ business_year ~
+                                "-PO-001") }}
+                                <small class="text-muted">Suggested: <span id="suggested-number">{{ next_po_number
+                                        }}</span> (you can edit this)</small>
+                                {% if form.po_number.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.po_number.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.po_date.label(class="form-label") }}
+                                {{ form.po_date(class="form-control", type="date") }}
+                                {% if form.po_date.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.po_date.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.delivery_date.label(class="form-label") }}
+                                {{ form.delivery_date(class="form-control", type="date") }}
+                                {% if form.delivery_date.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.delivery_date.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.expected_delivery_date.label(class="form-label") }}
+                                {{ form.expected_delivery_date(class="form-control", type="date") }}
+                                {% if form.expected_delivery_date.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.expected_delivery_date.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.reference_no.label(class="form-label") }}
+                                {{ form.reference_no(class="form-control", placeholder="Reference number") }}
+                                {% if form.reference_no.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.reference_no.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="delivery" class="form-label">Delivery</label>
+                                {{ form.delivery(class="form-control", placeholder="e.g., Immediate / One week / Address
+                                notes") }}
+                                {% if form.delivery.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.delivery.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.place_of_supply.label(class="form-label") }}
+                                {{ form.place_of_supply(class="form-control", placeholder="e.g., 33", value="33") }}
+                                {% if form.place_of_supply.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.place_of_supply.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="row">
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.shipping_charges.label(class="form-label") }}
+                                {{ form.shipping_charges(class="form-control", step="0.01") }}
+                                {% if form.shipping_charges.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.shipping_charges.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.extra_billing_info.label(class="form-label") }}
+                                {{ form.extra_billing_info(class="form-control") }}
+                                {% if form.extra_billing_info.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.extra_billing_info.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.main_address.label(class="form-label") }}
+                                {{ form.main_address(class="form-select") }}
+                                {% if form.main_address.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.main_address.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.branch_address.label(class="form-label") }}
+                                {{ form.branch_address(class="form-select") }}
+                                {% if form.branch_address.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.branch_address.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.terms_conditions.label(class="form-label") }}
+                        {{ form.terms_conditions(class="form-control", rows="4",
+                        id="terms_conditions",
+                        placeholder="GST : 18%\nFright : 0\nP&F : 0%") }}
+                        {% if form.terms_conditions.errors %}
+                        <div class="text-danger">
+                            {% for error in form.terms_conditions.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.payment_terms.label(class="form-label") }}
+                        {{ form.payment_terms(class="form-control", rows="3",
+                        id="payment_terms",
+                        placeholder="100% Advance payment along with Purchase Order.") }}
+                        {% if form.payment_terms.errors %}
+                        <div class="text-danger">
+                            {% for error in form.payment_terms.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.notes.label(class="form-label") }}
+                        {{ form.notes(class="form-control", rows="3", placeholder="Additional notes") }}
+                        {% if form.notes.errors %}
+                        <div class="text-danger">
+                            {% for error in form.notes.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Signature Selection (Optional) -->
+                    <div class="mb-3">
+                        <label for="selected_signature" class="form-label">
+                            <i class="fas fa-signature"></i> Purchase Order Signature (Optional)
+                        </label>
+                        {{ form.selected_signature(class="form-select") }}
+                        <div class="form-text">
+                            Choose which signature to use on this purchase order. Select "No Signature" to omit it.
+                            <a href="{{ url_for('upload_signature') }}" target="_blank">Manage signatures</a>
+                        </div>
+                        {% if form.selected_signature.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.selected_signature.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Digital Signature Option -->
+                    <div class="mb-4">
+                        <div class="form-check form-switch border p-3 rounded bg-light">
+                            {{ form.require_digital_signature(class="form-check-input ms-0",
+                            id="require_digital_signature") }}
+                            <label class="form-check-label fw-bold ms-2" for="require_digital_signature">
+                                <i class="fas fa-certificate text-primary me-1"></i> Require Cryptographic Digital
+                                Signature
+                            </label>
+                            <div class="form-text ms-2">
+                                If enabled, this document will be cryptographically signed using a .pfx certificate.
+                                Adobe Acrobat will show "Signed and all signatures are valid".
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('purchase_orders') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Help</h5>
+            </div>
+            <div class="card-body">
+                <h6>Purchase Order Number</h6>
+                <p class="small text-muted">The system will automatically generate a unique PO number using the format:
+                    MD{{ business_year }}-PO-{postfix}</p>
+
+                <h6>Vendor Selection</h6>
+                <p class="small text-muted">Select a vendor from your customer list. You can add new vendors through the
+                    Customers section.</p>
+
+                <h6>Place of Supply</h6>
+                <p class="small text-muted">Enter the state code (e.g., 33 for Tamil Nadu) for GST calculation purposes.
+                </p>
+
+                <h6>Terms & Conditions</h6>
+                <p class="small text-muted">Default terms include payment terms, delivery terms, and freight
+                    information.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Date input formatting helper
+    document.addEventListener('DOMContentLoaded', function () {
+        // Pre-fill Terms & Conditions and Payment Terms with defaults if empty
+        const termsField = document.getElementById('terms_conditions');
+        const paymentField = document.getElementById('payment_terms');
+        if (termsField && !termsField.value.trim()) {
+            termsField.value = 'GST : 18%\nFright : 0\nP&F : 0%';
+        }
+        if (paymentField && !paymentField.value.trim()) {
+            paymentField.value = '100% Advance payment along with Purchase Order.';
+        }
+        // Vendor selection handler
+        const vendorSelect = document.getElementById('vendor_id');
+        const vendorLocationDiv = document.getElementById('vendor-location');
+        const vendorAddress = document.getElementById('vendor-address');
+        const vendorCityState = document.getElementById('vendor-city-state');
+        const vendorPincode = document.getElementById('vendor-pincode');
+        const vendorContact = document.getElementById('vendor-contact');
+
+        vendorSelect.addEventListener('change', function () {
+            const vendorId = this.value;
+
+            if (vendorId) {
+                // Fetch vendor details
+                fetch(`/api/vendors/${vendorId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        vendorAddress.textContent = data.address;
+                        vendorCityState.textContent = `${data.city}, ${data.state}`;
+                        vendorPincode.textContent = `Pincode: ${data.pincode}`;
+
+                        // Display contact information if available
+                        let contactInfo = '';
+                        if (data.contact_person) {
+                            contactInfo += `Contact: ${data.contact_person}`;
+                        }
+                        if (data.phone) {
+                            contactInfo += contactInfo ? ` | Phone: ${data.phone}` : `Phone: ${data.phone}`;
+                        }
+                        if (data.email) {
+                            contactInfo += contactInfo ? ` | Email: ${data.email}` : `Email: ${data.email}`;
+                        }
+
+                        vendorContact.textContent = contactInfo || 'No contact information available';
+                        vendorLocationDiv.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Error fetching vendor details:', error);
+                        vendorLocationDiv.style.display = 'none';
+                    });
+            } else {
+                vendorLocationDiv.style.display = 'none';
+            }
+        });
+
+        // PO Date change handler for dynamic numbering
+        const poDateInput = document.getElementById('po_date');
+        const poNumberInput = document.getElementById('po_number');
+        if (poDateInput && poNumberInput) {
+            poNumberInput.dataset.isAuto = 'true';
+
+            poNumberInput.addEventListener('input', function () {
+                this.dataset.isAuto = 'false';
+            });
+
+            poDateInput.addEventListener('change', function () {
+                const newDate = this.value;
+                if (newDate) {
+                    fetch(`/api/next_document_number?type=po&date=${newDate}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const suggestedSpan = document.getElementById('suggested-number');
+                                if (suggestedSpan) {
+                                    suggestedSpan.textContent = data.next_number;
+                                }
+
+                                if (!poNumberInput.value || poNumberInput.dataset.isAuto === 'true' || poNumberInput.value === '') {
+                                    poNumberInput.value = data.next_number;
+                                    poNumberInput.dataset.isAuto = 'true';
+                                }
+                            }
+                        })
+                        .catch(error => console.error('Error fetching next PO number:', error));
+                }
+            });
+        }
+
+        // Show vendor location if a vendor is already selected (for form validation errors)
+        if (vendorSelect.value) {
+            vendorSelect.dispatchEvent(new Event('change'));
+        }
+        // Form validation
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const vendorId = document.getElementById('vendor_id');
+                const poNumber = document.getElementById('po_number');
+                const poDate = document.getElementById('po_date');
+
+                // Validate required fields
+                if (!vendorId.value) {
+                    e.preventDefault();
+                    alert('Please select a vendor.');
+                    vendorId.focus();
+                    return false;
+                }
+
+                if (!poNumber.value.trim()) {
+                    e.preventDefault();
+                    alert('Please enter a PO number.');
+                    poNumber.focus();
+                    return false;
+                }
+
+                if (!poDate.value) {
+                    e.preventDefault();
+                    alert('Please select PO date.');
+                    poDate.focus();
+                    return false;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Print Purchase Order {{ po.po_number }}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 6mm;
+    }
+
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #000;
+    }
+
+    /* Optimize page width for maximum content */
+    .page {
+      width: 194mm;
+      min-height: 285mm;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+
+    .row {
+      display: flex;
+    }
+
+    .between {
+      justify-content: space-between;
+    }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title {
+      text-align: center;
+      font-weight: 700;
+      color: #d32f2f;
+      font-size: 22px;
+      margin: 4px 0 8px;
+    }
+
+    .company-name {
+      color: #d32f2f;
+      font-weight: 700;
+      font-size: 16px;
+      white-space: nowrap;
+    }
+
+    .muted {
+      color: #666;
+    }
+
+    .header {
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .logo {
+      width: 30mm;
+      height: 30mm;
+      object-fit: contain;
+    }
+
+    .logo-col {
+      align-items: center;
+      width: 38mm;
+      text-align: center;
+    }
+
+    .tagline {
+      margin-top: 2px;
+      text-align: center;
+      white-space: normal;
+      font-size: 9px;
+      line-height: 1.1;
+      word-wrap: break-word;
+    }
+
+    .address {
+      line-height: 1.4;
+      margin-top: 2px;
+      font-size: 9px;
+    }
+
+    .box {
+      border: 1px solid #000;
+      border-collapse: collapse;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th,
+    td {
+      border: 1px solid #000;
+      padding: 2px 4px;
+      font-size: 9px;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f2f2f2;
+      text-align: left;
+      font-weight: 700;
+    }
+
+    .items th {
+      background: #fff3bf;
+      text-align: center;
+    }
+
+    .items td {
+      background: #fff9d6;
+    }
+
+    /* Prevent header overlapping */
+    .items th {
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    /* Ensure proper spacing - more compact */
+    .items td,
+    .items th {
+      padding: 2px 4px;
+    }
+
+    /* Allow text wrapping in item column */
+    .items td:first-child {
+      word-wrap: break-word;
+      word-break: break-word;
+    }
+
+    /* Allow line breaks in tax columns */
+    .items td:nth-child(8),
+    .items td:nth-child(9) {
+      white-space: normal;
+    }
+
+    /* Fix table width issues */
+    .items {
+      table-layout: fixed;
+      width: 100%;
+    }
+
+    .items th,
+    .items td {
+      overflow: visible;
+    }
+
+    /* Ensure amount columns have enough width */
+    .items td.num,
+    .items th.num {
+      min-width: 60px;
+      white-space: nowrap;
+    }
+
+    /* Allow description to wrap but limit height */
+    .items td:first-child+td {
+      word-wrap: break-word;
+      max-height: 20px;
+      overflow: visible;
+    }
+
+    /* Ensure proper alignment */
+    .items td:not(:first-child) {
+      text-align: center;
+    }
+
+    .items td:first-child {
+      text-align: left;
+    }
+
+    /* ALIGNMENT HELPERS */
+    .right {
+      text-align: right;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .nowrap {
+      white-space: nowrap;
+    }
+
+    /* Override nowrap for description column */
+    .items td:first-child.nowrap {
+      white-space: normal !important;
+    }
+
+    .num {
+      font-size: 8.5px;
+    }
+
+    .summary td {
+      border: none;
+      padding: 2px 0;
+      font-size: 10px;
+    }
+
+    .summary .total {
+      color: #d32f2f;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .bank th {
+      background: #d32f2f;
+      color: #fff;
+      border-color: #d32f2f;
+    }
+
+    .bank td {
+      border-color: #d32f2f;
+    }
+
+    .sign {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 8mm;
+    }
+
+    .sign .line {
+      width: 38mm;
+      border-bottom: 1px solid #000;
+      height: 0;
+    }
+
+    .small {
+      font-size: 9px;
+    }
+
+    .top-stamp {
+      border: 2px dashed #999;
+      padding: 4px 8px;
+      font-weight: 700;
+      color: #555;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .red-sep {
+      height: 2px;
+      background: #e53935;
+      margin: 6px 0;
+    }
+
+    @media print {
+      .no-print {
+        display: none;
+      }
+
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <div class="title">PURCHASE ORDER</div>
+    <br><br>
+    <div class="row between header" style="margin-bottom:6px;">
+      <div class="row" style="gap:10px; flex:1; min-width: 110mm;">
+        <div class="col logo-col">
+          <img class="logo" src="{{ logo_path }}" alt="Logo">
+          <div class="muted tagline">{{ company_details.tagline }}</div>
+        </div>
+        <div class="col" style="min-width: 80mm;">
+          <div class="company-name">{{ company_details.signature_name }}</div>
+          <div class="small address">
+            {% if po.main_address == 'salem' %}
+            {{ company_details.salem_address | safe }}
+            {% else %}
+            {{ company_details.chennai_address | safe }}
+            {% endif %}
+            <br>
+            GST: {{ company_details.gstin }}, PAN: {{ company_details.pan }}<br>
+            STATE: {{ company_details.state }}<br>
+            {% if po.main_address == 'salem' %}
+            CELL NO: +91-9360272226, +91-9444201021<br>
+            EMAIL: mahadevico@yahoo.in, mahadevico77@gmail.com
+            {% else %}
+            CELL NO: +91-44-35541362, +91-9444201021<br>
+            EMAIL: mahadevico@yahoo.in, mahadevico77@gmail.com
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <!-- Narrow the right panel so total width stays inside page -->
+      <div class="col" style="gap:6px; text-align:right; min-width: 56mm; max-width: 60mm;">
+        <div class="top-stamp">PURCHASE ORDER</div>
+        <table style="margin-top:6px; font-size:10px; border-color:#cfcfcf;">
+          <tr>
+            <td style="border:0; padding:2px 0;" class="nowrap">P.O NO</td>
+            <td style="border:0; padding:2px 0;" class="nowrap">{{ po.po_number }}</td>
+          </tr>
+          <tr>
+            <td style="border:0; padding:2px 0;" class="nowrap">DATE</td>
+            <td style="border:0; padding:2px 0;" class="nowrap">{{ po.po_date.strftime('%d-%m-%Y') }}</td>
+          </tr>
+          {% if po.reference_no and po.reference_no.strip() and po.reference_no != '-' %}
+          <tr>
+            <td style="border:0; padding:2px 0;" class="nowrap">REF</td>
+            <td style="border:0; padding:2px 0;">{{ po.reference_no }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <td style="border:0; padding:2px 0;" class="nowrap">DATED</td>
+            <td style="border:0; padding:2px 0;">{{ po.po_date.strftime('%d-%m-%Y') }}</td>
+          </tr>
+          <tr>
+            <td style="border:0; padding:2px 0;" class="nowrap">PLACE OF SUPPLY</td>
+            <td style="border:0; padding:2px 0;">{{ po.place_of_supply }}</td>
+          </tr>
+          <tr>
+            <td style="border:0; padding:2px 0;" class="nowrap">DELIVERY DATE</td>
+            <td style="border:0; padding:2px 0;">{{ po.delivery_date.strftime('%d-%m-%Y') if po.delivery_date else '' }}
+            </td>
+          </tr>
+          <tr>
+            <td style="border:0; padding:2px 0;" class="nowrap">EXPECTED DELIVERY</td>
+            <td style="border:0; padding:2px 0;">{{ po.expected_delivery_date.strftime('%d-%m-%Y') if
+              po.expected_delivery_date else '' }}</td>
+          </tr>
+          {% if delivery_text %}
+          <tr>
+            <td style="border:0; padding:2px 0;" class="nowrap">DELIVERY</td>
+            <td style="border:0; padding:2px 0;">{{ delivery_text }}</td>
+          </tr>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+
+    <div class="red-sep"></div>
+
+    <table style="table-layout:auto;">
+      <thead>
+        <tr>
+          <th class="nowrap" style="width:30%;">Vendor</th>
+          <th class="nowrap" style="width:35%;">Billing Address</th>
+          <th class="nowrap" style="width:35%;">Shipping Address</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="vertical-align: top; white-space: normal; word-break: break-word; line-height:1.4;">
+            {{ po.vendor.name }}<br>
+            {{ po.vendor.address }}<br>
+            {% if po.vendor.city %}{{ po.vendor.city }}, {% endif %}{{ po.vendor.state }},<br>
+            {% if po.vendor.pincode %}{{ po.vendor.pincode }}{% endif %}<br>
+            {% if po.vendor.gstin %}GST: {{ po.vendor.gstin }}{% endif %}
+          </td>
+          <td style="vertical-align: top; white-space: normal; word-break: break-word; line-height:1.4;">
+            M/s {{ company_details.signature_name }}<br>
+            {% if po.main_address == 'salem' %}
+            {{ company_details.salem_address | safe }}
+            {% else %}
+            {{ company_details.chennai_address | safe }}
+            {% endif %}
+            <br>
+            GST: {{ company_details.gstin }}, PAN: {{ company_details.pan }}<br>
+            STATE: {{ company_details.state }}<br>
+            {% if po.main_address == 'salem' %}
+            CELL NO: +91-9360272226, +91-9444201021<br>
+            EMAIL: mahadevico@yahoo.in, mahadevico77@gmail.com
+            {% else %}
+            CELL NO: +91-9360272226, +91-9444201021<br>
+            EMAIL: mahadevico@yahoo.in, mahadevico77@gmail.com
+            {% endif %}
+          </td>
+          <td style="vertical-align: top; white-space: normal; word-break: break-word; line-height:1.4;">
+            M/s {{ company_details.signature_name }}<br>
+            {% if po.branch_address == 'salem' %}
+            {{ company_details.salem_address | safe }}
+            {% else %}
+            {{ company_details.chennai_address | safe }}
+            {% endif %}
+            <br>
+            GST: {{ company_details.gstin }}, PAN: {{ company_details.pan }}<br>
+            STATE: {{ company_details.state }}<br>
+            {% if po.branch_address == 'salem' %}
+            CELL NO: +91-9360272226, +91-9444201021<br>
+            EMAIL: mahadevico@yahoo.in, mahadevico77@gmail.com
+            {% else %}
+            CELL NO: +91-9360272226, +91-9444201021<br>
+            EMAIL: mahadevico@yahoo.in, mahadevico77@gmail.com
+            {% endif %}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Items table with yellow background (matching your reference) -->
+    <table class="items" style="margin-top:8px;">
+      <thead>
+        <tr>
+          <th class="center" style="width:3%;">S.NO</th>
+          <th class="center" style="width:20%;">DESCRIPTION</th>
+          <th class="center nowrap" style="width:6%;">HSN /SAC</th>
+          <th class="center nowrap" style="width:5%;">QUANTITY</th>
+          <th class="center nowrap" style="width:10%;">Rate / Item</th>
+          <th class="center nowrap" style="width:6%;">Discount</th>
+          <th class="center nowrap" style="width:10%;">Taxable Value</th>
+          {% if not is_interstate %}
+          <th class="center nowrap" style="width:8%;">CGST 9%</th>
+          <th class="center nowrap" style="width:8%;">SGST 9%</th>
+          {% else %}
+          <th class="center nowrap" style="width:12%;">IGST 18%</th>
+          {% endif %}
+          <th class="center nowrap" style="width:10%;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for detail in item_details %}
+        <tr>
+          <td class="center">{{ loop.index }}</td>
+          <td>{{ detail.item.description }}</td>
+          <td class="nowrap center">{{ detail.item.hsn_code or company_details.default_hsn }}</td>
+          <td class="nowrap center">{{ "%.2f"|format(detail.item.quantity) }}</td>
+          <td class="nowrap num center">₹ {{ "{:,.2f}".format(detail.item.unit_price|float) }}</td>
+          <td class="nowrap num center">
+            {% if detail.item.discount_value > 0 %}
+            {% if detail.item.discount_type == 'percentage' %}
+            {{ "%.1f"|format(detail.item.discount_value) }}%
+            {% else %}
+            ₹{{ "{:,.2f}".format(detail.item.discount_value|float) }}
+            {% endif %}
+            {% else %}
+            -
+            {% endif %}
+          </td>
+          <td class="nowrap num center">₹ {{ "{:,.2f}".format(detail.taxable|float) }}</td>
+          {% if not is_interstate %}
+          <td class="num center">₹ {{ "{:,.2f}".format(detail.cgst) }}</td>
+          <td class="num center">₹ {{ "{:,.2f}".format(detail.sgst) }}</td>
+          {% else %}
+          <td class="nowrap num center">₹ {{ "{:,.2f}".format(detail.igst) }}</td>
+          {% endif %}
+          <td class="nowrap num center">₹ {{ "{:,.2f}".format(detail.total) }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <td colspan="6"><b>TOTAL</b></td>
+          <td class="nowrap num center"><b>₹ {{ "{:,.2f}".format(po.subtotal|float) }}</b></td>
+          {% if not is_interstate %}
+          <td class="nowrap num center"><b>₹ {{ "{:,.2f}".format(po.cgst_amount|float) }}</b></td>
+          <td class="nowrap num center"><b>₹ {{ "{:,.2f}".format(po.sgst_amount|float) }}</b></td>
+          {% else %}
+          <td class="nowrap num center"><b>₹ {{ "{:,.2f}".format(po.igst_amount|float) }}</b></td>
+          {% endif %}
+          <td class="nowrap num center"><b>₹ {{ "{:,.2f}".format(po.total_amount|float) }}</b></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table class="summary" style="margin-top:4px; width: 58%; float: right;">
+      <tr>
+        <td class="right nowrap" style="width:70%;">Taxable Amount</td>
+        <td class="right nowrap" style="width:30%;">₹ {{ "{:,.2f}".format(po.subtotal|float) }}</td>
+      </tr>
+      <tr>
+        <td class="right nowrap">Total Tax @18%</td>
+        <td class="right nowrap">₹ {{ "{:,.2f}".format((po.cgst_amount|float) + (po.sgst_amount|float) +
+          (po.igst_amount|float)) }}</td>
+      </tr>
+      <tr>
+        <td class="right total nowrap">Total Value</td>
+        <td class="right total nowrap">₹ {{ "{:,.2f}".format(po.total_amount|float) }}</td>
+      </tr>
+    </table>
+
+    <div style="clear:both;"></div>
+    <div class="small" style="margin-top:4px;"><b>Total Amount (In words):</b> {{ number_to_words(po.total_amount|float)
+      }}</div>
+
+
+    <div class="small" style="margin-top:6px;">
+      <b>Terms & Condition:</b><br>
+      {{ po.terms_conditions or 'Payment: 45 Days from the date of invoice. Delivery: Immediate / One week. Freight:
+      Inclusive' }}
+      <br><br>
+      {{ po.payment_terms or 'Make all checks payable to MAHADEVI&CO.' }}
+      <br><br>
+      <b>THANK YOU FOR YOUR BUSINESS!</b>
+    </div>
+
+    <div class="sign small">
+      <div></div>
+      <div style="text-align:center;">
+        <div><b>For {{ company_details.signature_name }}</b></div>
+        {% if signature_data %}
+        <div style="height:48px; display:flex; align-items:center; justify-content:center; margin-bottom: 4px;">
+          <img src="{{ signature_data }}" alt="Signature" style="max-height:48px; max-width:120px;" />
+        </div>
+        {% if po.signed_at %}
+        <div class="digital-seal"
+          style="border: 1.5px solid #2e7d32; padding: 4px 8px; border-radius: 4px; display: inline-block; text-align: left; background-color: #f1f8e9; margin-top: 2px;">
+          <div
+            style="color: #2e7d32; font-weight: bold; font-size: 10px; display: flex; align-items: center; gap: 4px;">
+            <span style="font-size: 12px;">✓</span> DIGITALLY SIGNED
+          </div>
+          <div style="font-size: 8px; line-height: 1.2; color: #333; margin-top: 1px;">
+            <strong>By:</strong> {{ po.signed_by.username if po.signed_by else 'Authorized User' }}<br>
+            <strong>Date:</strong> {{ po.signed_at.strftime('%d-%b-%Y %H:%M UTC') }}<br>
+            <span style="color: #666; font-family: 'Courier New', Courier, monospace; font-size: 7px;">ID: {{
+              po.signature_hash[:16] if po.signature_hash else 'VERIFIED' }}</span>
+          </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="line"></div>
+        {% endif %}
+        <div style="margin-top: 4px;">Authorised Signatory</div>
+      </div>
+    </div>
+
+    <div class="no-print" style="margin-top:16px;">
+      <button onclick="downloadPDF()">Print / Save as PDF</button>
+    </div>
+  </div>
+  <script>
+    function downloadPDF() {
+      const noPrintElements = document.querySelectorAll('.no-print');
+      
+      // Hide controls so they aren't in the generated PDF
+      noPrintElements.forEach(el => el.style.display = 'none');
+      
+      const htmlContent = document.documentElement.outerHTML;
+      
+      // Show controls again
+      noPrintElements.forEach(el => el.style.display = '');
+
+      // Create a hidden form to submit the HTML content
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/api/download_pdf_from_html';
+      form.enctype = 'multipart/form-data';
+      
+      // Send HTML as a file to bypass form memory limits
+      const file = new File([htmlContent], 'content.html', {type: 'text/html'});
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.name = 'html_file';
+      fileInput.files = dataTransfer.files;
+      
+      const filenameInput = document.createElement('input');
+      filenameInput.type = 'hidden';
+      filenameInput.name = 'filename';
+      filenameInput.value = document.title + '.pdf';
+      
+      form.appendChild(fileInput);
+      form.appendChild(filenameInput);
+      document.body.appendChild(form);
+      
+      // Submit form to trigger native download
+      form.submit();
+      
+      setTimeout(() => {
+        if (document.body.contains(form)) {
+          document.body.removeChild(form);
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+
+</html>

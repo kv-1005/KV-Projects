@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}offer {{ offer.offer_number }} - offer Generator{% endblock %}
+{% block page_title %}offer {{ offer.offer_number }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <a href="{{ url_for('envelope_print', offer_id=offer.id) }}" class="btn btn-outline-warning" target="_blank">
+        <i class="fas fa-envelope"></i> ENVELOPE
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- offer Details -->
+        <div class="card shadow">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-invoice"></i> offer Details
+                    </h5>
+                    <span class="badge bg-{{ 'success' if offer.status == 'paid' else 'warning' if offer.status == 'partially_paid' else 'danger' }} fs-6">
+                        {{ offer.status.replace('_', ' ').title() }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">offer Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>offer Number:</strong></td>
+                                <td>{{ offer.offer_number }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Date:</strong></td>
+                                <td>{{ offer.offer_date.strftime('%d/%m/%Y') }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Valid Until:</strong></td>
+                                <td>{{ offer.valid_until.strftime('%d/%m/%Y') if offer.valid_until else 'Not set' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Created:</strong></td>
+                                <td>{{ offer.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Customer Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Name:</strong></td>
+                                <td>{{ offer.customer.name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>GSTIN:</strong></td>
+                                <td>{{ offer.customer.gstin or 'Not provided' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Phone:</strong></td>
+                                <td>{{ offer.customer.phone }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td>{{ offer.customer.email or 'Not provided' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <h6 class="text-primary">Customer Address</h6>
+                    <p class="mb-0">
+                        {{ offer.customer.address }}<br>
+                        {{ offer.customer.city }}, {{ offer.customer.state }} - {{ offer.customer.pincode }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- offer Items -->
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list"></i> offer Items
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if offer.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Description</th>
+                                    <th>HSN</th>
+                                    <th>Qty</th>
+                                    <th>Rate</th>
+                                    <th>Tax %</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in offer.items %}
+                                <tr>
+                                    <td>{{ item.description }}</td>
+                                    <td>{{ item.hsn_code or '85044090' }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>₹{{ "{:,.2f}".format(item.unit_price) }}</td>
+                                    <td>{{ item.tax_rate }}%</td>
+                                    <td><strong>₹{{ "{:,.2f}".format(item.amount) }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+                        <h6 class="text-muted">No items added to this invoice</h6>
+                        <p class="text-muted">Add items to complete the offer.</p>
+                        <a href="{{ url_for('edit_offer', offer_id=offer.id) }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Items
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Notes -->
+        {% if offer.notes %}
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-sticky-note"></i> Notes
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if meta %}
+                    {% if meta.reference_no and meta.reference_no != "-" %}
+                    <div class="mb-2">
+                        <strong>Reference No.:</strong> {{ meta.reference_no }}
+                    </div>
+                    {% endif %}
+                    {% if meta.eway_bill and meta.eway_bill != "-" %}
+                    <div class="mb-2">
+                        <strong>E-way Bill:</strong> {{ meta.eway_bill }}
+                        {% if meta.eway_bill_date %}
+                        <span class="text-muted">(Date: {{ meta.eway_bill_date }})</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if meta.extra_billing_info %}
+                    <div class="mb-2">
+                        <strong>Extra Billing Info:</strong> {{ meta.extra_billing_info }}
+                    </div>
+                    {% endif %}
+                    {% if meta.terms_text %}
+                    <div class="mb-2">
+                        <strong>Terms & Conditions:</strong>
+                        <p class="mb-0 ms-3">{{ meta.terms_text }}</p>
+                    </div>
+                    {% endif %}
+                    {% if meta.payment_text %}
+                    <div class="mb-2">
+                        <strong>Payment/Warranty:</strong>
+                        <p class="mb-0 ms-3">{{ meta.payment_text|replace('\r\n', '<br>')|replace('\n', '<br>')|safe }}</p>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <p class="mb-0">{{ offer.notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- offer Summary -->
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calculator"></i> offer Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td>Subtotal:</td>
+                        <td class="text-end"><strong>₹{{ "{:,.2f}".format(offer.subtotal) }}</strong></td>
+                    </tr>
+                    {% if offer.cgst_amount > 0 %}
+                    <tr>
+                        <td>CGST:</td>
+                        <td class="text-end">₹{{ "{:,.2f}".format(offer.cgst_amount) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if offer.sgst_amount > 0 %}
+                    <tr>
+                        <td>SGST:</td>
+                        <td class="text-end">₹{{ "{:,.2f}".format(offer.sgst_amount) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if offer.igst_amount > 0 %}
+                    <tr>
+                        <td>IGST:</td>
+                        <td class="text-end">₹{{ "{:,.2f}".format(offer.igst_amount) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if offer.shipping_charges > 0 %}
+                    <tr>
+                        <td>Shipping:</td>
+                        <td class="text-end">₹{{ "{:,.2f}".format(offer.shipping_charges) }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr class="table-primary">
+                        <td><strong>Total:</strong></td>
+                        <td class="text-end"><strong>₹{{ "{:,.2f}".format(offer.total_amount) }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-cogs"></i> Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('edit_offer', offer_id=offer.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Edit Offer
+                    </a>
+                    <a href="{{ url_for('offer_print', offer_id=offer.id) }}" class="btn btn-outline-success" target="_blank">
+                        <i class="fas fa-print"></i> Print/PDF
+                    </a>
+                    <a href="{{ url_for('delivery_challan', offer_id=offer.id) }}" class="btn btn-outline-info">
+                        <i class="fas fa-box"></i> PACKING SLIP LABEL
+                    </a>
+                    <a href="{{ url_for('envelope_print', offer_id=offer.id) }}" class="btn btn-outline-warning" target="_blank">
+                        <i class="fas fa-envelope"></i> ENVELOPE
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment Status -->
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-credit-card"></i> Payment Status
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <div class="mb-3">
+                        <span class="badge bg-{{ 'success' if offer.status == 'paid' else 'warning' if offer.status == 'partially_paid' else 'danger' }} fs-5">
+                            {{ offer.status.replace('_', ' ').title() }}
+                        </span>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-outline-success" onclick="updateStatus('paid')">
+                            Mark Paid
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="updateStatus('partially_paid')">
+                            Partial
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="updateStatus('unpaid')">
+                            Unpaid
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="application/json" id="invoice-data">
+{
+    "id": {{ offer.id }}
+}
+</script>
+<script>
+function updateStatus(status) {
+    if (confirm(`Are you sure you want to mark this offer as ${status.replace('_', ' ')}?`)) {
+        // Update status via API
+        const invoiceData = JSON.parse(document.getElementById('invoice-data').textContent);
+        
+        // Show loading state
+        const buttons = document.querySelectorAll('.btn-group button');
+        buttons.forEach(btn => btn.disabled = true);
+        
+        if (window.InvoiceApp && window.InvoiceApp.updateOfferstatus) {
+            InvoiceApp.updateOfferstatus(invoiceData.id, status)
+                .then(response => {
+                    if (response.success) {
+                        // Update the status badge
+                        const statusBadge = document.querySelector('.badge');
+                        statusBadge.className = `badge bg-${status === 'paid' ? 'success' : status === 'partially_paid' ? 'warning' : 'danger'} fs-5`;
+                        statusBadge.textContent = status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        
+                        if (window.InvoiceApp.showToast) {
+                            InvoiceApp.showToast(`offer status updated to ${status.replace('_', ' ')}`, 'success');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating status:', error);
+                    if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                        InvoiceApp.showToast('Failed to update status. Please try again.', 'danger');
+                    } else {
+                        alert('Failed to update status. Please try again.');
+                    }
+                })
+                .finally(() => {
+                    // Re-enable buttons
+                    buttons.forEach(btn => btn.disabled = false);
+                });
+        } else {
+            alert('Application not ready. Please refresh the page.');
+            buttons.forEach(btn => btn.disabled = false);
+        }
+    }
+}
+</script>
+{% endblock %}
+

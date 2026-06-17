@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice History - {{ invoice.invoice_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f4f6f9;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .print-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        background: #fff;
+        padding: 40px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .print-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 3px solid #000;
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+    }
+
+    .print-header-left h1 {
+        margin: 0;
+        color: #000;
+        font-size: 24pt;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .print-header-left p {
+        margin: 5px 0 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .print-header-right {
+        text-align: right;
+    }
+
+    .print-header-right h3 {
+        margin: 0 0 5px;
+        font-weight: 800;
+        color: #000;
+    }
+
+    .print-header-right p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #444;
+    }
+
+    .invoice-info-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 20px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .info-group h6 {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 5px;
+        font-weight: 700;
+    }
+
+    .info-group p {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #0f172a;
+    }
+
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+    .history-table th,
+    .history-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .history-table th {
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    .history-table td {
+        font-size: 0.95rem;
+        color: #1e293b;
+    }
+
+    .text-end {
+        text-align: right !important;
+    }
+
+    .type-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .type-invoice {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .type-payment {
+        background: #dcfce3;
+        color: #15803d;
+    }
+
+    .summary-box {
+        float: right;
+        width: 350px;
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 1rem;
+    }
+
+    .summary-row.total {
+        border-top: 2px solid #cbd5e1;
+        padding-top: 10px;
+        font-weight: 800;
+        font-size: 1.25rem;
+    }
+
+    .summary-row.outstanding {
+        color: #dc2626;
+    }
+
+    .summary-row.paid-full {
+        color: #16a34a;
+    }
+
+    /* Print Styles */
+    @media print {
+        @page {
+            margin: 1cm;
+        }
+
+        body {
+            background: #fff;
+            margin: 0;
+            padding: 0;
+        }
+
+        .print-container {
+            box-shadow: none;
+            margin: 0;
+            padding: 0;
+            max-width: 100%;
+        }
+
+        .sidebar,
+        .navbar,
+        .btn-print,
+        #chatbot-widget {
+            display: none !important;
+        }
+
+        .invoice-info-box {
+            border: 1px solid #000;
+            background: #fff;
+        }
+
+        .history-table th {
+            background: #eee;
+            border: 1px solid #000;
+            color: #000;
+        }
+
+        .history-table td {
+            border: 1px solid #ccc;
+            color: #000;
+        }
+
+        .type-badge {
+            background: #fff !important;
+            color: #000 !important;
+            border: 1px solid #000;
+        }
+
+        .summary-box {
+            border: 1px solid #000;
+            background: #fff;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-4">
+    <div class="d-flex justify-content-end mb-3 d-print-none">
+        <button onclick="window.print()" class="btn btn-primary btn-print me-2">
+            <i class="fas fa-print me-1"></i> Print / Save as PDF
+        </button>
+        <a href="{{ url_for('customer_ledger', customer_id=invoice.customer_id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Ledger
+        </a>
+    </div>
+
+    <div class="print-container">
+        <!-- Header -->
+        <div class="print-header">
+            <div class="print-header-left">
+                {% if company.logo_path %}
+                <img src="{{ url_for('static', filename=company.logo_path.split('static/')[-1]) if 'static/' in company.logo_path else url_for('static', filename='uploads/md_logo.jpg') }}"
+                    alt="Logo" style="max-height: 80px; margin-bottom: 10px;">
+                {% else %}
+                <img src="{{ url_for('static', filename='uploads/md_logo.jpg') }}" alt="Logo"
+                    style="max-height: 80px; margin-bottom: 10px;">
+                {% endif %}
+                <h1>Payment Advice</h1>
+                <p>Generated on {{ now.strftime('%d %b %Y %H:%M') }}</p>
+            </div>
+            <div class="print-header-right">
+                <h3>{{ company_address.name if company_address else (company.name or 'MAHADEVI & CO') }}</h3>
+                <p>{{ company_address.address | safe if company_address else (company.address or '1/462-1, National
+                    Nagar, Alangar Thetre Back side, Salem') }}</p>
+                <p>GSTIN: {{ company.gstin or '33AAMFM2845D1ZG' }}</p>
+                <p>{{ company_address.phone if company_address else ('Phone: ' ~ company.phone) }}</p>
+            </div>
+        </div>
+
+        <!-- Details -->
+        <div class="invoice-info-box">
+            <div class="info-group">
+                <h6>Customer Name</h6>
+                <p>{{ invoice.customer.name }}</p>
+            </div>
+            <div class="info-group">
+                <h6>Invoice Number</h6>
+                <p>{{ invoice.invoice_number }}</p>
+            </div>
+            <div class="info-group">
+                <h6>Invoice Date</h6>
+                <p>{{ invoice.invoice_date.strftime('%d %b %Y') }}</p>
+            </div>
+            <div class="info-group text-end">
+                <h6>Status</h6>
+                <p>
+                    {% if outstanding_balance <= 0.01 %} <span style="color: #16a34a;">PAID IN FULL</span>
+                        {% else %}
+                        <span style="color: #dc2626;">PARTIAL / UNPAID</span>
+                        {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Ledger Table -->
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Ref / Mode</th>
+                    <th>Type</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Initial Invoice Row -->
+                <tr>
+                    <td>{{ invoice.invoice_date.strftime('%d %b %Y') }}</td>
+                    <td>Original Invoice Generated</td>
+                    <td><span class="type-badge type-invoice">INVOICE (DEBIT)</span></td>
+                    <td class="text-end">₹{{ "{:,.2f}".format(invoice.total_amount) }}</td>
+                </tr>
+
+                {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.payment_date.strftime('%d %b %Y') }}</td>
+                    <td>
+                        {{ payment.payment_mode }}
+                        {% if payment.reference_number %}({{ payment.reference_number }}){% endif %}
+                        <div style="font-size: 0.85em; color: #475569; margin-top: 4px;">
+                            Received: ₹{{ payment.amount_received }} |
+                            {% if payment.tds_amount > 0 %}TDS: ₹{{ payment.tds_amount }} | {% endif %}
+                            {% if payment.retention_amount > 0 %}Retention: ₹{{ payment.retention_amount }} | {% endif
+                            %}
+                            {% if payment.hold_amount > 0 %}Hold: ₹{{ payment.hold_amount }} | {% endif %}
+                            {% if payment.adjustment_amount > 0 %}Adj: ₹{{ payment.adjustment_amount }} | {% endif %}
+                            {% if payment.other_deductions > 0 %}Misc: ₹{{ payment.other_deductions }}{% endif %}
+                        </div>
+                        {% if payment.notes %}<small class="text-muted" style="display: block; margin-top: 2px;">{{
+                            payment.notes }}</small>{% endif %}
+                    </td>
+                    <td><span class="type-badge type-payment">PAYMENT (CREDIT)</span></td>
+                    <td class="text-end">₹{{ "{:,.2f}".format(payment.total_amount) }}</td>
+                </tr>
+                {% endfor %}
+
+                {% if not payments %}
+                <tr>
+                    <td colspan="4" class="text-center" style="font-style: italic; color: #64748b;">No payments recorded
+                        against this invoice yet.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- Summary -->
+        <div class="summary-box">
+            <div class="summary-row">
+                <span>Total Invoiced:</span>
+                <span>₹{{ "{:,.2f}".format(invoice.total_amount) }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Total Received:</span>
+                <span>- ₹{{ "{:,.2f}".format(total_paid) }}</span>
+            </div>
+            <div
+                class="summary-row total {% if outstanding_balance <= 0.01 %}paid-full{% else %}outstanding{% endif %}">
+                <span>Outstanding Balance:</span>
+                <span>₹{{ "{:,.2f}".format(outstanding_balance) }}</span>
+            </div>
+        </div>
+
+        <div style="clear: both;"></div>
+    </div>
+</div>
+
+<script>
+    // Automatically trigger print dialog when page loads
+    document.addEventListener("DOMContentLoaded", function () {
+        // Short delay to ensure logo loads
+        setTimeout(function () {
+            window.print();
+        }, 500);
+    });
+</script>
+{% endblock %}

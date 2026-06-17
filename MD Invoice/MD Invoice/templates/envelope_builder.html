@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Envelope Generator{% endblock %}
+{% block page_title %}Envelope Generator{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <a href="{{ url_for('invoices') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-file-invoice"></i> All Invoices
+    </a>
+    <a href="{{ url_for('packing_slip_builder') }}" class="btn btn-outline-primary">
+        <i class="fas fa-box-open"></i> Packing Slips
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-xl-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-envelope"></i> Envelope Generator
+                    </h5>
+                    <span class="badge bg-dark">
+                        Print-ready #10 Envelope (Landscape)
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> This will generate a PDF with exact #10 envelope measurements in
+                    <b>Landscape</b> (9.5" x 4.125").
+                    The FROM address is at the top-left, and the TO address is positioned center-right,
+                    matching standard business mailing formats.
+                </div>
+
+                <form method="POST" action="{{ url_for('envelope_builder') }}" id="envelopeForm"
+                    class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Quick Invoice Option -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="p-3 bg-light border rounded">
+                                <label for="invoice_id" class="form-label fw-bold mb-1">
+                                    <i class="fas fa-magic"></i> Quick Fill from Invoice
+                                </label>
+                                <div class="row g-2">
+                                    <div class="col-md-9">
+                                        <select class="form-select" id="invoice_id" name="invoice_id">
+                                            <option value="">-- Start fresh or select an invoice to populate --</option>
+                                            {% for invoice in invoices %}
+                                            <option value="{{ invoice.id }}">
+                                                #{{ invoice.invoice_number }} - {{ invoice.customer.name }} ({{
+                                                invoice.invoice_date.strftime('%d/%m/%Y') }})
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="submit" class="btn btn-outline-primary w-100">
+                                            <i class="fas fa-check"></i> Auto-Generate
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-text">Selecting an invoice here will instantly generate the PDF using
+                                    its addresses.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="position-relative text-center mb-4">
+                        <hr>
+                        <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted">OR
+                            BUILD MANUALLY</span>
+                    </div>
+
+                    <!-- From Address -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold text-primary">
+                                    <i class="fas fa-building"></i> From (Return Address)
+                                </h6>
+                                <div class="mb-2">
+                                    {% for key, addr in company_addresses.items() %}
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="from_address"
+                                            id="from_{{ key }}" value="{{ key }}" {% if loop.first %}checked{% endif %}>
+                                        <label class="form-check-label small" for="from_{{ key }}">
+                                            <strong>{{ key|title }} Office</strong><br>
+                                            <span class="text-muted">{{ addr.address|replace('<br>', ', ') }}</span>
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="from_address"
+                                            id="from_both" value="both">
+                                        <label class="form-check-label small" for="from_both">
+                                            <strong>Both Offices</strong><br>
+                                            <span class="text-muted">Includes both Salem and Chennai addresses</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <label class="form-label small text-muted">Extra From Info (Optional)</label>
+                                    <textarea class="form-control form-control-sm" name="from_extra"
+                                        placeholder="e.g. Dept: Billing, Return Code: 123..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- To Address -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold text-success">
+                                    <i class="fas fa-user-tag"></i> To (Recipient)
+                                </h6>
+
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted">Select Recipient</label>
+                                    <select class="form-select" name="to_recipient" id="to_recipient">
+                                        <option value="">-- Choose Customer or Vendor --</option>
+                                        {% for opt in recipient_options %}
+                                        <option value="{{ opt.value }}">{{ opt.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted">Or Custom Address</label>
+                                    <textarea class="form-control" name="to_custom_text" id="to_custom_text" rows="3"
+                                        placeholder="Enter name and address manually..."></textarea>
+                                </div>
+
+                                <div class="mb-0">
+                                    <label class="form-label small text-muted">Extra To Info (Optional)</label>
+                                    <textarea class="form-control form-control-sm" name="to_extra"
+                                        placeholder="e.g. Attn: Accounts Payable, Ph: 9876543210..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-warning btn-lg">
+                    <i class="fas fa-envelope"></i> Generate Envelope PDF
+                </button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow mt-4">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="fas fa-lightbulb"></i> Quick Tips
+            </h6>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li>The envelope uses the customer address from the selected invoice</li>
+                <li>Company return address is automatically added from your company settings</li>
+                <li>PDF is sized for standard #10 business envelopes (9.5" x 4.125")</li>
+                <li>Open the PDF and print directly on your envelope (Landscape orientation)</li>
+                <li>You can also access envelopes from individual invoice pages</li>
+            </ul>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

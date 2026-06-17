@@ -1,0 +1,981 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Invoice {{ invoice.invoice_number }} - Invoice Generator{% endblock %}
+{% block page_title %}Edit Invoice {{ invoice.invoice_number }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <a href="{{ url_for('edit_invoice_details', invoice_id=invoice.id) }}" class="btn btn-outline-primary">
+        <i class="fas fa-edit"></i> EDIT HEADER DETAILS
+    </a>
+    <a href="{{ url_for('envelope_print', invoice_id=invoice.id) }}" class="btn btn-outline-warning" target="_blank">
+        <i class="fas fa-envelope"></i> ENVELOPE
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Current Items (Moved to Top) -->
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list"></i> Invoice Items
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="itemsList">
+                    {% if invoice.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 25%; font-size: 16px; padding: 15px; text-align: left;">
+                                        Description</th>
+                                    <th style="width: 8%; font-size: 16px; padding: 15px; text-align: center;">HSN</th>
+                                    <th style="width: 8%; font-size: 16px; padding: 15px; text-align: center;">Qty</th>
+                                    <th style="width: 10%; font-size: 16px; padding: 15px; text-align: center;">Rate (₹)
+                                    </th>
+                                    <th style="width: 12%; font-size: 16px; padding: 15px; text-align: center;">Discount
+                                    </th>
+                                    <th style="width: 8%; font-size: 16px; padding: 15px; text-align: center;">Tax %
+                                    </th>
+                                    <th style="width: 12%; font-size: 16px; padding: 15px; text-align: center;">Total
+                                        (₹)</th>
+                                    <th style="width: 17%; font-size: 16px; padding: 15px; text-align: center;">Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in invoice.items %}
+                                <tr data-item-id="{{ item.id }}" style="font-size: 16px;">
+                                    <td style="padding: 15px; vertical-align: middle;">
+                                        <div class="item-description" data-field="description">
+                                            <strong style="word-break: break-word; white-space: normal;">{{
+                                                item.description }}</strong>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px; text-align: center; vertical-align: middle;">
+                                        <div class="item-hsn" data-field="hsn_code">
+                                            <span class="badge bg-secondary fs-6">{{ item.hsn_code or '85044090'
+                                                }}</span>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px; text-align: center; vertical-align: middle;">
+                                        <div class="item-quantity" data-field="quantity">
+                                            <span class="badge bg-primary fs-6">{{ item.quantity }}</span>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px; text-align: center; vertical-align: middle;">
+                                        <div class="item-rate" data-field="unit_price">
+                                            <strong>₹{{ "{:,.2f}".format(item.unit_price) }}</strong>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px; text-align: center; vertical-align: middle;">
+                                        <div class="item-discount" data-field="discount">
+                                            {% if item.discount_value > 0 %}
+                                            {% if item.discount_type == 'percentage' %}
+                                            <span class="badge bg-warning fs-6">{{ item.discount_value }}%</span>
+                                            {% else %}
+                                            <span class="badge bg-warning fs-6">₹{{
+                                                "{:,.2f}".format(item.discount_value) }}</span>
+                                            {% endif %}
+                                            {% else %}
+                                            <span class="text-muted fs-6">No Discount</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px; text-align: center; vertical-align: middle;">
+                                        <div class="item-tax" data-field="tax_rate">
+                                            <span class="badge bg-info fs-6">{{ item.tax_rate }}%</span>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px; text-align: center; vertical-align: middle;">
+                                        <strong class="text-success fs-5 item-total">₹{{ "{:,.2f}".format(item.amount)
+                                            }}</strong>
+                                    </td>
+                                    <td style="padding: 15px; text-align: center; vertical-align: middle;">
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-outline-primary btn-sm"
+                                                data-action="edit" data-item-id="{{ item.id }}" title="Edit Item">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm"
+                                                data-action="delete" data-item-id="{{ item.id }}" title="Remove Item">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-shopping-cart fa-3x text-muted mb-4"></i>
+                        <h5 class="text-muted mb-3">No items added yet</h5>
+                        <p class="text-muted fs-5">Add items using the form below to get started.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Items Form (Moved Below Items List) -->
+        <div class="card shadow mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-plus"></i> Add Items to Invoice
+                </h5>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
+                        data-bs-target="#excelModeModal">
+                        <i class="fas fa-file-excel me-1"></i> Excel Mode
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
+                        data-bs-target="#importItemsModal">
+                        <i class="fas fa-file-import me-1"></i> Import from Doc
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <form id="addItemForm">
+                    <!-- Row 1: Description and HSN Code -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-lg-8 col-md-8 mb-3">
+                            <label for="description" class="form-label fw-bold fs-5">Description *</label>
+                            <input type="text" class="form-control form-control-lg" id="description"
+                                placeholder="Enter product or service name" required
+                                style="font-size: 20px; padding: 15px; min-height: 60px;">
+                        </div>
+                        <div class="col-lg-4 col-md-4 mb-3">
+                            <label for="hsn_code" class="form-label fw-bold fs-5">HSN Code</label>
+                            <input type="text" class="form-control form-control-lg" id="hsn_code" placeholder="85044090"
+                                value="85044090" style="font-size: 20px; padding: 15px; min-height: 60px;">
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Quantity, Rate, Discount Type, and Discount Value -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-lg-3 col-md-3 mb-3">
+                            <label for="quantity" class="form-label fw-bold fs-5">Quantity *</label>
+                            <input type="number" class="form-control form-control-lg" id="quantity" step="0.01" min="0"
+                                placeholder="1" required style="font-size: 20px; padding: 15px; min-height: 60px;">
+                        </div>
+                        <div class="col-lg-3 col-md-3 mb-3">
+                            <label for="unit_price" class="form-label fw-bold fs-5">Rate (₹) *</label>
+                            <input type="number" class="form-control form-control-lg" id="unit_price" step="0.01"
+                                min="0" placeholder="0.00" required
+                                style="font-size: 20px; padding: 15px; min-height: 60px;">
+                        </div>
+                        <div class="col-lg-3 col-md-3 mb-3">
+                            <label for="discount_type" class="form-label fw-bold fs-5">Discount Type</label>
+                            <select class="form-select form-select-lg" id="discount_type"
+                                style="font-size: 20px; padding: 15px; min-height: 60px;">
+                                <option value="amount">Amount (₹)</option>
+                                <option value="percentage">Percentage (%)</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-3 mb-3">
+                            <label for="discount_value" class="form-label fw-bold fs-5">Discount Value</label>
+                            <input type="number" class="form-control form-control-lg" id="discount_value" step="0.01"
+                                min="0" placeholder="0.00" style="font-size: 20px; padding: 15px; min-height: 60px;">
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Tax Rate and Add Button -->
+                    <div class="row g-4 mb-3">
+                        <div class="col-lg-3 col-md-3 mb-3">
+                            <label for="tax_rate" class="form-label fw-bold fs-5">Tax Rate %</label>
+                            <select class="form-select form-select-lg" id="tax_rate"
+                                style="font-size: 20px; padding: 15px; min-height: 60px;">
+                                <option value="0">0%</option>
+                                <option value="5">5%</option>
+                                <option value="12">12%</option>
+                                <option value="18" selected>18%</option>
+                                <option value="28">28%</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-9 col-md-9 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary btn-lg w-100"
+                                style="font-size: 18px; padding: 20px; min-height: 60px; font-weight: 600;">
+                                <i class="fas fa-plus me-3"></i> Add Item to Invoice
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Invoice Summary -->
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calculator"></i> Invoice Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <tr style="font-size: 16px;">
+                        <td class="fw-bold">Subtotal:</td>
+                        <td class="text-end"><strong id="subtotal" class="fs-5">₹{{ "{:,.2f}".format(invoice.subtotal)
+                                }}</strong></td>
+                    </tr>
+                    <tr style="font-size: 16px;">
+                        <td class="fw-bold">CGST:</td>
+                        <td class="text-end" id="cgst" class="fs-5">₹{{ "{:,.2f}".format(invoice.cgst_amount) }}</td>
+                    </tr>
+                    <tr style="font-size: 16px;">
+                        <td class="fw-bold">SGST:</td>
+                        <td class="text-end" id="sgst" class="fs-5">₹{{ "{:,.2f}".format(invoice.sgst_amount) }}</td>
+                    </tr>
+                    <tr style="font-size: 16px;">
+                        <td class="fw-bold">IGST:</td>
+                        <td class="text-end" id="igst" class="fs-5">₹{{ "{:,.2f}".format(invoice.igst_amount) }}</td>
+                    </tr>
+                    <tr style="font-size: 16px;">
+                        <td class="fw-bold">Shipping:</td>
+                        <td class="text-end" id="shipping" class="fs-5">₹{{ "{:,.2f}".format(invoice.shipping_charges)
+                            }}</td>
+                    </tr>
+                    <tr class="table-primary" style="font-size: 18px;">
+                        <td class="fw-bold">Total:</td>
+                        <td class="text-end"><strong id="total" class="fs-4 text-primary">₹{{
+                                "{:,.2f}".format(invoice.total_amount) }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Invoice Settings -->
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-cogs"></i> Invoice Settings
+                </h6>
+            </div>
+            <div class="card-body">
+                <form id="invoiceSettingsForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="reference_no" class="form-label fw-bold">Reference No.</label>
+                            <input type="text" class="form-control form-control-lg" id="reference_no"
+                                value="{{ meta.reference_no or '-' }}" style="font-size: 16px; padding: 12px;"
+                                placeholder="-">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="eway_bill" class="form-label fw-bold">E-way Bill No.</label>
+                            <input type="text" class="form-control form-control-lg" id="eway_bill"
+                                value="{{ meta.eway_bill or '-' }}" style="font-size: 16px; padding: 12px;"
+                                placeholder="-">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="eway_bill_date" class="form-label fw-bold">E-way Bill Date</label>
+                            <input type="text" class="form-control form-control-lg" id="eway_bill_date"
+                                value="{{ meta.eway_bill_date or '' }}" style="font-size: 16px; padding: 12px;"
+                                placeholder="e.g., 05/10/2025 or text">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                    </div>
+                    <div class="mb-3">
+                        <label for="shipping_charges" class="form-label fw-bold">Shipping Charges (₹)</label>
+                        <input type="number" class="form-control form-control-lg" id="shipping_charges" step="0.01"
+                            min="0" value="{{ invoice.shipping_charges or 0 }}" style="font-size: 16px; padding: 12px;"
+                            placeholder="0.00">
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-outline-primary btn-lg py-3">
+                            <i class="fas fa-save me-2"></i> Update Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-tasks"></i> Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-3">
+                    <a href="{{ url_for('view_invoice', invoice_id=invoice.id) }}"
+                        class="btn btn-outline-primary btn-lg py-3">
+                        <i class="fas fa-eye me-2"></i> View Invoice
+                    </a>
+                    <a href="{{ url_for('invoice_print', invoice_id=invoice.id) }}"
+                        class="btn btn-outline-success btn-lg py-3" target="_blank">
+                        <i class="fas fa-print me-2"></i> Print/PDF
+                    </a>
+                    <a href="{{ url_for('delivery_challan', invoice_id=invoice.id) }}"
+                        class="btn btn-outline-info btn-lg py-3">
+                        <i class="fas fa-box me-2"></i> PACKING SLIP LABEL
+                    </a>
+                    <a href="{{ url_for('envelope_print', invoice_id=invoice.id) }}"
+                        class="btn btn-outline-warning btn-lg py-3" target="_blank">
+                        <i class="fas fa-envelope me-2"></i> ENVELOPE
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Item Modal -->
+<div class="modal fade" id="editItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title fw-bold">
+                    <i class="fas fa-edit me-2"></i>Edit Invoice Item
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="editItemForm">
+                    <input type="hidden" id="edit_item_id">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="edit_description" class="form-label fw-semibold text-dark">Item Description</label>
+                            <textarea class="form-control shadow-sm" id="edit_description" rows="3" required placeholder="Enter product or service description..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_hsn_code" class="form-label fw-semibold text-dark">HSN/SAC Code</label>
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-light"><i class="fas fa-barcode"></i></span>
+                                <input type="text" class="form-control" id="edit_hsn_code" placeholder="e.g. 85044090">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_tax_rate" class="form-label fw-semibold text-dark">GST Rate (%)</label>
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-light"><i class="fas fa-percent"></i></span>
+                                <select class="form-select" id="edit_tax_rate">
+                                    <option value="0">0% (Exempt)</option>
+                                    <option value="5">5%</option>
+                                    <option value="12">12%</option>
+                                    <option value="18" selected>18%</option>
+                                    <option value="28">28%</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_quantity" class="form-label fw-semibold text-dark">Quantity</label>
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-light"><i class="fas fa-boxes"></i></span>
+                                <input type="number" class="form-control" id="edit_quantity" step="0.01" min="0" required placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_unit_price" class="form-label fw-semibold text-dark">Unit Price (₹)</label>
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-light">₹</span>
+                                <input type="number" class="form-control" id="edit_unit_price" step="0.01" min="0" required placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_discount_type" class="form-label fw-semibold text-dark">Discount Type</label>
+                            <select class="form-select shadow-sm" id="edit_discount_type">
+                                <option value="amount">Fixed Amount (₹)</option>
+                                <option value="percentage">Percentage (%)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_discount_value" class="form-label fw-semibold text-dark">Discount Value</label>
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-light" id="edit_discount_symbol">₹</span>
+                                <input type="number" class="form-control" id="edit_discount_value" step="0.01" min="0" value="0">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light border-0 py-3">
+                <button type="button" class="btn btn-outline-secondary px-4 fw-semibold" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary px-4 fw-semibold" onclick="saveItemEdit()">
+                    <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+{% include "import_modal.html" %}
+{% include "excel_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script type="application/json" id="invoice-data">
+{
+    "id": {{ invoice.id }},
+    "items": {{ items_json|safe }}
+}
+</script>
+<script>
+    // Pass data from server to client
+    window.invoiceData = JSON.parse(document.getElementById('invoice-data').textContent);
+
+    // Initialize Import Modal
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.InvoiceApp && window.InvoiceApp.initImportModal) {
+            window.InvoiceApp.initImportModal();
+        }
+    });
+
+    let items = [];
+
+    // Load existing items
+    if (window.invoiceData && window.invoiceData.items) {
+        items = window.invoiceData.items.map(item => ({
+            id: item.id,
+            description: item.description,
+            hsn_code: item.hsn_code || '85044090',
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            tax_rate: item.tax_rate,
+            discount_type: item.discount_type || 'amount',
+            discount_value: item.discount_value || 0,
+            amount: item.amount
+        }));
+    }
+
+    // Add item form submission
+    const addItemForm = document.getElementById('addItemForm');
+    if (addItemForm) {
+        addItemForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const description = document.getElementById('description')?.value;
+            const hsn_code = document.getElementById('hsn_code')?.value || '85044090';
+            const quantity = parseFloat(document.getElementById('quantity')?.value || 0);
+            const unit_price = parseFloat(document.getElementById('unit_price')?.value || 0);
+            const discount_type = document.getElementById('discount_type')?.value || 'amount';
+            const discount_value = parseFloat(document.getElementById('discount_value')?.value || 0);
+
+            // Round discount value to 2 decimal places to prevent precision issues
+            const rounded_discount_value = Math.round(discount_value * 100) / 100;
+            const tax_rate = parseFloat(document.getElementById('tax_rate')?.value || 18);
+
+            if (!description || !quantity || !unit_price) {
+                if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                    window.InvoiceApp.showToast('Please fill in all required fields', 'warning');
+                } else {
+                    alert('Please fill in all required fields');
+                }
+                return;
+            }
+
+            const itemData = {
+                description: description,
+                hsn_code: hsn_code,
+                quantity: quantity,
+                unit_price: unit_price,
+                discount_type: discount_type,
+                discount_value: rounded_discount_value,
+                tax_rate: tax_rate
+            };
+
+            // Show loading state
+            const submitBtn = document.querySelector('#addItemForm button[type="submit"]');
+            if (window.InvoiceApp && window.InvoiceApp.showLoading) {
+                window.InvoiceApp.showLoading(submitBtn);
+            }
+
+            // Add item via API
+            if (window.InvoiceApp && window.InvoiceApp.addInvoiceItem) {
+                window.InvoiceApp.addInvoiceItem(window.invoiceData.id, itemData)
+                    .then(response => {
+                        if (response.success) {
+                            // Add to local items array
+                            items.push(response.item);
+                            updateItemsList();
+                            updateTotals();
+
+                            // Clear form
+                            const form = document.getElementById('addItemForm');
+                            if (form) form.reset();
+                            const taxRateField = document.getElementById('tax_rate');
+                            if (taxRateField) taxRateField.value = '18';
+
+                            if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                                window.InvoiceApp.showToast('Item added successfully!', 'success');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error adding item:', error);
+                        if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                            window.InvoiceApp.showToast('Failed to add item. Please try again.', 'danger');
+                        } else {
+                            alert('Failed to add item. Please try again.');
+                        }
+                    })
+                    .finally(() => {
+                        if (window.InvoiceApp && window.InvoiceApp.hideLoading) {
+                            window.InvoiceApp.hideLoading(submitBtn);
+                        }
+                    });
+            } else {
+                console.error('InvoiceApp not available');
+                alert('Application not ready. Please refresh the page.');
+            }
+        });
+    }
+
+    function updateItemsList() {
+        const itemsList = document.getElementById('itemsList');
+        if (!itemsList) {
+            console.error('Items list element not found');
+            return;
+        }
+
+        if (items.length === 0) {
+            itemsList.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-shopping-cart fa-3x text-muted mb-4"></i>
+                <h5 class="text-muted mb-3">No items added yet</h5>
+                <p class="text-muted fs-5">Add items using the form above to get started.</p>
+            </div>
+        `;
+            return;
+        }
+
+        let html = `
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 30%;" class="ps-3">Description</th>
+                        <th style="width: 10%; text-align: center;">HSN</th>
+                        <th style="width: 10%; text-align: center;">Qty</th>
+                        <th style="width: 12%; text-align: center;">Rate (₹)</th>
+                        <th style="width: 12%; text-align: center;">Discount</th>
+                        <th style="width: 8%; text-align: center;">Tax %</th>
+                        <th style="width: 12%; text-align: center;">Total (₹)</th>
+                        <th style="width: 6%; text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+        items.forEach(item => {
+            // Escape HTML to prevent XSS
+            const description = String(item.description || '').replace(/[&<>"']/g, function (match) {
+                const escape = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                };
+                return escape[match];
+            });
+
+            html += `
+            <tr data-item-id="${item.id}">
+                <td class="ps-3">
+                    <div class="fw-bold text-dark" style="word-break: break-word; white-space: normal;">${description}</div>
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-secondary opacity-75 fw-normal">${item.hsn_code || '-'}</span>
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3">${item.quantity || 0}</span>
+                </td>
+                <td class="text-center fw-semibold">
+                    ₹${(item.unit_price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+                <td class="text-center">
+                    ${item.discount_value > 0 ?
+                        (item.discount_type === 'percentage' ?
+                            `<span class="badge bg-warning bg-opacity-10 text-warning-emphasis fw-semibold">-${item.discount_value}%</span>` :
+                            `<span class="badge bg-warning bg-opacity-10 text-warning-emphasis fw-semibold">-₹${(item.discount_value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`)
+                        : '<span class="text-muted small">None</span>'}
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-info bg-opacity-10 text-info-emphasis fw-semibold">${item.tax_rate || 0}%</span>
+                </td>
+                <td class="text-center">
+                    <strong class="text-success fs-6">₹${(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                </td>
+                <td class="text-center pe-3">
+                    <div class="dropdown">
+                        <button class="btn btn-light btn-sm rounded-circle shadow-sm border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            <li>
+                                <a class="dropdown-item py-2" href="#" data-action="edit" data-item-id="${item.id}">
+                                    <i class="fas fa-edit me-2 text-primary"></i>Edit Item
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item py-2 text-danger" href="#" data-action="delete" data-item-id="${item.id}">
+                                    <i class="fas fa-trash-alt me-2"></i>Remove
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+        `;
+        });
+
+        html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+        itemsList.innerHTML = html;
+    }
+
+    function removeItem(itemId) {
+        if (confirm('Are you sure you want to remove this item?')) {
+            // Remove via API
+            if (window.InvoiceApp && window.InvoiceApp.removeInvoiceItem) {
+                window.InvoiceApp.removeInvoiceItem(window.invoiceData.id, itemId)
+                    .then(response => {
+                        if (response.success) {
+                            // Remove from local items array
+                            items = items.filter(item => item.id !== itemId);
+                            updateItemsList();
+                            updateTotals();
+                            if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                                window.InvoiceApp.showToast('Item removed successfully!', 'success');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error removing item:', error);
+                        if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                            window.InvoiceApp.showToast('Failed to remove item. Please try again.', 'danger');
+                        } else {
+                            alert('Failed to remove item. Please try again.');
+                        }
+                    });
+            } else {
+                console.error('InvoiceApp not available');
+                alert('Application not ready. Please refresh the page.');
+            }
+        }
+    }
+
+    function updateTotals() {
+        const subtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+        const shippingCharges = parseFloat(document.getElementById('shipping_charges')?.value || 0);
+
+        // No invoice-level discount anymore - taxable amount is same as subtotal
+        const taxableAmount = subtotal;
+
+        // Calculate GST for each item individually (more accurate)
+        let totalCgst = 0;
+        let totalSgst = 0;
+        let totalIgst = 0;
+
+        // For now, assume interstate (IGST only) - this should be calculated based on company/customer states
+        // TODO: Implement proper state-based GST calculation
+        const isInterstate = true; // This should be determined from company/customer states
+
+        items.forEach(item => {
+            const itemAmount = item.amount || 0;
+            const itemTaxRate = item.tax_rate || 18;
+            const itemTax = (itemAmount * itemTaxRate / 100);
+
+            if (isInterstate) {
+                totalIgst += itemTax;
+            } else {
+                totalCgst += itemTax / 2;
+                totalSgst += itemTax / 2;
+            }
+        });
+
+        const cgst = totalCgst;
+        const sgst = totalSgst;
+        const igst = totalIgst;
+
+        const total = taxableAmount + cgst + sgst + igst + shippingCharges;
+
+        // Update display with error handling
+        const updateElement = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            } else {
+                console.warn(`Element with id '${id}' not found`);
+            }
+        };
+
+        updateElement('subtotal', `₹${subtotal.toFixed(2)}`);
+        updateElement('cgst', `₹${cgst.toFixed(2)}`);
+        updateElement('sgst', `₹${sgst.toFixed(2)}`);
+        updateElement('igst', `₹${igst.toFixed(2)}`);
+        updateElement('shipping', `₹${shippingCharges.toFixed(2)}`);
+        updateElement('total', `₹${total.toFixed(2)}`);
+    }
+
+    // Handle action button clicks (Edit/Delete)
+    document.addEventListener('DOMContentLoaded', function () {
+        const itemsList = document.getElementById('itemsList');
+        if (itemsList) {
+            itemsList.addEventListener('click', function (e) {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+                
+                e.preventDefault();
+                const itemId = parseInt(btn.dataset.itemId, 10);
+                const action = btn.dataset.action;
+                
+                if (action === 'edit') {
+                    editItem(itemId);
+                } else if (action === 'delete') {
+                    removeItem(itemId);
+                }
+            });
+        }
+
+        // Handle discount type changes in edit modal
+        const editDiscountType = document.getElementById('edit_discount_type');
+        if (editDiscountType) {
+            editDiscountType.addEventListener('change', function() {
+                const symbol = document.getElementById('edit_discount_symbol');
+                if (symbol) {
+                    symbol.textContent = this.value === 'percentage' ? '%' : '₹';
+                }
+            });
+        }
+    });
+
+    // Edit item function
+    function editItem(itemId) {
+        const item = items.find(i => i.id === itemId);
+        if (item) {
+            document.getElementById('edit_item_id').value = item.id;
+            document.getElementById('edit_description').value = item.description;
+            document.getElementById('edit_hsn_code').value = item.hsn_code;
+            document.getElementById('edit_quantity').value = item.quantity;
+            document.getElementById('edit_unit_price').value = item.unit_price;
+            document.getElementById('edit_tax_rate').value = item.tax_rate;
+            document.getElementById('edit_discount_type').value = item.discount_type || 'amount';
+            document.getElementById('edit_discount_value').value = item.discount_value || 0;
+            
+            // Trigger discount symbol update
+            const discountTypeSelect = document.getElementById('edit_discount_type');
+            if (discountTypeSelect) {
+                const event = new Event('change');
+                discountTypeSelect.dispatchEvent(event);
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('editItemModal'));
+            modal.show();
+        }
+    }
+
+    // Save item edit function
+    async function saveItemEdit() {
+        const itemId = document.getElementById('edit_item_id').value;
+        const description = document.getElementById('edit_description').value;
+        const hsn_code = document.getElementById('edit_hsn_code').value;
+        const quantity = parseFloat(document.getElementById('edit_quantity').value);
+        const unit_price = parseFloat(document.getElementById('edit_unit_price').value);
+        const tax_rate = parseFloat(document.getElementById('edit_tax_rate').value);
+        const discount_type = document.getElementById('edit_discount_type').value;
+        const discount_value = parseFloat(document.getElementById('edit_discount_value').value) || 0;
+
+        if (!description || isNaN(quantity) || isNaN(unit_price)) {
+            if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                window.InvoiceApp.showToast('Please fill in all required fields', 'warning');
+            }
+            return;
+        }
+
+        const submitBtn = document.querySelector('#editItemModal .btn-primary');
+        const originalHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+        try {
+            const response = await updateItem(itemId, {
+                description,
+                hsn_code,
+                quantity,
+                unit_price,
+                tax_rate,
+                discount_type,
+                discount_value
+            });
+
+            if (response.success) {
+                // Update local items array
+                const index = items.findIndex(i => i.id == itemId);
+                if (index !== -1) {
+                    items[index] = {
+                        ...items[index],
+                        description,
+                        hsn_code,
+                        quantity,
+                        unit_price,
+                        tax_rate,
+                        discount_type,
+                        discount_value,
+                        amount: response.new_amount || response.amount || (quantity * unit_price)
+                    };
+                }
+
+                // Refresh UI
+                updateItemsList();
+                updateTotals();
+
+                // Close modal
+                const modalElement = document.getElementById('editItemModal');
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) modal.hide();
+
+                if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                    window.InvoiceApp.showToast('Item updated successfully', 'success');
+                }
+            }
+        } catch (error) {
+            console.error('Error saving item:', error);
+            if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                window.InvoiceApp.showToast('Failed to save changes', 'danger');
+            }
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHtml;
+        }
+    }
+
+    // Function to update item via API
+    async function updateItem(itemId, itemData) {
+        const response = await fetch(`/api/invoices/${window.invoiceData.id}/items/${itemId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify(itemData)
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to update item');
+        }
+
+        return response.json();
+    }
+
+    // Settings form submission
+    const settingsForm = document.getElementById('invoiceSettingsForm');
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const settings = {
+                reference_no: document.getElementById('reference_no')?.value || '-',
+                eway_bill: document.getElementById('eway_bill')?.value || '-',
+                eway_bill_date: document.getElementById('eway_bill_date')?.value || '',
+                shipping_charges: parseFloat(document.getElementById('shipping_charges')?.value || 0)
+            };
+
+            // Show loading state
+            const submitBtn = document.querySelector('#invoiceSettingsForm button[type="submit"]');
+            if (window.InvoiceApp && window.InvoiceApp.showLoading) {
+                window.InvoiceApp.showLoading(submitBtn);
+            }
+
+            // Update settings via API
+            if (window.InvoiceApp && window.InvoiceApp.updateInvoiceSettings) {
+                window.InvoiceApp.updateInvoiceSettings(window.invoiceData.id, settings)
+                    .then(response => {
+                        if (response.success) {
+                            updateTotals();
+                            if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                                window.InvoiceApp.showToast('Settings updated successfully!', 'success');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error updating settings:', error);
+                        if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                            window.InvoiceApp.showToast('Failed to update settings. Please try again.', 'danger');
+                        } else {
+                            alert('Failed to update settings. Please try again.');
+                        }
+                    })
+                    .finally(() => {
+                        if (window.InvoiceApp && window.InvoiceApp.hideLoading) {
+                            window.InvoiceApp.hideLoading(submitBtn);
+                        }
+                    });
+            } else {
+                console.error('InvoiceApp not available');
+                alert('Application not ready. Please refresh the page.');
+            }
+        });
+    }
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function () {
+        // Wait a bit for InvoiceApp to be available
+        setTimeout(() => {
+            updateItemsList();
+            updateTotals();
+        }, 100);
+
+        // Add input validation for discount fields
+        const discountTypeSelect = document.getElementById('discount_type');
+        const discountValueInput = document.getElementById('discount_value');
+
+        if (discountTypeSelect && discountValueInput) {
+            // Set max value based on discount type
+            function updateDiscountValidation() {
+                const discountType = discountTypeSelect.value;
+                if (discountType === 'percentage') {
+                    discountValueInput.max = '100';
+                    discountValueInput.placeholder = '0.00 (max 100%)';
+                } else {
+                    discountValueInput.removeAttribute('max');
+                    discountValueInput.placeholder = '0.00 (amount in ₹)';
+                }
+            }
+
+            // Update validation when discount type changes
+            discountTypeSelect.addEventListener('change', updateDiscountValidation);
+
+            // Validate discount value input
+            discountValueInput.addEventListener('input', function () {
+                const value = parseFloat(this.value) || 0;
+                const discountType = discountTypeSelect.value;
+
+                if (discountType === 'percentage' && value > 100) {
+                    this.value = '100';
+                    if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                        window.InvoiceApp.showToast('Discount percentage cannot exceed 100%', 'warning');
+                    }
+                } else if (value < 0) {
+                    this.value = '0';
+                    if (window.InvoiceApp && window.InvoiceApp.showToast) {
+                        window.InvoiceApp.showToast('Discount value cannot be negative', 'warning');
+                    }
+                }
+            });
+
+            // Initialize validation
+            updateDiscountValidation();
+        }
+    });
+</script>
+{% endblock %}

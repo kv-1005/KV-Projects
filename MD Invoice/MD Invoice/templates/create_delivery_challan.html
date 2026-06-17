@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+
+{% block title %}Create Delivery Challan - Invoice Generator{% endblock %}
+
+{% block page_title %}Create Delivery Challan{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('delivery_challans') }}" class="btn btn-secondary">
+    <i class="fas fa-arrow-left"></i> Back to Delivery Challans
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Delivery Challan Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <!-- Address Selection Dropdown -->
+                    <div class="mb-3">
+                        <label for="address_select" class="form-label">
+                            <i class="fas fa-map-marker-alt"></i> Select Address (Auto-fill from existing addresses)
+                        </label>
+                        <select class="form-select" id="address_select">
+                            <option value="">-- Select an address to auto-fill --</option>
+                        </select>
+                        <small class="text-muted">Select a customer or vendor address to automatically fill the
+                            consignee fields below.</small>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.consignee_name.label(class="form-label") }}
+                                {{ form.consignee_name(class="form-control", placeholder="Consignee Name",
+                                id="consignee_name") }}
+                                {% if form.consignee_name.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.consignee_name.errors %}
+                                    <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="challan_number" class="form-label">Challan No. *</label>
+                                {{ form.challan_number(class="form-control", placeholder="e.g., MD" ~ business_year ~ "-CH-001") }}
+                                <small class="text-muted">Suggested: <span id="suggested-number">{{ next_challan_number }}</span> (you can edit
+                                    this)</small>
+                                {% if form.challan_number.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.challan_number.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.consignee_details.label(class="form-label") }}
+                        {{ form.consignee_details(class="form-control", rows="3", placeholder="Contact person, phone,
+                        email, etc.", id="consignee_details") }}
+                        {% if form.consignee_details.errors %}
+                        <div class="text-danger">
+                            {% for error in form.consignee_details.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.consignee_address.label(class="form-label") }}
+                        {{ form.consignee_address(class="form-control", rows="4", placeholder="Full address",
+                        id="consignee_address") }}
+                        {% if form.consignee_address.errors %}
+                        <div class="text-danger">
+                            {% for error in form.consignee_address.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.challan_date.label(class="form-label") }}
+                                {{ form.challan_date(class="form-control", type="date") }}
+                                {% if form.challan_date.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.challan_date.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.delivery_date.label(class="form-label") }}
+                                {{ form.delivery_date(class="form-control", type="date") }}
+                                {% if form.delivery_date.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.delivery_date.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.expected_delivery_date.label(class="form-label") }}
+                                {{ form.expected_delivery_date(class="form-control", type="date") }}
+                                {% if form.expected_delivery_date.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.expected_delivery_date.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.reference_no.label(class="form-label") }}
+                                {{ form.reference_no(class="form-control", placeholder="Reference number") }}
+                                {% if form.reference_no.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.reference_no.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="delivery" class="form-label">Delivery</label>
+                                {{ form.delivery(class="form-control", placeholder="e.g., Immediate / One week / Address
+                                notes") }}
+                                {% if form.delivery.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.delivery.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.place_of_supply.label(class="form-label") }}
+                                {{ form.place_of_supply(class="form-control", placeholder="e.g., 33", value="33") }}
+                                {% if form.place_of_supply.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.place_of_supply.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.shipping_charges.label(class="form-label") }}
+                                {{ form.shipping_charges(class="form-control", step="0.01") }}
+                                {% if form.shipping_charges.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.shipping_charges.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.extra_billing_info.label(class="form-label") }}
+                                {{ form.extra_billing_info(class="form-control") }}
+                                {% if form.extra_billing_info.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.extra_billing_info.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.main_address.label(class="form-label") }}
+                                {{ form.main_address(class="form-select") }}
+                                {% if form.main_address.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.main_address.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.branch_address.label(class="form-label") }}
+                                {{ form.branch_address(class="form-select") }}
+                                {% if form.branch_address.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.branch_address.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.notes.label(class="form-label") }}
+                        {{ form.notes(class="form-control", rows="3", placeholder="Additional notes") }}
+                        {% if form.notes.errors %}
+                        <div class="text-danger">
+                            {% for error in form.notes.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Signature Selection (Optional) -->
+                    <div class="mb-3">
+                        <label for="selected_signature" class="form-label">
+                            <i class="fas fa-signature"></i> Delivery Challan Signature (Optional)
+                        </label>
+                        {{ form.selected_signature(class="form-select") }}
+                        <div class="form-text">
+                            Choose which signature to use on this delivery challan. Select "No Signature" to omit it.
+                            <a href="{{ url_for('upload_signature') }}" target="_blank">Manage signatures</a>
+                        </div>
+                        {% if form.selected_signature.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.selected_signature.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Digital Signature Option -->
+                    <div class="mb-4">
+                        <div class="form-check form-switch border p-3 rounded bg-light">
+                            {{ form.require_digital_signature(class="form-check-input ms-0",
+                            id="require_digital_signature") }}
+                            <label class="form-check-label fw-bold ms-2" for="require_digital_signature">
+                                <i class="fas fa-certificate text-primary me-1"></i> Require Cryptographic Digital
+                                Signature
+                            </label>
+                            <div class="form-text ms-2">
+                                If enabled, this document will be cryptographically signed using a .pfx certificate.
+                                Adobe Acrobat will show "Signed and all signatures are valid".
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('delivery_challans') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Help</h5>
+            </div>
+            <div class="card-body">
+                <h6>Challan Number</h6>
+                <p class="small text-muted">The system will automatically generate a unique challan number using the
+                    format: MD{{ business_year }}-CH-{postfix}</p>
+
+                <h6>Consignee Information</h6>
+                <p class="small text-muted">Enter the consignee name, contact details, and full address where the goods
+                    will be delivered.</p>
+
+                <h6>Place of Supply</h6>
+                <p class="small text-muted">Enter the state code (e.g., 33 for Tamil Nadu) for GST calculation purposes.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Form validation and address auto-fill
+    document.addEventListener('DOMContentLoaded', function () {
+        const addressSelect = document.getElementById('address_select');
+        const consigneeName = document.getElementById('consignee_name');
+        const consigneeDetails = document.getElementById('consignee_details');
+        const consigneeAddress = document.getElementById('consignee_address');
+
+        // Load addresses into dropdown
+        fetch('/api/addresses')
+            .then(response => response.json())
+            .then(addresses => {
+                addresses.forEach(address => {
+                    const option = document.createElement('option');
+                    option.value = address.id;
+                    option.textContent = address.display;
+                    option.setAttribute('data-address', JSON.stringify(address));
+                    addressSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading addresses:', error);
+            });
+
+        // Challan Date change handler for dynamic numbering
+        const challanDateInput = document.getElementById('challan_date');
+        const challanNumberInput = document.getElementById('challan_number');
+        if (challanDateInput && challanNumberInput) {
+            challanNumberInput.dataset.isAuto = 'true';
+            
+            challanNumberInput.addEventListener('input', function() {
+                this.dataset.isAuto = 'false';
+            });
+
+            challanDateInput.addEventListener('change', function() {
+                const newDate = this.value;
+                if (newDate) {
+                    fetch(`/api/next_document_number?type=dc&date=${newDate}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const suggestedSpan = document.getElementById('suggested-number');
+                                if (suggestedSpan) {
+                                    suggestedSpan.textContent = data.next_number;
+                                }
+                                
+                                if (!challanNumberInput.value || challanNumberInput.dataset.isAuto === 'true' || challanNumberInput.value === '') {
+                                    challanNumberInput.value = data.next_number;
+                                    challanNumberInput.dataset.isAuto = 'true';
+                                }
+                            }
+                        })
+                        .catch(error => console.error('Error fetching next challan number:', error));
+                }
+            });
+        }
+
+        // Handle address selection
+        addressSelect.addEventListener('change', function () {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                const address = JSON.parse(selectedOption.getAttribute('data-address'));
+
+                // Fill consignee name
+                consigneeName.value = address.name;
+
+                // Fill consignee details (contact person, phone, email)
+                let details = [];
+                if (address.contact_person) {
+                    details.push(`Contact: ${address.contact_person}`);
+                }
+                if (address.phone) {
+                    details.push(`Phone: ${address.phone}`);
+                }
+                if (address.email) {
+                    details.push(`Email: ${address.email}`);
+                }
+                consigneeDetails.value = details.join('\n');
+
+                // Fill consignee address (full address with city, state, pincode)
+                let fullAddress = address.address;
+                if (address.city || address.state || address.pincode) {
+                    const locationParts = [];
+                    if (address.city) locationParts.push(address.city);
+                    if (address.state) locationParts.push(address.state);
+                    if (address.pincode) locationParts.push(address.pincode);
+                    if (locationParts.length > 0) {
+                        fullAddress += '\n' + locationParts.join(', ');
+                    }
+                }
+                consigneeAddress.value = fullAddress;
+            }
+        });
+
+        // Form validation
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const challanNumber = document.getElementById('challan_number');
+                const challanDate = document.getElementById('challan_date');
+
+                // Validate required fields
+                if (!consigneeName.value.trim()) {
+                    e.preventDefault();
+                    alert('Please enter consignee name.');
+                    consigneeName.focus();
+                    return false;
+                }
+
+                if (!challanNumber.value.trim()) {
+                    e.preventDefault();
+                    alert('Please enter a challan number.');
+                    challanNumber.focus();
+                    return false;
+                }
+
+                if (!challanDate.value) {
+                    e.preventDefault();
+                    alert('Please select challan date.');
+                    challanDate.focus();
+                    return false;
+                }
+
+                if (!consigneeAddress.value.trim()) {
+                    e.preventDefault();
+                    alert('Please enter consignee address.');
+                    consigneeAddress.focus();
+                    return false;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

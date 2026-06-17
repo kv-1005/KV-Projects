@@ -1,0 +1,664 @@
+{% extends "base.html" %}
+
+{% block title %}Invoices - Invoice Generator{% endblock %}
+{% block page_title %}Invoices{% endblock %}
+
+{% block extra_css %}
+<style>
+.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.sortable:hover {
+    background-color: #f8f9fa;
+}
+
+.sortable i {
+    margin-left: 5px;
+    opacity: 0.5;
+}
+
+.sortable:hover i {
+    opacity: 1;
+}
+
+.table th.sortable {
+    border-bottom: 2px solid #dee2e6;
+}
+
+.filter-card {
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+}
+
+.quick-filter-btn {
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+.invoice-number {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+.amount-cell {
+    text-align: right;
+    font-weight: bold;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+}
+
+.customer-info {
+    line-height: 1.2;
+}
+
+.customer-name {
+    font-weight: 600;
+    color: #495057;
+}
+
+.customer-details {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.action-buttons {
+    white-space: nowrap;
+}
+
+.action-buttons .btn {
+    margin-right: 2px;
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+    
+    .action-buttons .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .quick-filter-btn {
+        margin-bottom: 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block page_actions %}
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('create_invoice') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Invoice
+        </a>
+        <a href="{{ url_for('bulk_download_invoices') }}" class="btn btn-success">
+            <i class="fas fa-download"></i> Bulk Download
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-file-invoice-dollar"></i> Invoice List
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Advanced Filters and Search -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-light">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fas fa-filter"></i> Filters & Search
+                            <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </h6>
+                    </div>
+                    <div class="collapse" id="filterCollapse">
+                        <div class="card-body">
+                            <form method="GET" id="filterForm">
+                                <div class="row g-3">
+                                    <!-- Search -->
+                                    <div class="col-md-4">
+                                        <label for="search" class="form-label">Search</label>
+                                        <input type="text" class="form-control" id="search" name="search" 
+                                               value="{{ search }}" placeholder="Invoice #, Customer, Email, Phone, GSTIN">
+                                    </div>
+                                    
+                                    <!-- Status Filter -->
+                                    <div class="col-md-2">
+                                        <label for="status" class="form-label">Status</label>
+                                        <select class="form-select" id="status" name="status">
+                                            <option value="">All Status</option>
+                                            <option value="unpaid" {{ 'selected' if status_filter == 'unpaid' }}>Unpaid</option>
+                                            <option value="partially_paid" {{ 'selected' if status_filter == 'partially_paid' }}>Partially Paid</option>
+                                            <option value="paid" {{ 'selected' if status_filter == 'paid' }}>Paid</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Customer Filter -->
+                                    <div class="col-md-3">
+                                        <label for="customer" class="form-label">Customer</label>
+                                        <select class="form-select" id="customer" name="customer">
+                                            <option value="">All Customers</option>
+                                            {% for customer in customers %}
+                                            <option value="{{ customer.id }}" {{ 'selected' if customer_filter == customer.id|string }}>
+                                                {{ customer.name }} - {{ customer.city }}, {{ customer.state }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Sort Options -->
+                                    <div class="col-md-3">
+                                        <label for="sort_by" class="form-label">Sort By</label>
+                                        <div class="input-group">
+                                            <select class="form-select" id="sort_by" name="sort_by">
+                                                <option value="invoice_number" {{ 'selected' if sort_by == 'invoice_number' }}>Invoice Number</option>
+                                                <option value="date" {{ 'selected' if sort_by == 'date' }}>Date</option>
+                                                <option value="customer" {{ 'selected' if sort_by == 'customer' }}>Customer</option>
+                                                <option value="amount" {{ 'selected' if sort_by == 'amount' }}>Amount</option>
+                                                <option value="status" {{ 'selected' if sort_by == 'status' }}>Status</option>
+                                            </select>
+                                            <select class="form-select" id="sort_order" name="sort_order">
+                                                <option value="asc" {{ 'selected' if sort_order == 'asc' }}>Ascending</option>
+                                                <option value="desc" {{ 'selected' if sort_order == 'desc' }}>Descending</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row g-3 mt-2">
+                                    <!-- Date Range -->
+                                    <div class="col-md-3">
+                                        <label for="date_from" class="form-label">Date From</label>
+                                        <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                                    </div>
+                                    
+                                    <div class="col-md-3">
+                                        <label for="date_to" class="form-label">Date To</label>
+                                        <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                                    </div>
+                                    
+                                    <!-- Amount Range -->
+                                    <div class="col-md-3">
+                                        <label for="amount_min" class="form-label">Min Amount (₹)</label>
+                                        <input type="number" class="form-control" id="amount_min" name="amount_min" 
+                                               value="{{ amount_min }}" step="0.01" min="0">
+                                    </div>
+                                    
+                                    <div class="col-md-3">
+                                        <label for="amount_max" class="form-label">Max Amount (₹)</label>
+                                        <input type="number" class="form-control" id="amount_max" name="amount_max" 
+                                               value="{{ amount_max }}" step="0.01" min="0">
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search"></i> Apply Filters
+                                        </button>
+                                        <a href="{{ url_for('invoices') }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times"></i> Clear All
+                                        </a>
+                                        <button type="button" class="btn btn-outline-info" onclick="exportFiltered()">
+                                            <i class="fas fa-download"></i> Export Filtered
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Filter Buttons -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="btn-group" role="group" aria-label="Quick filters">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="quickFilter('')">
+                        <i class="fas fa-list"></i> All
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="quickFilter('paid')">
+                        <i class="fas fa-check-circle"></i> Paid
+                    </button>
+                    <button type="button" class="btn btn-outline-warning btn-sm" onclick="quickFilter('unpaid')">
+                        <i class="fas fa-clock"></i> Unpaid
+                    </button>
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="quickFilter('partially_paid')">
+                        <i class="fas fa-hourglass-half"></i> Partial
+                    </button>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-calendar"></i> Date Range
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="quickDateFilter(7)">Last 7 days</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="quickDateFilter(30)">Last 30 days</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="quickDateFilter(90)">Last 90 days</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="quickDateFilter(365)">Last year</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Summary -->
+        {% if search or status_filter or customer_filter or date_from or date_to or amount_min or amount_max %}
+        <div class="alert alert-info mb-3">
+            <i class="fas fa-info-circle"></i>
+            Showing {{ invoices|length }} of {{ pagination.total }} invoice(s) with applied filters
+            {% if search %}<span class="badge bg-primary ms-2">Search: "{{ search }}"</span>{% endif %}
+            {% if status_filter %}<span class="badge bg-secondary ms-2">Status: {{ status_filter.replace('_', ' ').title() }}</span>{% endif %}
+            {% if customer_filter %}<span class="badge bg-info ms-2">Customer: {{ customers|selectattr('id', 'equalto', customer_filter|int)|map(attribute='name')|first }}</span>{% endif %}
+            {% if date_from or date_to %}<span class="badge bg-warning ms-2">Date Range: {{ date_from or 'Start' }} to {{ date_to or 'End' }}</span>{% endif %}
+            {% if amount_min or amount_max %}<span class="badge bg-success ms-2">Amount: ₹{{ amount_min or '0' }} - ₹{{ amount_max or '∞' }}</span>{% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Pagination Info -->
+        {% if pagination.total > 15 %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="text-muted">
+                <i class="fas fa-list"></i>
+                Showing {{ ((pagination.page - 1) * 15) + 1 }} to {{ ((pagination.page - 1) * 15) + invoices|length }} of {{ pagination.total }} invoices
+            </div>
+            <div class="text-muted">
+                Page {{ pagination.page }} of {{ pagination.pages }}
+            </div>
+        </div>
+        {% endif %}
+        {% if invoices %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="sortable" data-sort="invoice_number">
+                                Invoice # 
+                                {% if sort_by == 'invoice_number' %}
+                                    <i class="fas fa-sort-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                {% else %}
+                                    <i class="fas fa-sort text-muted"></i>
+                                {% endif %}
+                            </th>
+                            <th class="sortable" data-sort="date">
+                                Date 
+                                {% if sort_by == 'date' %}
+                                    <i class="fas fa-sort-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                {% else %}
+                                    <i class="fas fa-sort text-muted"></i>
+                                {% endif %}
+                            </th>
+                            <th class="sortable" data-sort="customer">
+                                Customer 
+                                {% if sort_by == 'customer' %}
+                                    <i class="fas fa-sort-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                {% else %}
+                                    <i class="fas fa-sort text-muted"></i>
+                                {% endif %}
+                            </th>
+                            <th class="sortable" data-sort="amount">
+                                Amount 
+                                {% if sort_by == 'amount' %}
+                                    <i class="fas fa-sort-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                {% else %}
+                                    <i class="fas fa-sort text-muted"></i>
+                                {% endif %}
+                            </th>
+                            <th class="sortable" data-sort="status">
+                                Status 
+                                {% if sort_by == 'status' %}
+                                    <i class="fas fa-sort-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                {% else %}
+                                    <i class="fas fa-sort text-muted"></i>
+                                {% endif %}
+                            </th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for invoice in invoices %}
+                        <tr>
+                            <td>
+                                <span class="invoice-number">{{ invoice.invoice_number }}</span>
+                            </td>
+                            <td>{{ invoice.invoice_date.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                <div class="customer-info">
+                                    <div class="customer-name">{{ invoice.customer.name }}</div>
+                                    {% if invoice.customer.gstin %}
+                                        <div class="customer-details">GSTIN: {{ invoice.customer.gstin }}</div>
+                                    {% endif %}
+                                    {% if invoice.customer.city %}
+                                        <div class="customer-details">{{ invoice.customer.city }}, {{ invoice.customer.state }}</div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="amount-cell">
+                                ₹{{ "{:,.2f}".format(invoice.total_amount) }}
+                            </td>
+                            <td>
+                                <span class="badge status-badge bg-{{ 'success' if invoice.status == 'paid' else 'warning' if invoice.status == 'partially_paid' else 'danger' }}">
+                                    {{ invoice.status.replace('_', ' ').title() }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{{ url_for('view_invoice', invoice_id=invoice.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('edit_invoice', invoice_id=invoice.id) }}" 
+                                       class="btn btn-sm btn-outline-secondary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('invoice_print', invoice_id=invoice.id) }}" target="_blank" 
+                                       class="btn btn-sm btn-outline-success" title="Print/PDF">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-invoice-btn" 
+                                            title="Delete Invoice" 
+                                            data-invoice-id="{{ invoice.id }}" 
+                                            data-invoice-number="{{ invoice.invoice_number }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination Controls -->
+            {% if pagination.pages > 1 %}
+            <nav aria-label="Invoice pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <!-- Previous Page -->
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('invoices', page=pagination.prev_num, search=search, status=status_filter, customer=customer_filter, date_from=date_from, date_to=date_to, amount_min=amount_min, amount_max=amount_max, sort_by=sort_by, sort_order=sort_order) }}">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </span>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Page Numbers -->
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != pagination.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('invoices', page=page_num, search=search, status=status_filter, customer=customer_filter, date_from=date_from, date_to=date_to, amount_min=amount_min, amount_max=amount_max, sort_by=sort_by, sort_order=sort_order) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <!-- Next Page -->
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('invoices', page=pagination.next_num, search=search, status=status_filter, customer=customer_filter, date_from=date_from, date_to=date_to, amount_min=amount_min, amount_max=amount_max, sort_by=sort_by, sort_order=sort_order) }}">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No invoices found</h5>
+                <p class="text-muted">Create your first invoice to get started.</p>
+                <a href="{{ url_for('create_invoice') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create First Invoice
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Stats -->
+{% if all_invoices %}
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ all_invoices|length }}</h4>
+                        <p class="mb-0">Total Invoices</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-file-invoice fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ all_invoices|selectattr('status', 'equalto', 'paid')|list|length }}</h4>
+                        <p class="mb-0">Paid</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ all_invoices|selectattr('status', 'equalto', 'unpaid')|list|length }}</h4>
+                        <p class="mb-0">Unpaid</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>₹{{ "{:,.0f}".format(all_invoices|sum(attribute='total_amount') or 0) }}</h4>
+                        <p class="mb-0">Total Amount</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-rupee-sign fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function confirmDeleteInvoice(invoiceId, invoiceNumber) {
+    // Prompt for company password
+    const password = prompt(`🗑️ DELETE INVOICE: ${invoiceNumber}\n\nEnter company password to confirm deletion:`);
+    
+    if (password === null) {
+        // User cancelled
+        return;
+    }
+    
+    if (password.trim() === "") {
+        alert("❌ Password cannot be empty. Deletion cancelled.");
+        return;
+    }
+    
+    // Create a form and submit with password
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/invoices/${invoiceId}/delete`;
+    
+    // Add password
+    const passwordInput = document.createElement('input');
+    passwordInput.type = 'hidden';
+    passwordInput.name = 'delete_password';
+    passwordInput.value = password;
+    form.appendChild(passwordInput);
+    
+    // Add CSRF token if available
+    const csrfToken = document.querySelector('meta[name=csrf-token]');
+    if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken.getAttribute('content');
+        form.appendChild(csrfInput);
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// Sortable table headers and delete buttons
+document.addEventListener('DOMContentLoaded', function() {
+    const sortableHeaders = document.querySelectorAll('.sortable');
+    
+    sortableHeaders.forEach(header => {
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', function() {
+            const sortBy = this.dataset.sort;
+            const currentSortBy = '{{ sort_by }}';
+            const currentSortOrder = '{{ sort_order }}';
+            
+            let newSortOrder = 'asc';
+            if (currentSortBy === sortBy && currentSortOrder === 'asc') {
+                newSortOrder = 'desc';
+            }
+            
+            // Update the form with new sort parameters
+            const form = document.getElementById('filterForm');
+            const sortByInput = form.querySelector('[name="sort_by"]');
+            const sortOrderInput = form.querySelector('[name="sort_order"]');
+            
+            sortByInput.value = sortBy;
+            sortOrderInput.value = newSortOrder;
+            
+            // Submit the form
+            form.submit();
+        });
+    });
+    
+    // Delete button event listeners
+    const deleteButtons = document.querySelectorAll('.delete-invoice-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const invoiceId = this.dataset.invoiceId;
+            const invoiceNumber = this.dataset.invoiceNumber;
+            confirmDeleteInvoice(invoiceId, invoiceNumber);
+        });
+    });
+    
+});
+
+// Export filtered results
+function exportFiltered() {
+    const form = document.getElementById('filterForm');
+    const exportForm = form.cloneNode(true);
+    exportForm.action = '{{ url_for("generate_bulk_invoice_download") }}';
+    exportForm.method = 'POST';
+    
+    // Add export parameter
+    const exportInput = document.createElement('input');
+    exportInput.type = 'hidden';
+    exportInput.name = 'export_filtered';
+    exportInput.value = 'true';
+    exportForm.appendChild(exportInput);
+    
+    document.body.appendChild(exportForm);
+    exportForm.submit();
+    document.body.removeChild(exportForm);
+}
+
+// Auto-submit form on filter change (optional)
+document.addEventListener('DOMContentLoaded', function() {
+    const autoSubmitCheckbox = document.getElementById('autoSubmit');
+    if (autoSubmitCheckbox) {
+        autoSubmitCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                const form = document.getElementById('filterForm');
+                const inputs = form.querySelectorAll('select, input[type="date"], input[type="number"]');
+                inputs.forEach(input => {
+                    input.addEventListener('change', function() {
+                        form.submit();
+                    });
+                });
+            }
+        });
+    }
+});
+
+// Quick filter buttons
+function quickFilter(status) {
+    const form = document.getElementById('filterForm');
+    const statusSelect = form.querySelector('[name="status"]');
+    statusSelect.value = status;
+    form.submit();
+}
+
+function quickDateFilter(days) {
+    const form = document.getElementById('filterForm');
+    const dateToInput = form.querySelector('[name="date_to"]');
+    const dateFromInput = form.querySelector('[name="date_from"]');
+    
+    const today = new Date();
+    const fromDate = new Date(today);
+    fromDate.setDate(today.getDate() - days);
+    
+    dateToInput.value = today.toISOString().split('T')[0];
+    dateFromInput.value = fromDate.toISOString().split('T')[0];
+    
+    form.submit();
+}
+</script>
+{% endblock %}

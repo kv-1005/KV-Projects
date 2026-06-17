@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Vendor {{ vendor.name }} - Invoice Generator{% endblock %}
+
+{% block page_title %}Edit Vendor{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url_for('vendors') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Vendors
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Edit Vendor: {{ vendor.name }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.name.label(class="form-label") }}
+                                {{ form.name(class="form-control", placeholder="Enter vendor name") }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.name.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.contact_person.label(class="form-label") }}
+                                {{ form.contact_person(class="form-control", placeholder="Contact person name") }}
+                                {% if form.contact_person.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.contact_person.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.address.label(class="form-label") }}
+                        {{ form.address(class="form-control", rows="3", placeholder="Enter complete address") }}
+                        {% if form.address.errors %}
+                            <div class="text-danger">
+                                {% for error in form.address.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.city.label(class="form-label") }}
+                                {{ form.city(class="form-control", placeholder="City") }}
+                                {% if form.city.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.city.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.state.label(class="form-label") }}
+                                {{ form.state(class="form-control", placeholder="State") }}
+                                {% if form.state.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.state.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.pincode.label(class="form-label") }}
+                                {{ form.pincode(class="form-control", placeholder="Pincode") }}
+                                {% if form.pincode.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.pincode.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.phone.label(class="form-label") }}
+                                {{ form.phone(class="form-control", placeholder="Phone number") }}
+                                {% if form.phone.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.phone.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.email.label(class="form-label") }}
+                                {{ form.email(class="form-control", placeholder="Email address") }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.email.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.gstin.label(class="form-label") }}
+                                {{ form.gstin(class="form-control", placeholder="GSTIN (optional)") }}
+                                {% if form.gstin.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.gstin.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.payment_terms.label(class="form-label") }}
+                                {{ form.payment_terms(class="form-control", placeholder="Payment terms (optional)") }}
+                                {% if form.payment_terms.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.payment_terms.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('vendors') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Vendor Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-12">
+                        <h4 class="text-primary">{{ vendor.purchase_orders|length }}</h4>
+                        <p class="text-muted mb-0">Purchase Orders</p>
+                    </div>
+                </div>
+                
+                {% if vendor.purchase_orders %}
+                <hr>
+                <h6>Recent Purchase Orders</h6>
+                <div class="list-group list-group-flush">
+                    {% for po in vendor.purchase_orders[:3] %}
+                    <div class="list-group-item px-0 py-2">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-bold">{{ po.po_number }}</span>
+                            <span class="badge bg-{% if po.status == 'pending' %}warning{% elif po.status == 'approved' %}info{% elif po.status == 'received' %}success{% else %}danger{% endif %}">
+                                {{ po.status.title() }}
+                            </span>
+                        </div>
+                        <small class="text-muted">{{ po.po_date.strftime('%d/%m/%Y') }} - ₹ {{ "{:,.2f}".format(po.total_amount|float) }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Signatures{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-signature"></i> Multi-Signature Management
+                    </h4>
+                    <small class="d-block mt-1">Upload multiple signatures with different names for different invoice
+                        purposes</small>
+                </div>
+                <div class="card-body">
+
+                    <!-- Draw Signature Option -->
+                    <div class="d-grid gap-2 mb-4">
+                        <a href="{{ url_for('draw_signature') }}"
+                            class="btn btn-outline-primary btn-lg shadow-sm py-3 border-2">
+                            <i class="fas fa-pen-fancy"></i> Create Signature with Drawing Pad
+                            <div class="small fw-normal mt-1">Draw your signature directly in the browser</div>
+                        </a>
+                    </div>
+
+                    <!-- Upload New Signature Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0"><i class="fas fa-plus-circle"></i> Upload New Signature</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" enctype="multipart/form-data">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="signature_name" class="form-label">
+                                                <i class="fas fa-tag"></i> Signature Name
+                                            </label>
+                                            <input type="text" class="form-control" id="signature_name"
+                                                name="signature_name"
+                                                placeholder="e.g., CEO Signature, Manager Approval, etc." required>
+                                            <div class="form-text">Give your signature a descriptive name</div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="signature" class="form-label">
+                                                <i class="fas fa-file-image"></i> Signature Image
+                                            </label>
+                                            <input type="file" class="form-control" id="signature" name="signature"
+                                                accept=".png,.jpg,.jpeg" required>
+                                            <div class="form-text">
+                                                <strong>Supported:</strong> PNG, JPG, JPEG | <strong>Max:</strong> 5MB |
+                                                <strong>Best:</strong> Transparent PNG
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="is_default"
+                                                    name="is_default">
+                                                <label class="form-check-label" for="is_default">
+                                                    <i class="fas fa-star"></i> Set as Default Signature
+                                                </label>
+                                            </div>
+                                            <div class="form-text">Default signature will be used for new invoices</div>
+                                        </div>
+
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-upload"></i> Upload Signature
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Signature Preview -->
+                                <div id="signature-preview" class="mt-3" style="display: none;">
+                                    <h6>Preview:</h6>
+                                    <div class="border p-3 text-center" style="background-color: #f8f9fa;">
+                                        <img id="preview-image" alt="Signature Preview"
+                                            style="max-width: 300px; max-height: 100px;">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+
+                    <!-- Existing Signatures Section -->
+                    {% if user_signatures %}
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0"><i class="fas fa-list"></i> Your Signatures ({{ user_signatures|length }})
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Signature Preview</th>
+                                            <th>Name</th>
+                                            <th>Status</th>
+                                            <th>Created</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sig in user_signatures %}
+                                        <tr>
+                                            <td>
+                                                <div class="signature-preview-sm">
+                                                    <img src="{{ sig.signature_data }}" alt="{{ sig.signature_name }}"
+                                                        style="max-width: 80px; max-height: 40px; border: 1px solid #dee2e6;">
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <strong>{{ sig.signature_name }}</strong>
+                                                {% if sig.is_default %}
+                                                <span class="badge bg-warning text-dark ms-2">
+                                                    <i class="fas fa-star"></i> Default
+                                                </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if sig.is_default %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check"></i> Active Default
+                                                </span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">Available</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <small>{{ sig.created_at.strftime('%d/%m/%Y') }}</small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    {% if not sig.is_default %}
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        onclick="setAsDefault('{{ sig.id }}')" title="Set as Default">
+                                                        <i class="fas fa-star"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                    {% if not sig.is_default %}
+                                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                                        data-sig-id="{{ sig.id }}"
+                                                        data-sig-name="{{ sig.signature_name }}"
+                                                        onclick="deleteSignature(this.getAttribute('data-sig-id'), this.getAttribute('data-sig-name'))"
+                                                        title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                    <button type="button" class="btn btn-sm btn-outline-info"
+                                                        onclick="testSignature('{{ sig.id }}')" title="Test on Invoice">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>No signatures uploaded yet.</strong> Upload your first signature above to get started.
+                    </div>
+                    {% endif %}
+
+                    <hr>
+
+                    <!-- Instructions -->
+                    <div class="mt-4">
+                        <h6><i class="fas fa-lightbulb"></i> How Multiple Signatures Work:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Upload different signatures with descriptive
+                                names (CEO, Manager, etc.)</li>
+                            <li><i class="fas fa-check text-success"></i> Set one signature as default for automatic
+                                selection</li>
+                            <li><i class="fas fa-check text-success"></i> Select specific signature when creating
+                                invoices</li>
+                            <li><i class="fas fa-check text-success"></i> Signatures appear on PDFs and printed invoices
+                            </li>
+                            <li><i class="fas fa-check text-success"></i> Manage default settings anytime</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="fas fa-shield-alt"></i>
+                        All signatures are securely stored and optimized for invoice PDFs. Maximum 5 signatures
+                        recommended.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden Forms for Actions -->
+<form id="actionForm" method="POST" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+
+<script>
+    // Signature preview on file selection
+    document.getElementById('signature').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Check file size (5MB limit)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('❌ File is too large. Please choose a file smaller than 5MB.');
+                e.target.value = '';
+                return;
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('preview-image').src = e.target.result;
+                document.getElementById('signature-preview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Set signature as default
+    function setAsDefault(signatureId) {
+        if (confirm('⭐ Set as Default Signature\n\nThis signature will be automatically selected for new invoices.')) {
+            const form = document.getElementById('actionForm');
+            form.action = `/signature/set-default/${signatureId}`;
+            form.submit();
+        }
+    }
+
+    // Delete signature
+    function deleteSignature(signatureId, signatureName) {
+        if (confirm(`🗑️ Delete Signature "${signatureName}"\n\nThis will remove the signature permanently.\nInvoices using this signature will show a signature line instead.\n\nAre you sure?`)) {
+            const form = document.getElementById('actionForm');
+            form.action = `/signature/delete/${signatureId}`;
+            form.submit();
+        }
+    }
+
+    // Test signature on an invoice (you can modify this to show a preview)
+    function testSignature(signatureId) {
+        alert(`👁️ Testing Signature\n\nSignature ID: ${signatureId}\n\nFeature: Preview signature on a sample invoice\n(Implementation coming soon)`);
+    }
+</script>
+{% endblock %}

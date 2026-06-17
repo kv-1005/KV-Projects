@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Envelope Generator{% endblock %}
+{% block page_title %}Envelope Generator{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <a href="{{ url_for('invoices') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-file-invoice"></i> All Invoices
+    </a>
+    <a href="{{ url_for('packing_slip_builder') }}" class="btn btn-outline-primary">
+        <i class="fas fa-box-open"></i> Packing Slips
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-xl-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-envelope"></i> Envelope Generator
+                    </h5>
+                    <span class="badge bg-dark">
+                        Print-ready #10 envelope format
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Note:</strong> This will generate a PDF with exact #10 envelope measurements (4.125" x 9.5"). 
+                    The FROM address (return address) will be at the top-left, and the TO address (recipient) will be centered-right, 
+                    ready for direct printing on standard business envelopes.
+                </div>
+
+                <form method="POST" action="{{ url_for('envelope_builder') }}" id="envelopeForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-4">
+                        <label for="invoice_id" class="form-label fw-bold">
+                            <i class="fas fa-file-invoice-dollar"></i> Select Invoice <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select form-select-lg" id="invoice_id" name="invoice_id" required>
+                            <option value="">-- Select an invoice --</option>
+                            {% for invoice in invoices %}
+                            <option value="{{ invoice.id }}">
+                                {{ invoice.invoice_number }} - {{ invoice.customer.name }} 
+                                ({{ invoice.invoice_date.strftime('%d/%m/%Y') }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Select an invoice to use its customer address for the envelope.</small>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-warning btn-lg">
+                            <i class="fas fa-envelope"></i> Generate Envelope PDF
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-lightbulb"></i> Quick Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>The envelope uses the customer address from the selected invoice</li>
+                    <li>Company return address is automatically added from your company settings</li>
+                    <li>PDF is sized for standard #10 business envelopes (4.125" x 9.5")</li>
+                    <li>Open the PDF and print directly on your envelope</li>
+                    <li>You can also access envelopes from individual invoice pages</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

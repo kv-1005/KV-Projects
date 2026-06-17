@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ data.page_title or 'Offer' }}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 15mm;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #000;
+      font-size: 12px;
+    }
+
+    .page {
+      width: 180mm;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6mm;
+    }
+
+    .logo {
+      width: 38mm;
+      height: 32mm;
+      object-fit: contain;
+    }
+
+    .company-block {
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .title {
+      text-align: center;
+      font-weight: 700;
+      font-size: 18px;
+      margin: 2mm 0 4mm;
+      text-decoration: underline;
+    }
+
+    .muted {
+      color: #555;
+      font-size: 11px;
+    }
+
+    .section {
+      margin-bottom: 5mm;
+    }
+
+    .section h4 {
+      margin: 0 0 2mm;
+      font-size: 13px;
+    }
+
+    .block {
+      border: 1px solid #000;
+      padding: 3mm;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border: 1px solid #000;
+      padding: 3px 6px;
+      font-size: 11px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f2f2f2;
+      text-align: left;
+    }
+
+    .items th {
+      background: #fff7d6;
+      text-align: center;
+    }
+
+    .items td:nth-child(1) {
+      width: 12mm;
+      text-align: center;
+    }
+
+    .items td:nth-child(2) {
+      width: 90mm;
+    }
+
+    .items td:nth-child(3) {
+      width: 20mm;
+      text-align: center;
+    }
+
+    .items td:nth-child(4),
+    .items td:nth-child(5) {
+      width: 26mm;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .signature-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8mm;
+      gap: 10mm;
+    }
+
+    .sign-box {
+      text-align: center;
+    }
+
+    .sign-img {
+      width: 35mm;
+      height: 20mm;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto 2mm;
+    }
+
+    .stamp-img {
+      width: 28mm;
+      height: 28mm;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .page-tag {
+      text-align: right;
+      font-size: 10px;
+      color: #666;
+      margin-top: 4mm;
+    }
+
+    .note {
+      font-size: 11px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="company-block">
+        {% if data.company_name %}<div><strong>{{ data.company_name }}</strong></div>{% endif %}
+        {% if data.company_address %}<div>{{ data.company_address }}</div>{% endif %}
+        {% if data.company_contact %}<div class="muted">{{ data.company_contact }}</div>{% endif %}
+      </div>
+      {% if data.logo_path %}<img class="logo" src="{{ data.logo_path }}" alt="Logo">{% endif %}
+    </div>
+
+    <div class="title">{{ data.offer_title or 'OFFER' }}</div>
+
+    <div class="section block">
+      <div><strong>To,</strong></div>
+      {% if data.to_name %}<div>{{ data.to_name }}</div>{% endif %}
+      {% if data.to_address %}
+      {% if data.to_address is string %}
+      <div>{{ data.to_address }}</div>
+      {% else %}
+      {% for line in data.to_address %}<div>{{ line }}</div>{% endfor %}
+      {% endif %}
+      {% endif %}
+      {% if data.attention %}<div>Kind Attn: {{ data.attention }}</div>{% endif %}
+      {% if data.subject %}<div>Sub: {{ data.subject }}</div>{% endif %}
+      {% if data.reference %}<div>Ref No: {{ data.reference }} {% if data.ref_date %} Dated {{ data.ref_date }}{% endif
+        %}</div>{% endif %}
+    </div>
+
+    {% if data.intro_paragraph %}
+    <div class="section note">{{ data.intro_paragraph }}</div>
+    {% endif %}
+
+    <div class="section">
+      <table class="items">
+        <thead>
+          <tr>
+            <th>S.No</th>
+            <th>Description</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Total Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in data.items or [] %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ row.description }}</td>
+            <td>{{ row.qty }}</td>
+            <td>{{ row.unit_price }}</td>
+            <td>{{ row.total_price }}</td>
+          </tr>
+          {% endfor %}
+          {% if not data.items %}
+          <tr>
+            <td colspan="5" style="text-align:center;">(No items provided)</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section block">
+      <div><strong>General Terms and Conditions</strong></div>
+      {% if data.prices_text %}<div>Prices: {{ data.prices_text }}</div>{% endif %}
+      {% if data.gst_text %}<div>{{ data.gst_text }}</div>{% endif %}
+      {% if data.pf_text %}<div>{{ data.pf_text }}</div>{% endif %}
+      {% if data.validity_text %}<div>Validity: {{ data.validity_text }}</div>{% endif %}
+    </div>
+
+    <div class="section block">
+      <div><strong>Terms of Payment</strong></div>
+      <div>
+        {% for term in data.payment_terms or [] %}
+        <div>{{ term }}</div>
+        {% endfor %}
+        {% if not data.payment_terms %}(Specify payment terms){% endif %}
+      </div>
+      {% if data.payment_note %}<div class="note" style="margin-top:2mm;">Note: {{ data.payment_note }}</div>{% endif %}
+    </div>
+
+    <div class="section block">
+      {% if data.delivery_text %}<div><strong>Delivery:</strong> {{ data.delivery_text }}</div>{% endif %}
+      {% if data.warranty_text %}<div><strong>Warranty:</strong> {{ data.warranty_text }}</div>{% endif %}
+    </div>
+
+    <div class="section note">
+      {% if data.closing_text %}{{ data.closing_text }}{% endif %}
+    </div>
+
+    <div class="signature-row">
+      {% if data.stamp_path %}<div class="sign-box"><img class="stamp-img" src="{{ data.stamp_path }}" alt="Stamp">
+      </div>{% endif %}
+      <div class="sign-box">
+        {% if data.signature_path %}<img class="sign-img" src="{{ data.signature_path }}" alt="Signature">{% endif %}
+        {% if data.signed_at %}
+        <div class="digital-seal"
+          style="border: 1.5px solid #2e7d32; padding: 4px 8px; border-radius: 4px; display: inline-block; text-align: left; background-color: #f1f8e9; margin-top: 4px; max-width: 160px;">
+          <div
+            style="color: #2e7d32; font-weight: bold; font-size: 10px; display: flex; align-items: center; gap: 4px;">
+            <span style="font-size: 12px;">✓</span> DIGITALLY SIGNED
+          </div>
+          <div style="font-size: 8px; line-height: 1.2; color: #333; margin-top: 1px;">
+            <strong>By:</strong> {{ data.signed_by or 'Authorized User' }}<br>
+            <strong>Date:</strong> {{ data.signed_at }}<br>
+            <span style="color: #666; font-family: 'Courier New', Courier, monospace; font-size: 7px;">ID: {{
+              data.signature_hash[:16] if data.signature_hash else 'VERIFIED' }}</span>
+          </div>
+        </div>
+        {% endif %}
+        {% if data.sign_name %}<div style="margin-top: 4px;">{{ data.sign_name }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="page-tag">{{ data.page_tag or 'Page 1/1' }}</div>
+  </div>
+</body>
+
+</html>

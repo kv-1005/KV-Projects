@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Invoice Details - {{ invoice.invoice_number }}{% endblock %}
+{% block page_title %}Edit Invoice Details: {{ invoice.invoice_number }}{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('edit_invoice', invoice_id=invoice.id) }}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> Back to Items
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-invoice"></i> Edit Invoice Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="customer_id" class="form-label">Customer *</label>
+                            {{ form.customer_id(class="form-select") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="invoice_date" class="form-label">Invoice Date *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                {{ form.invoice_date(class="form-control", type="date") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="invoice_number" class="form-label">Invoice No. *</label>
+                            {{ form.invoice_number(class="form-control") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="due_date" class="form-label">Due Date</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
+                                {{ form.due_date(class="form-control", type="date") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="shipping_charges" class="form-label">Shipping Charges</label>
+                            {{ form.shipping_charges(class="form-control", step="0.01", placeholder="0.00") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="reference_no" class="form-label">Reference No.</label>
+                            {{ form.reference_no(class="form-control", placeholder="-" ) }}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="eway_bill" class="form-label">E-way Bill No.</label>
+                            {{ form.eway_bill(class="form-control", placeholder="-" ) }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="eway_bill_date" class="form-label">E-way Bill Date</label>
+                            {{ form.eway_bill_date(class="form-control", placeholder="e.g., 05/10/2025 or text") }}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="extra_billing_info" class="form-label">Shipping Address Information</label>
+                            {{ form.extra_billing_info(class="form-control", rows="3", placeholder="Shipping address details (e.g., Floor, Building, Landmark, Special Instructions)") }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="terms_text" class="form-label">
+                            <i class="fas fa-file-contract"></i> Terms & Conditions
+                        </label>
+                        {{ form.terms_text(class="form-control", rows="3") }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="payment_text" class="form-label">
+                            <i class="fas fa-credit-card"></i> Payment / Warranty / Only For
+                        </label>
+                        {{ form.payment_text(class="form-control", rows="2") }}
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-map-marker-alt"></i> Company Address Selection</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="main_address" class="form-label">Main Address (Header) *</label>
+                                    {{ form.main_address(class="form-select") }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="branch_address" class="form-label">Branch Address (Footer) *</label>
+                                    {{ form.branch_address(class="form-select") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="selected_signature" class="form-label">
+                                <i class="fas fa-signature"></i> Invoice Signature (Optional)
+                            </label>
+                            {{ form.selected_signature(class="form-select") }}
+                        </div>
+                    </div>
+
+                    <!-- SAC Checkbox -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                {{ form.is_sac(class="form-check-input") }}
+                                <label class="form-check-label" for="is_sac">
+                                    <strong>SAC</strong>
+                                </label>
+                                <div class="form-text">
+                                    If checked, the duplicate copy will show "For the Supplier" instead of "For Transporter"
+                                </div>
+                            </div>
+                            {% if form.is_sac.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.is_sac.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('edit_invoice', invoice_id=invoice.id) }}" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+ </div>
+{% endblock %}
+
+

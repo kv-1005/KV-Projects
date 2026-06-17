@@ -1,0 +1,1458 @@
+{% extends "base.html" %}
+
+{% block title %}Enhanced Dashboard - MD Invoice System{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+{% if dashboard_data and dashboard_data.revenue_metrics and dashboard_data.revenue_metrics.total_revenue > 0 %}
+    {% set current_month_percentage = (dashboard_data.revenue_metrics.current_month_revenue / dashboard_data.revenue_metrics.total_revenue * 100)|round|int %}
+{% else %}
+    {% set current_month_percentage = 0 %}
+{% endif %}
+{% if total_amount > 0 %}
+    {% set outstanding_percentage = ((unpaid_amount + partially_paid_amount) / total_amount * 100)|round|int %}
+{% else %}
+    {% set outstanding_percentage = 0 %}
+{% endif %}
+<!-- Enhanced Welcome Header with Quick Stats -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-lg bg-gradient-primary text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="card-body py-4">
+                <div class="row align-items-center">
+                    <div class="col-md-5">
+                        <h2 class="mb-2 fw-bold">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                           Analytics Dashboard
+                        </h2>
+                        <p class="mb-0 opacity-75">
+                            Real-time insights into your business performance
+                        </p>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="row text-center g-2">
+                            <div class="col-4">
+                                <div class="d-flex flex-column">
+                                    <span class="h4 mb-0 fw-bold" id="totalInvoices" style="font-size: 1.75rem;">{{ total_invoices }}</span>
+                            <small class="opacity-75">Total Invoices</small>
+                        </div>
+                    </div>
+                            <div class="col-4" style="overflow: visible;">
+                                <div class="d-flex flex-column align-items-center">
+                                    <div id="totalRevenue" class="fw-bold" style="font-size: 1.75rem; line-height: 1.4; white-space: nowrap !important; overflow: visible !important; text-align: center; max-width: none; word-break: keep-all;">₹{{ "{:,.0f}".format(total_amount) }}</div>
+                                    <small class="opacity-75 mt-1">Total Revenue</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="d-flex flex-column">
+                                    <span class="h4 mb-0 fw-bold" id="totalCustomers" style="font-size: 1.75rem;">{{ total_customers }}</span>
+                                    <small class="opacity-75">Customers</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Primary Metrics Cards with Growth Indicators -->
+<div class="row mb-4">
+    <!-- Total Revenue Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 hover-lift">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                            Total Revenue
+                        </div>
+                        <div class="h4 mb-0 fw-bold text-gray-800" id="cardTotalRevenue">
+                            ₹{{ "{:,.2f}".format(total_amount) }}
+                        </div>
+                        {% if dashboard_data and dashboard_data.revenue_metrics.revenue_growth %}
+                        <div class="small mt-2">
+                            {% if dashboard_data.revenue_metrics.revenue_growth > 0 %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-arrow-up"></i>
+                                {{ "%.1f"|format(dashboard_data.revenue_metrics.revenue_growth) }}%
+                            </span>
+                            {% else %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-arrow-down"></i>
+                                {{ "%.1f"|format(dashboard_data.revenue_metrics.revenue_growth) }}%
+                            </span>
+                            {% endif %}
+                            <span class="text-muted ms-1">vs last month</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="icon-circle-lg bg-success text-white">
+                            <i class="fas fa-rupee-sign"></i>
+                        </div>
+                    </div>
+                <div class="progress" style="height: 4px;">
+                    <div class="progress-bar bg-success" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Month Revenue -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 hover-lift">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                            This Month
+                        </div>
+                        <div class="h4 mb-0 fw-bold text-gray-800" id="cardMonthRevenue">
+                            {% if dashboard_data %}
+                            ₹{{ "{:,.2f}".format(dashboard_data.revenue_metrics.current_month_revenue) }}
+                            {% else %}
+                            ₹0.00
+                            {% endif %}
+                        </div>
+                        <div class="small mt-2 d-flex flex-column">
+                            {% if dashboard_data and dashboard_data.invoice_metrics %}
+                            <span class="text-muted">{{ dashboard_data.invoice_metrics.current_month_count }} invoices issued</span>
+                            {% endif %}
+                            
+                            {% if dashboard_data and dashboard_data.revenue_metrics and dashboard_data.revenue_metrics.current_month_collected is defined %}
+                            <span class="text-success fw-bold">₹{{ "{:,.2f}".format(dashboard_data.revenue_metrics.current_month_collected) }} collected</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="icon-circle-lg bg-info text-white">
+                        <i class="fas fa-calendar-alt"></i>
+                        </div>
+                    </div>
+                <div class="progress" style="height: 4px;">
+                    <div class="progress-bar bg-info" data-width="{{ current_month_percentage }}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outstanding Amount -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 hover-lift">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                            Outstanding
+                        </div>
+                        <div class="h4 mb-0 fw-bold text-gray-800" id="cardOutstanding">
+                            ₹{{ "{:,.2f}".format(unpaid_amount + partially_paid_amount) }}
+                        </div>
+                        <div class="small mt-2">
+                            <span class="badge bg-warning">{{ unpaid_invoices + partially_paid_invoices }} invoices</span>
+                        </div>
+                    </div>
+                    <div class="icon-circle-lg bg-warning">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                <div class="progress" style="height: 4px;">
+                    <div class="progress-bar bg-warning" data-width="{{ outstanding_percentage }}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overdue Invoices -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 hover-lift border-danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="text-xs fw-bold text-danger text-uppercase mb-1">
+                            Overdue
+                        </div>
+                        <div class="h4 mb-0 fw-bold text-danger" id="cardOverdue">
+                            {% if dashboard_data %}
+                            ₹{{ "{:,.2f}".format(dashboard_data.payment_status.overdue.amount) }}
+                            {% else %}
+                            ₹0.00
+                            {% endif %}
+                        </div>
+                        <div class="small mt-2">
+                            <span class="badge bg-danger">
+                                {% if dashboard_data %}{{ dashboard_data.payment_status.overdue.count }}{% else %}{{ overdue_invoices }}{% endif %} invoices
+                            </span>
+                        </div>
+                    </div>
+                    <div class="icon-circle-lg bg-danger text-white">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                <div class="progress" style="height: 4px;">
+                    <div class="progress-bar bg-danger" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Metrics Row -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 text-center hover-lift">
+            <div class="card-body">
+                <div class="icon-circle-lg bg-primary text-white mx-auto mb-3">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="fw-bold text-gray-800 mb-1">{{ total_customers }}</h3>
+                <p class="text-muted mb-0">Total Customers</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 text-center hover-lift">
+            <div class="card-body">
+                <div class="icon-circle-lg bg-secondary text-white mx-auto mb-3">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <h3 class="fw-bold text-gray-800 mb-1">{{ total_vendors }}</h3>
+                <p class="text-muted mb-0">Total Vendors</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 text-center hover-lift">
+            <div class="card-body">
+                <div class="icon-circle-lg bg-dark text-white mx-auto mb-3">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <h3 class="fw-bold text-gray-800 mb-1">{{ total_purchase_orders }}</h3>
+                <p class="text-muted mb-0">Purchase Orders</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 text-center hover-lift">
+            <div class="card-body">
+                <div class="icon-circle-lg bg-info text-white mx-auto mb-3">
+                    <i class="fas fa-percent"></i>
+                </div>
+                <h3 class="fw-bold text-gray-800 mb-1">
+                    {% if dashboard_data %}
+                    ₹{{ "{:,.2f}".format(dashboard_data.gst_breakdown.total_gst) }}
+                    {% else %}
+                    ₹0.00
+                    {% endif %}
+                </h3>
+                <p class="text-muted mb-0">Total GST Collected</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Controls Row -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body py-2">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div class="d-flex gap-2 align-items-center">
+                        <label class="form-label mb-0 me-2"><strong>Time Range:</strong></label>
+                        <select class="form-select form-select-sm" id="timeRangeFilter" style="width: auto;">
+                            <option value="daily">Last 30 Days</option>
+                            <option value="weekly">Last 8 Weeks</option>
+                            <option value="monthly" selected>Last 12 Months</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-primary" onclick="exportDashboardData()">
+                            <i class="fas fa-download me-1"></i>Export
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="refreshDashboardData()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                        <span class="badge bg-success" id="liveIndicator">
+                            <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>Live
+                        </span>
+                        <small class="text-muted" id="lastUpdate">Last updated: <span id="updateTime">--</span></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <!-- Monthly Revenue Trend Chart -->
+    <div class="col-lg-8 mb-4">
+        <div class="card border-0 shadow-sm" style="min-height: 550px;">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-chart-line me-2"></i>Revenue Trends
+                    <span id="chartTitle">(Last 12 Months)</span>
+                </h6>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary" onclick="switchChartView('daily')">Daily</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="switchChartView('weekly')">Weekly</button>
+                    <button type="button" class="btn btn-outline-primary active" onclick="switchChartView('monthly')">Monthly</button>
+                </div>
+            </div>
+            <div class="card-body position-relative p-4" style="min-height: 500px;">
+                <div id="revenueChartWrapper" style="height: 450px; width: 100%; position: relative;">
+                    <canvas id="revenueChart" style="width: 100%; height: 100%;"></canvas>
+                </div>
+                <div id="revenueChartNoData" class="position-absolute top-50 start-50 translate-middle text-muted" style="display: none;">
+                    <i class="fas fa-chart-line fa-2x mb-2 d-block"></i>
+                    <p class="mb-0">No data available</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Status Pie Chart -->
+    <div class="col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-chart-pie me-2"></i>Payment Status
+                </h6>
+                {% if dashboard_data and dashboard_data.payment_status %}
+                <span class="badge bg-info" id="collectionRateBadge">
+                    <i class="fas fa-percent me-1"></i>
+                    {{ "%.1f"|format(dashboard_data.payment_status.collection_rate or 0) }}% Collected
+                </span>
+                {% endif %}
+                </div>
+            <div class="card-body">
+                <canvas id="paymentStatusChart" height="200"></canvas>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="fas fa-circle text-success me-2"></i>Paid</span>
+                        <strong>₹{{ "{:,.2f}".format(paid_amount) }}</strong>
+            </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="fas fa-circle text-warning me-2"></i>Partial</span>
+                        <strong>₹{{ "{:,.2f}".format(partially_paid_amount) }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span><i class="fas fa-circle text-danger me-2"></i>Unpaid</span>
+                        <strong>₹{{ "{:,.2f}".format(unpaid_amount) }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Charts Row -->
+<div class="row mb-4">
+    <!-- Top Customers Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-trophy me-2"></i>Top 5 Customers by Revenue
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="topCustomersChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aging Analysis Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-hourglass-half me-2"></i>Accounts Receivable Aging
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="agingChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Row -->
+<div class="row">
+    <!-- Quick Actions -->
+    <div class="col-lg-3 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('create_invoice') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus me-2"></i>Create Invoice
+                    </a>
+                    <a href="{{ url_for('create_purchase_order') }}" class="btn btn-success btn-lg">
+                        <i class="fas fa-shopping-cart me-2"></i>Create PO
+                    </a>
+                    <a href="{{ url_for('add_customer') }}" class="btn btn-info">
+                        <i class="fas fa-user-plus me-2"></i>Add Customer
+                    </a>
+                    <a href="{{ url_for('add_vendor') }}" class="btn btn-warning">
+                        <i class="fas fa-truck me-2"></i>Add Vendor
+                    </a>
+                    <hr class="my-2">
+                    <a href="{{ url_for('invoices') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-list me-2"></i>All Invoices
+                    </a>
+                    <a href="{{ url_for('purchase_orders') }}" class="btn btn-outline-success">
+                        <i class="fas fa-clipboard-list me-2"></i>All POs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Invoices -->
+    <div class="col-lg-9 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-file-invoice me-2"></i>Recent Invoices
+                </h6>
+                <a href="{{ url_for('invoices') }}" class="btn btn-sm btn-outline-primary">
+                    View All <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_invoices %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for invoice in recent_invoices %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('view_invoice', invoice_id=invoice.id) }}" 
+                                           class="text-decoration-none fw-bold text-primary">
+                                            {{ invoice.invoice_number }}
+                                        </a>
+                                    </td>
+                                    <td>{{ invoice.customer.name }}</td>
+                                    <td class="fw-bold">₹{{ "{:,.2f}".format(invoice.total_amount) }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if invoice.status == 'paid' else 'warning' if invoice.status == 'partially_paid' else 'danger' }}">
+                                            {{ invoice.status.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td class="text-muted">
+                                        {{ invoice.invoice_date.strftime('%d %b %Y') }}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('view_invoice', invoice_id=invoice.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-file-invoice fa-4x text-muted mb-3"></i>
+                        <p class="text-muted">No invoices created yet.</p>
+                        <a href="{{ url_for('create_invoice') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create Your First Invoice
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Customers & Items Row -->
+<div class="row mb-4">
+    <!-- Top Customers Table -->
+    <div class="col-lg-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-trophy me-2"></i>Top Customers
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if dashboard_data and dashboard_data.top_customers.by_revenue %}
+                    <div class="list-group list-group-flush">
+                        {% for customer in dashboard_data.top_customers.by_revenue %}
+                        <div class="list-group-item border-0 px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1 fw-bold">{{ customer[0] }}</h6>
+                                    <small class="text-muted">{{ customer[2] }} invoices</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="fw-bold text-success h5 mb-0">₹{{ "{:,.2f}".format(customer[1]) }}</span>
+                                </div>
+                            </div>
+                            {% if dashboard_data.revenue_metrics.total_revenue > 0 %}
+                                {% set customer_percentage = (customer[1] / dashboard_data.revenue_metrics.total_revenue * 100)|round|int %}
+                {% else %}
+                                {% set customer_percentage = 0 %}
+                {% endif %}
+                            <div class="progress mt-2" style="height: 4px;">
+                                <div class="progress-bar bg-success" data-width="{{ customer_percentage }}"></div>
+            </div>
+        </div>
+                                {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No customer data available yet.</p>
+                    </div>
+                {% endif %}
+        </div>
+    </div>
+</div>
+
+    <!-- Top Items Table -->
+    <div class="col-lg-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-box me-2"></i>Top Selling Items
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if dashboard_data and dashboard_data.top_items %}
+                    <div class="list-group list-group-flush">
+                        {% for item in dashboard_data.top_items[:5] %}
+                        <div class="list-group-item border-0 px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1 fw-bold">{{ item.description }}</h6>
+                                    <small class="text-muted">Qty: {{ "{:,.2f}".format(item.quantity) }} | Sold {{ item.times_sold }} times</small>
+                        </div>
+                                <div class="text-end">
+                                    <span class="fw-bold text-info h6 mb-0">₹{{ "{:,.2f}".format(item.amount) }}</span>
+                    </div>
+                        </div>
+                    </div>
+                            {% endfor %}
+                </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-box fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No item data available yet.</p>
+</div>
+{% endif %}
+            </div>
+                                </div>
+                            </div>
+                        </div>
+
+<!-- Auto-refresh indicator -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+    <div class="toast" role="alert" id="refreshToast" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fas fa-sync-alt me-2 text-primary"></i>
+            <strong class="me-auto">Dashboard</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+        <div class="toast-body">
+            Dashboard data refreshed successfully
+                </div>
+            </div>
+        </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js for interactive charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+<style>
+/* Enhanced Dashboard Styles */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.icon-circle-lg {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.hover-lift {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card:nth-child(1) { animation-delay: 0.1s; }
+.card:nth-child(2) { animation-delay: 0.2s; }
+.card:nth-child(3) { animation-delay: 0.3s; }
+.card:nth-child(4) { animation-delay: 0.4s; }
+
+.progress {
+    border-radius: 10px;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    cursor: pointer;
+}
+
+/* Fix for Chart.js rendering issues - prevent text jumbling */
+#topCustomersChart,
+#agingChart,
+#paymentStatusChart {
+    max-width: 100% !important;
+    height: auto !important;
+    transform: none !important;
+    position: relative !important;
+}
+
+.card-body canvas {
+    display: block !important;
+    max-width: 100% !important;
+    height: auto !important;
+    transform: none !important;
+}
+
+/* Loading spinner */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .icon-circle-lg {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 1.2rem;
+    }
+    
+    #totalRevenue {
+        font-size: 1.1rem !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+    }
+    
+    #totalInvoices, #totalCustomers {
+        font-size: 1.4rem !important;
+    }
+}
+
+/* Prevent revenue text from wrapping - keep on single line */
+#totalRevenue {
+    white-space: nowrap !important;
+    overflow: visible !important;
+    word-break: keep-all !important;
+    display: block !important;
+    max-width: none !important;
+    width: auto !important;
+}
+</style>
+
+<script>
+// Dashboard data from backend
+var dashboardDataJson = '{% if dashboard_data %}{{ dashboard_data|tojson|safe }}{% else %}null{% endif %}';
+let dashboardData = dashboardDataJson !== 'null' ? JSON.parse(dashboardDataJson) : {};
+
+// Verify data structure on load
+if (dashboardData && typeof dashboardData === 'object') {
+    console.log('Dashboard data structure:', {
+        hasMonthlyTrends: !!dashboardData.monthly_trends,
+        hasDailyTrends: !!dashboardData.daily_trends,
+        hasPaymentStatus: !!dashboardData.payment_status,
+        hasTopCustomers: !!dashboardData.top_customers,
+        hasAgingAnalysis: !!dashboardData.aging_analysis,
+        revenueMetrics: dashboardData.revenue_metrics
+    });
+} else {
+    console.warn('Dashboard data is invalid or null');
+    dashboardData = {};
+}
+
+// Chart instances
+let revenueChart = null;
+let paymentStatusChart = null;
+let topCustomersChart = null;
+let agingChart = null;
+let currentChartView = 'monthly';
+let lastUpdateTime = new Date();
+
+// Update last update time display
+function updateLastUpdateTime() {
+    const now = new Date();
+    const timeDiff = Math.floor((now - lastUpdateTime) / 1000);
+    const timeEl = document.getElementById('updateTime');
+    if (timeEl) {
+        if (timeDiff < 60) {
+            timeEl.textContent = `${timeDiff}s ago`;
+        } else if (timeDiff < 3600) {
+            timeEl.textContent = `${Math.floor(timeDiff / 60)}m ago`;
+        } else {
+            timeEl.textContent = lastUpdateTime.toLocaleTimeString();
+        }
+    }
+}
+
+// Initialize all charts
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard data:', dashboardData);
+    
+    // Update last update time
+    updateLastUpdateTime();
+    
+    if (dashboardData && typeof dashboardData === 'object') {
+        try {
+            initializeRevenueChart();
+            initializePaymentStatusChart();
+            initializeTopCustomersChart();
+            initializeAgingChart();
+            initializePerformanceGauges();
+        } catch (error) {
+            console.error('Error initializing charts:', error);
+        }
+    } else {
+        console.warn('No dashboard data available');
+    }
+    
+    // Setup time range filter
+    document.getElementById('timeRangeFilter')?.addEventListener('change', function(e) {
+        switchChartView(e.target.value);
+    });
+    
+    // Auto-refresh every 30 seconds for live updates
+    setInterval(refreshDashboardData, 30000);
+    
+    // Update time indicator every second
+    setInterval(updateLastUpdateTime, 1000);
+    
+    // Set progress bar widths from data attributes
+    document.querySelectorAll('.progress-bar[data-width]').forEach(bar => {
+        const width = bar.getAttribute('data-width');
+        if (width !== null && !isNaN(width)) {
+            bar.style.width = width + '%';
+        }
+    });
+});
+
+// Revenue Trend Chart
+function initializeRevenueChart() {
+    const ctx = document.getElementById('revenueChart');
+    if (!ctx) {
+        console.error('Revenue chart canvas not found');
+        return;
+    }
+    
+    // Ensure dashboardData exists
+    if (!dashboardData || typeof dashboardData !== 'object') {
+        console.error('Invalid dashboard data');
+        return;
+    }
+    
+    // Set canvas size to fill container
+    const wrapper = document.getElementById('revenueChartWrapper');
+    if (wrapper) {
+        const wrapperHeight = wrapper.offsetHeight || 450;
+        const wrapperWidth = wrapper.offsetWidth || ctx.width;
+        // Set explicit dimensions for Chart.js
+        ctx.width = wrapperWidth;
+        ctx.height = wrapperHeight;
+        ctx.style.width = wrapperWidth + 'px';
+        ctx.style.height = wrapperHeight + 'px';
+    }
+    
+    const monthlyData = dashboardData.monthly_trends || [];
+    const dailyData = dashboardData.daily_trends || [];
+    const weeklyData = dashboardData.weekly_trends || [];
+    
+    console.log('Monthly data:', monthlyData);
+    console.log('Daily data:', dailyData);
+    console.log('Weekly data:', weeklyData);
+    
+    // Update chart title
+    const chartTitleEl = document.getElementById('chartTitle');
+    if (chartTitleEl) {
+        if (currentChartView === 'daily') {
+            chartTitleEl.textContent = '(Last 30 Days)';
+        } else if (currentChartView === 'weekly') {
+            chartTitleEl.textContent = '(Last 8 Weeks)';
+        } else {
+            chartTitleEl.textContent = '(Last 12 Months)';
+        }
+    }
+    
+    // Select chart data based on view
+    let chartData;
+    if (currentChartView === 'daily') {
+        chartData = dailyData;
+    } else if (currentChartView === 'weekly') {
+        chartData = weeklyData;
+    } else {
+        chartData = monthlyData;
+    }
+    
+    // Ensure we have at least one data point for Chart.js
+    let labels, revenues, paid_revenues, counts;
+    if (chartData.length === 0) {
+        console.warn('No chart data available');
+        labels = ['No Data'];
+        revenues = [0];
+        counts = [0];
+        const noDataMsg = document.getElementById('revenueChartNoData');
+        if (noDataMsg) {
+            noDataMsg.style.display = 'block';
+        }
+    } else {
+        // Extract labels based on chart type
+        labels = chartData.map(d => {
+            if (currentChartView === 'monthly') return d.month || d.month_key || '';
+            if (currentChartView === 'weekly') return d.label || d.week || '';
+            return d.day || d.date || '';
+        });
+        revenues = chartData.map(d => parseFloat(d.revenue) || 0);
+        paid_revenues = chartData.map(d => parseFloat(d.paid_revenue) || 0);
+        counts = chartData.map(d => parseInt(d.count) || 0);
+        
+        // Hide no-data message if we have data
+        const noDataMsg = document.getElementById('revenueChartNoData');
+        if (noDataMsg && (labels.length > 0 && revenues.some(v => v > 0))) {
+            noDataMsg.style.display = 'none';
+        }
+        
+        // If all revenues are zero, show message
+        if (revenues.every(v => v === 0)) {
+            console.warn('All revenue values are zero');
+            if (noDataMsg) {
+                noDataMsg.style.display = 'block';
+            }
+        }
+    }
+    
+    console.log('Chart labels:', labels);
+    console.log('Chart revenues:', revenues);
+    console.log('Chart collections:', paid_revenues);
+    console.log('Chart counts:', counts);
+    
+    revenueChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Billed Revenue (₹)',
+                    data: revenues,
+                    borderColor: 'rgb(102, 126, 234)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Collections (₹)',
+                    data: paid_revenues,
+                    borderColor: 'rgb(40, 167, 69)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Invoice Count',
+                    data: counts,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.4,
+                    fill: false,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            if (context.datasetIndex === 0) {
+                                return 'Billed: ₹' + context.parsed.y.toLocaleString('en-IN', {maximumFractionDigits: 2});
+                            } else if (context.datasetIndex === 1) {
+                                return 'Collected: ₹' + context.parsed.y.toLocaleString('en-IN', {maximumFractionDigits: 2});
+                            } else {
+                                return 'Invoices: ' + context.parsed.y;
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Revenue (₹)',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString('en-IN');
+                        },
+                        font: {
+                            size: 10
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Invoice Count',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        font: {
+                            size: 10
+                        }
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 10
+                        },
+                        maxRotation: 45,
+                        minRotation: 0
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    bottom: 10,
+                    top: 10,
+                    left: 10,
+                    right: 10
+                }
+            }
+        }
+    });
+}
+
+// Payment Status Pie Chart
+function initializePaymentStatusChart() {
+    const ctx = document.getElementById('paymentStatusChart');
+    if (!ctx) {
+        console.error('Payment status chart canvas not found');
+        return;
+    }
+    
+    if (!dashboardData || typeof dashboardData !== 'object') {
+        console.error('Invalid dashboard data');
+        return;
+    }
+    
+    const paymentData = dashboardData.payment_status || {};
+    console.log('Payment data:', paymentData);
+    
+    const paidAmount = paymentData.paid?.amount || 0;
+    const partialAmount = paymentData.partially_paid?.amount || 0;
+    const unpaidAmount = paymentData.unpaid?.amount || 0;
+    
+    console.log('Payment amounts - Paid:', paidAmount, 'Partial:', partialAmount, 'Unpaid:', unpaidAmount);
+    
+    paymentStatusChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Paid', 'Partially Paid', 'Unpaid'],
+            datasets: [{
+                data: [
+                    paidAmount,
+                    partialAmount,
+                    unpaidAmount
+                ],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(255, 193, 7, 0.8)',
+                    'rgba(220, 53, 69, 0.8)'
+                ],
+                borderColor: [
+                    'rgb(40, 167, 69)',
+                    'rgb(255, 193, 7)',
+                    'rgb(220, 53, 69)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ₹' + context.parsed.toLocaleString('en-IN', {maximumFractionDigits: 2});
+                        }
+                    }
+                }
+            },
+            // Show "No data" message if all values are zero
+            onResize: function(chart) {
+                const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                if (total === 0) {
+                    console.warn('Payment status chart has no data');
+                }
+            }
+        }
+    });
+}
+
+// Top Customers Bar Chart
+function initializeTopCustomersChart() {
+    const ctx = document.getElementById('topCustomersChart');
+    if (!ctx) {
+        console.error('Top customers chart canvas not found');
+        return;
+    }
+    
+    if (!dashboardData || typeof dashboardData !== 'object') {
+        console.error('Invalid dashboard data');
+        return;
+    }
+    
+    // Ensure canvas has proper sizing
+    const container = ctx.parentElement;
+    if (container) {
+        ctx.style.maxWidth = '100%';
+        ctx.style.height = 'auto';
+    }
+    
+    const customers = dashboardData.top_customers?.by_revenue || [];
+    console.log('Top customers data:', customers);
+    
+    const labels = customers.map(c => {
+        if (Array.isArray(c)) return c[0];
+        if (typeof c === 'object') return c.name || c.description || '';
+        return String(c);
+    });
+    const revenues = customers.map(c => {
+        if (Array.isArray(c)) return parseFloat(c[1]) || 0;
+        if (typeof c === 'object') return parseFloat(c.revenue || c.amount || 0);
+        return parseFloat(c) || 0;
+    });
+    
+    console.log('Top customers labels:', labels);
+    console.log('Top customers revenues:', revenues);
+    
+    // Truncate long labels to prevent overlap
+    const truncatedLabels = labels.map(label => {
+        const maxLength = 20;
+        if (label && label.length > maxLength) {
+            return label.substring(0, maxLength) + '...';
+        }
+        return label || '';
+    });
+    
+    topCustomersChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: truncatedLabels,
+            datasets: [{
+                label: 'Revenue (₹)',
+                data: revenues,
+                backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                borderColor: 'rgb(102, 126, 234)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            layout: {
+                padding: {
+                    bottom: 10
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            // Show full label in tooltip
+                            const index = context[0].dataIndex;
+                            return labels[index] || '';
+                        },
+                        label: function(context) {
+                            return 'Revenue: ₹' + context.parsed.y.toLocaleString('en-IN', {maximumFractionDigits: 2});
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 10,
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString('en-IN');
+                        },
+                        font: {
+                            size: 11
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Aging Analysis Chart
+function initializeAgingChart() {
+    const ctx = document.getElementById('agingChart');
+    if (!ctx) {
+        console.error('Aging chart canvas not found');
+        return;
+    }
+    
+    if (!dashboardData || typeof dashboardData !== 'object') {
+        console.error('Invalid dashboard data');
+        return;
+    }
+    
+    const aging = dashboardData.aging_analysis || {};
+    const amounts = aging.amounts || {};
+    console.log('Aging analysis data:', aging);
+    console.log('Aging amounts:', amounts);
+    
+    agingChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Current', '1-30 Days', '31-60 Days', '61-90 Days', '90+ Days'],
+            datasets: [{
+                label: 'Outstanding Amount (₹)',
+                data: [
+                    amounts.current || 0,
+                    amounts['30_days'] || 0,
+                    amounts['60_days'] || 0,
+                    amounts['90_days'] || 0,
+                    amounts['over_90_days'] || 0
+                ],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(255, 193, 7, 0.8)',
+                    'rgba(255, 152, 0, 0.8)',
+                    'rgba(255, 87, 34, 0.8)',
+                    'rgba(220, 53, 69, 0.8)'
+                ],
+                borderColor: [
+                    'rgb(40, 167, 69)',
+                    'rgb(255, 193, 7)',
+                    'rgb(255, 152, 0)',
+                    'rgb(255, 87, 34)',
+                    'rgb(220, 53, 69)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Amount: ₹' + context.parsed.y.toLocaleString('en-IN', {maximumFractionDigits: 2});
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString('en-IN');
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Switch between chart views
+function switchChartView(view) {
+    currentChartView = view;
+    
+    // Update button states
+    const buttons = document.querySelectorAll('[onclick*="switchChartView"]');
+    buttons.forEach(btn => {
+        const btnText = btn.textContent.toLowerCase();
+        if ((view === 'monthly' && btnText.includes('monthly')) ||
+            (view === 'daily' && btnText.includes('daily')) ||
+            (view === 'weekly' && btnText.includes('weekly'))) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // Update time range filter
+    const timeRangeFilter = document.getElementById('timeRangeFilter');
+    if (timeRangeFilter) {
+        timeRangeFilter.value = view;
+    }
+    
+    // Reinitialize chart
+    if (revenueChart) {
+        revenueChart.destroy();
+        revenueChart = null;
+    }
+    initializeRevenueChart();
+}
+
+// Initialize Performance Gauges
+function initializePerformanceGauges() {
+    if (!dashboardData || !dashboardData.performance_indicators) return;
+    
+    // Collection rate gauge would go here if using gauge charts
+    const collectionRate = dashboardData.performance_indicators.collection_rate || 0;
+    console.log('Collection rate:', collectionRate);
+}
+
+// Export Dashboard Data
+function exportDashboardData() {
+    if (!dashboardData) {
+        alert('No data to export');
+        return;
+    }
+    
+    // Create CSV content
+    let csvContent = "Dashboard Export - " + new Date().toLocaleString() + "\n\n";
+    csvContent += "Metric,Value\n";
+    csvContent += `Total Revenue,${dashboardData.revenue_metrics?.total_revenue || 0}\n`;
+    csvContent += `Current Month Revenue,${dashboardData.revenue_metrics?.current_month_revenue || 0}\n`;
+    csvContent += `Total Invoices,${dashboardData.invoice_metrics?.total_invoices || 0}\n`;
+    csvContent += `Outstanding Amount,${dashboardData.payment_status?.outstanding_amount || 0}\n`;
+    csvContent += `Collection Rate,${dashboardData.performance_indicators?.collection_rate || 0}%\n`;
+    
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dashboard_export_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    // Show success message
+    const toast = bootstrap.Toast.getOrCreateInstance(document.getElementById('refreshToast'));
+    const toastBody = document.querySelector('#refreshToast .toast-body');
+    if (toastBody) {
+        toastBody.textContent = 'Dashboard data exported successfully';
+    }
+    toast.show();
+}
+
+// Refresh dashboard data via API
+function refreshDashboardData() {
+    fetch('/api/dashboard-data')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('API response:', data);
+            if (data.success && data.data && typeof data.data === 'object') {
+                // Update dashboard with new data
+                dashboardData = data.data;
+                console.log('Updated dashboard data:', dashboardData);
+                
+                // Update last update time
+                lastUpdateTime = new Date();
+                
+                // Reinitialize charts
+                if (revenueChart) {
+                    revenueChart.destroy();
+                    revenueChart = null;
+                }
+                if (paymentStatusChart) {
+                    paymentStatusChart.destroy();
+                    paymentStatusChart = null;
+                }
+                if (topCustomersChart) {
+                    topCustomersChart.destroy();
+                    topCustomersChart = null;
+                }
+                if (agingChart) {
+                    agingChart.destroy();
+                    agingChart = null;
+                }
+                
+                // Hide no-data messages
+                const noDataMsg = document.getElementById('revenueChartNoData');
+                if (noDataMsg) {
+                    noDataMsg.style.display = 'none';
+                }
+                
+                // Reinitialize all charts
+                initializeRevenueChart();
+                initializePaymentStatusChart();
+                initializeTopCustomersChart();
+                initializeAgingChart();
+                
+                // Update card values
+                if (data.data.revenue_metrics) {
+                    const rm = data.data.revenue_metrics;
+                    updateCardValue('cardTotalRevenue', '₹' + rm.total_revenue.toLocaleString('en-IN', {maximumFractionDigits: 2}));
+                    updateCardValue('cardMonthRevenue', '₹' + rm.current_month_revenue.toLocaleString('en-IN', {maximumFractionDigits: 2}));
+                }
+                if (data.data.payment_status) {
+                    const ps = data.data.payment_status;
+                    updateCardValue('cardOutstanding', '₹' + ps.outstanding_amount.toLocaleString('en-IN', {maximumFractionDigits: 2}));
+                    updateCardValue('cardOverdue', '₹' + ps.overdue.amount.toLocaleString('en-IN', {maximumFractionDigits: 2}));
+                }
+                
+                // Show refresh notification
+                const toast = new bootstrap.Toast(document.getElementById('refreshToast'));
+                toast.show();
+            } else {
+                console.error('API returned error:', data.error || 'Unknown error');
+            }
+        })
+        .catch(error => {
+            console.error('Error refreshing dashboard:', error);
+        });
+}
+
+// Helper function to update card values with animation
+function updateCardValue(elementId, newValue) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.transition = 'opacity 0.3s';
+        element.style.opacity = '0.5';
+        setTimeout(() => {
+            element.textContent = newValue;
+            element.style.opacity = '1';
+        }, 300);
+    }
+}
+
+// Smooth scrolling for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

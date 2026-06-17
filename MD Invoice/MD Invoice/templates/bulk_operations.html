@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Operations - Invoice Generator{% endblock %}
+
+{% block page_title %}Bulk Operations{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url_for('purchase_orders') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Purchase Orders
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tasks"></i> Bulk Operations for Purchase Orders
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Bulk Operations:</strong> Select multiple purchase orders and perform actions on them simultaneously.
+                </div>
+                
+                <!-- Filter and Search -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label for="statusFilter" class="form-label">Filter by Status</label>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="draft">Draft</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="sent">Sent</option>
+                            <option value="received">Received</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="vendorFilter" class="form-label">Filter by Vendor</label>
+                        <select class="form-select" id="vendorFilter">
+                            <option value="">All Vendors</option>
+                            <!-- Will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="searchInput" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search PO numbers, vendors...">
+                    </div>
+                </div>
+                
+                <!-- Bulk Actions -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="btn btn-primary" onclick="selectAll()">
+                                <i class="fas fa-check-square"></i> Select All
+                            </button>
+                            <button class="btn btn-secondary" onclick="deselectAll()">
+                                <i class="fas fa-square"></i> Deselect All
+                            </button>
+                            <div class="vr"></div>
+                            <button class="btn btn-success" onclick="bulkUpdateStatus('approved')" disabled id="bulkApprove">
+                                <i class="fas fa-check"></i> Approve Selected
+                            </button>
+                            <button class="btn btn-info" onclick="bulkUpdateStatus('sent')" disabled id="bulkSend">
+                                <i class="fas fa-paper-plane"></i> Mark as Sent
+                            </button>
+                            <button class="btn btn-warning" onclick="bulkUpdateStatus('received')" disabled id="bulkReceived">
+                                <i class="fas fa-truck"></i> Mark as Received
+                            </button>
+                            <button class="btn btn-danger" onclick="bulkDelete()" disabled id="bulkDelete">
+                                <i class="fas fa-trash"></i> Delete Selected
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Purchase Orders Table -->
+                <div class="table-responsive">
+                    <table class="table table-hover" id="poTable">
+                        <thead>
+                            <tr>
+                                <th width="50">
+                                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                                </th>
+                                <th>PO Number</th>
+                                <th>Vendor</th>
+                                <th>Date</th>
+                                <th>Total Amount</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="poTableBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- Will be populated by JavaScript -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalTitle">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody">
+                <!-- Content will be set by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmButton">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allPOs = [];
+let filteredPOs = [];
+let selectedPOs = new Set();
+let currentPage = 1;
+const itemsPerPage = 10;
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadPOs();
+    loadVendors();
+    
+    // Event listeners
+    document.getElementById('statusFilter').addEventListener('change', filterPOs);
+    document.getElementById('vendorFilter').addEventListener('change', filterPOs);
+    document.getElementById('searchInput').addEventListener('input', filterPOs);
+});
+
+async function loadPOs() {
+    try {
+        const response = await fetch('/api/purchase-orders/all');
+        if (response.ok) {
+            allPOs = await response.json();
+            filterPOs();
+        } else {
+            console.error('Failed to load POs');
+        }
+    } catch (error) {
+        console.error('Error loading POs:', error);
+    }
+}
+
+async function loadVendors() {
+    try {
+        const response = await fetch('/api/vendors');
+        if (response.ok) {
+            const vendors = await response.json();
+            const vendorSelect = document.getElementById('vendorFilter');
+            vendors.forEach(vendor => {
+                const option = document.createElement('option');
+                option.value = vendor.id;
+                option.textContent = vendor.name;
+                vendorSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading vendors:', error);
+    }
+}
+
+function filterPOs() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const vendorFilter = document.getElementById('vendorFilter').value;
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    
+    filteredPOs = allPOs.filter(po => {
+        const matchesStatus = !statusFilter || po.status === statusFilter;
+        const matchesVendor = !vendorFilter || po.vendor_id == vendorFilter;
+        const matchesSearch = !searchTerm || 
+            po.po_number.toLowerCase().includes(searchTerm) ||
+            po.vendor.name.toLowerCase().includes(searchTerm);
+        
+        return matchesStatus && matchesVendor && matchesSearch;
+    });
+    
+    currentPage = 1;
+    renderTable();
+    updatePagination();
+}
+
+function renderTable() {
+    const tbody = document.getElementById('poTableBody');
+    tbody.innerHTML = '';
+    
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pagePOs = filteredPOs.slice(startIndex, endIndex);
+    
+    pagePOs.forEach(po => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <input type="checkbox" class="po-checkbox" value="${po.id}" 
+                       onchange="togglePOSelection(${po.id})" 
+                       ${selectedPOs.has(po.id) ? 'checked' : ''}>
+            </td>
+            <td>
+                <a href="/purchase-orders/${po.id}" class="text-decoration-none">
+                    ${po.po_number}
+                </a>
+            </td>
+            <td>${po.vendor.name}</td>
+            <td>${new Date(po.po_date).toLocaleDateString()}</td>
+            <td>₹${parseFloat(po.total_amount).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+            <td>
+                <span class="badge bg-${getStatusColor(po.status)}">${po.status.charAt(0).toUpperCase() + po.status.slice(1)}</span>
+            </td>
+            <td>
+                <span class="badge bg-${getPriorityColor(po.priority)}">${po.priority.charAt(0).toUpperCase() + po.priority.slice(1)}</span>
+            </td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <a href="/purchase-orders/${po.id}" class="btn btn-outline-primary">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="/purchase-orders/${po.id}/edit" class="btn btn-outline-secondary">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    updateBulkButtons();
+}
+
+function updatePagination() {
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+    
+    const totalPages = Math.ceil(filteredPOs.length / itemsPerPage);
+    
+    if (totalPages <= 1) return;
+    
+    // Previous button
+    const prevLi = document.createElement('li');
+    prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+    prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Previous</a>`;
+    pagination.appendChild(prevLi);
+    
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+        pagination.appendChild(li);
+    }
+    
+    // Next button
+    const nextLi = document.createElement('li');
+    nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+    nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Next</a>`;
+    pagination.appendChild(nextLi);
+}
+
+function changePage(page) {
+    if (page < 1 || page > Math.ceil(filteredPOs.length / itemsPerPage)) return;
+    currentPage = page;
+    renderTable();
+    updatePagination();
+}
+
+function selectAll() {
+    const checkboxes = document.querySelectorAll('.po-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+        selectedPOs.add(parseInt(checkbox.value));
+    });
+    updateBulkButtons();
+}
+
+function deselectAll() {
+    const checkboxes = document.querySelectorAll('.po-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    selectedPOs.clear();
+    updateBulkButtons();
+}
+
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const checkboxes = document.querySelectorAll('.po-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+        if (selectAllCheckbox.checked) {
+            selectedPOs.add(parseInt(checkbox.value));
+        } else {
+            selectedPOs.delete(parseInt(checkbox.value));
+        }
+    });
+    updateBulkButtons();
+}
+
+function togglePOSelection(poId) {
+    const checkbox = document.querySelector(`input[value="${poId}"]`);
+    if (checkbox.checked) {
+        selectedPOs.add(poId);
+    } else {
+        selectedPOs.delete(poId);
+    }
+    updateBulkButtons();
+}
+
+function updateBulkButtons() {
+    const hasSelection = selectedPOs.size > 0;
+    document.getElementById('bulkApprove').disabled = !hasSelection;
+    document.getElementById('bulkSend').disabled = !hasSelection;
+    document.getElementById('bulkReceived').disabled = !hasSelection;
+    document.getElementById('bulkDelete').disabled = !hasSelection;
+}
+
+function bulkUpdateStatus(status) {
+    if (selectedPOs.size === 0) return;
+    
+    const statusText = status.charAt(0).toUpperCase() + status.slice(1);
+    showConfirmModal(
+        `Update Status to ${statusText}`,
+        `Are you sure you want to update ${selectedPOs.size} purchase order(s) to "${statusText}" status?`,
+        () => performBulkStatusUpdate(status)
+    );
+}
+
+function bulkDelete() {
+    if (selectedPOs.size === 0) return;
+    
+    showConfirmModal(
+        'Delete Purchase Orders',
+        `Are you sure you want to delete ${selectedPOs.size} purchase order(s)? This action cannot be undone.`,
+        () => performBulkDelete()
+    );
+}
+
+function showConfirmModal(title, message, onConfirm) {
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalBody').textContent = message;
+    document.getElementById('confirmButton').onclick = onConfirm;
+    new bootstrap.Modal(document.getElementById('confirmModal')).show();
+}
+
+async function performBulkStatusUpdate(status) {
+    try {
+        const response = await fetch('/api/purchase-orders/bulk-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                po_ids: Array.from(selectedPOs),
+                status: status
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert(`Successfully updated ${result.updated_count} purchase order(s)`);
+            selectedPOs.clear();
+            loadPOs();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while updating status');
+    }
+}
+
+async function performBulkDelete() {
+    try {
+        const response = await fetch('/api/purchase-orders/bulk-delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                po_ids: Array.from(selectedPOs)
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert(`Successfully deleted ${result.deleted_count} purchase order(s)`);
+            selectedPOs.clear();
+            loadPOs();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while deleting');
+    }
+}
+
+function getStatusColor(status) {
+    const colors = {
+        'draft': 'secondary',
+        'pending': 'warning',
+        'approved': 'info',
+        'sent': 'primary',
+        'received': 'success',
+        'completed': 'success',
+        'cancelled': 'danger'
+    };
+    return colors[status] || 'secondary';
+}
+
+function getPriorityColor(priority) {
+    const colors = {
+        'low': 'secondary',
+        'medium': 'info',
+        'high': 'warning',
+        'urgent': 'danger'
+    };
+    return colors[priority] || 'secondary';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Vendor Performance - Invoice Generator{% endblock %}
+
+{% block page_title %}Vendor Performance Metrics{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url_for('vendors') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Vendors
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line"></i> Vendor Performance Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if vendor_metrics %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Vendor</th>
+                                <th>Total POs</th>
+                                <th>Total Amount</th>
+                                <th>Avg PO Value</th>
+                                <th>Delivery Performance</th>
+                                <th>Status Breakdown</th>
+                                <th>Recent Activity</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for metrics in vendor_metrics %}
+                            <tr>
+                                <td>
+                                    <div>
+                                        <strong>{{ metrics.vendor.name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ metrics.vendor.city }}, {{ metrics.vendor.state }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ metrics.total_pos }}</span>
+                                </td>
+                                <td>
+                                    <strong>₹{{ "{:,.2f}".format(metrics.total_amount|float) }}</strong>
+                                </td>
+                                <td>
+                                    ₹{{ "{:,.2f}".format(metrics.avg_amount|float) }}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1 me-2" style="height: 20px;">
+                                            <div class="progress-bar bg-{{ 'success' if metrics.delivery_performance >= 80 else 'warning' if metrics.delivery_performance >= 60 else 'danger' }}" 
+                                                 role="progressbar" 
+                                                 style="width: {{ metrics.delivery_performance }}%">
+                                                {{ "%.1f"|format(metrics.delivery_performance) }}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ metrics.on_time_deliveries }} on-time, {{ metrics.late_deliveries }} late
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for status, count in metrics.status_counts.items() %}
+                                        <span class="badge bg-{{ 'success' if status == 'completed' else 'warning' if status in ['pending', 'approved'] else 'info' if status == 'received' else 'secondary' }}">
+                                            {{ status.title() }}: {{ count }}
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ metrics.recent_pos }} POs (30 days)</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('view_vendor', vendor_id=metrics.vendor.id) }}" class="btn btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('edit_vendor', vendor_id=metrics.vendor.id) }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h5>No Vendor Data Available</h5>
+                    <p class="text-muted">Create purchase orders to see vendor performance metrics.</p>
+                    <a href="{{ url_for('create_purchase_order') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create Purchase Order
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Summary Cards -->
+{% if vendor_metrics %}
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ vendor_metrics|length }}</h4>
+                        <p class="mb-0">Active Vendors</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ vendor_metrics|sum(attribute='total_pos') }}</h4>
+                        <p class="mb-0">Total POs</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-file-invoice fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>₹{{ "{:,.0f}".format(vendor_metrics|sum(attribute='total_amount')|float) }}</h4>
+                        <p class="mb-0">Total Value</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-rupee-sign fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ "%.1f"|format((vendor_metrics|sum(attribute='delivery_performance') / vendor_metrics|length) if vendor_metrics else 0) }}%</h4>
+                        <p class="mb-0">Avg Delivery Performance</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-truck fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

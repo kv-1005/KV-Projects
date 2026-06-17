@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Orders - Invoice Generator{% endblock %}
+
+{% block page_title %}Purchase Orders{% endblock %}
+
+{% block page_actions %}
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('create_purchase_order') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Purchase Order
+        </a>
+        <a href="{{ url_for('delivery_tracking') }}" class="btn btn-info">
+            <i class="fas fa-truck"></i> Delivery Tracking
+        </a>
+        <a href="{{ url_for('bulk_operations') }}" class="btn btn-warning">
+            <i class="fas fa-tasks"></i> Bulk Operations
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">All Purchase Orders</h5>
+            </div>
+            <div class="card-body">
+                {% if purchase_orders %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>PO Number</th>
+                                <th>Vendor</th>
+                                <th>PO Date</th>
+                                <th>Delivery Date</th>
+                                <th>Total Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for po in purchase_orders %}
+                            <tr>
+                                <td>
+                                    <strong>{{ po.po_number }}</strong>
+                                    {% if po.reference_no and po.reference_no != '-' %}
+                                    <br><small class="text-muted">Ref: {{ po.reference_no }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ po.vendor.name }}</td>
+                                <td>{{ po.po_date.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ po.delivery_date.strftime('%d/%m/%Y') if po.delivery_date else '-' }}</td>
+                                <td>₹ {{ "{:,.2f}".format(po.total_amount|float) }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if po.status == 'pending' %}bg-warning
+                                        {% elif po.status == 'approved' %}bg-info
+                                        {% elif po.status == 'received' %}bg-success
+                                        {% elif po.status == 'cancelled' %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ po.status.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('view_purchase_order', po_id=po.id) }}" 
+                                           class="btn btn-sm btn-outline-primary" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('edit_purchase_order', po_id=po.id) }}" 
+                                           class="btn btn-sm btn-outline-secondary" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ url_for('purchase_order_print', po_id=po.id) }}" 
+                                           class="btn btn-sm btn-outline-success" title="Print" target="_blank">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                title="Delete" 
+                                                onclick="confirmDeletePO({{ po.id }}, '{{ po.po_number }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Purchase Orders Found</h5>
+                    <p class="text-muted">Create your first purchase order to get started.</p>
+                    <a href="{{ url_for('create_purchase_order') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create Purchase Order
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDeletePO(poId, poNumber) {
+    if (confirm(`Are you sure you want to delete Purchase Order ${poNumber}?\n\nThis action cannot be undone and will permanently remove the purchase order and all its items.`)) {
+        // Create a form and submit it
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/purchase-orders/${poId}/delete`;
+        
+        // Add CSRF token if available
+        const csrfToken = document.querySelector('meta[name=csrf-token]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken.getAttribute('content');
+            form.appendChild(csrfInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

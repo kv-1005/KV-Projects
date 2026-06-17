@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Logs - Invoice Generator{% endblock %}
+{% block page_title %}Activity Logs{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('export_activity_logs', **request.args) }}" class="btn btn-outline-success">
+    <i class="fas fa-download"></i> Export CSV
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-body">
+                <!-- Filters -->
+                <form method="GET" action="{{ url_for('activity_logs') }}" class="mb-4">
+                    <div class="row g-3">
+                        <!-- Search -->
+                        <div class="col-md-3">
+                            <label class="form-label">Search</label>
+                            <input type="text" class="form-control" name="search" 
+                                   value="{{ search }}" placeholder="Search...">
+                        </div>
+                        
+                        <!-- Action Type -->
+                        <div class="col-md-2">
+                            <label class="form-label">Action</label>
+                            <select class="form-select" name="action">
+                                <option value="">All Actions</option>
+                                {% for action in action_types %}
+                                <option value="{{ action }}" {% if action == action_filter %}selected{% endif %}>
+                                    {{ action|replace('_', ' ')|title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Entity Type -->
+                        <div class="col-md-2">
+                            <label class="form-label">Entity</label>
+                            <select class="form-select" name="entity">
+                                <option value="">All Entities</option>
+                                {% for entity in entity_types %}
+                                <option value="{{ entity }}" {% if entity == entity_filter %}selected{% endif %}>
+                                    {{ entity|replace('_', ' ')|title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- User -->
+                        <div class="col-md-2">
+                            <label class="form-label">User</label>
+                            <select class="form-select" name="user">
+                                <option value="">All Users</option>
+                                {% for username in usernames %}
+                                <option value="{{ username }}" {% if username == user_filter %}selected{% endif %}>
+                                    {{ username }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Date From -->
+                        <div class="col-md-3">
+                            <label class="form-label">Date From</label>
+                            <input type="date" class="form-control" name="date_from" 
+                                   value="{{ date_from }}">
+                        </div>
+                        
+                        <!-- Date To -->
+                        <div class="col-md-3">
+                            <label class="form-label">Date To</label>
+                            <input type="date" class="form-control" name="date_to" 
+                                   value="{{ date_to }}">
+                        </div>
+                        
+                        <!-- Buttons -->
+                        <div class="col-md-9 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                            <a href="{{ url_for('activity_logs') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Logs Table -->
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Entity</th>
+                                <th>Resource</th>
+                                <th>Description</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if logs %}
+                                {% for log in logs %}
+                                <tr>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ log.username }}</span>
+                                    </td>
+                                    <td>
+                                        {% if log.action_type == 'create' %}
+                                            <span class="badge bg-success">Create</span>
+                                        {% elif log.action_type == 'update' %}
+                                            <span class="badge bg-warning text-dark">Update</span>
+                                        {% elif log.action_type == 'delete' %}
+                                            <span class="badge bg-danger">Delete</span>
+                                        {% elif log.action_type == 'login' %}
+                                            <span class="badge bg-info">Login</span>
+                                        {% elif log.action_type == 'logout' %}
+                                            <span class="badge bg-secondary">Logout</span>
+                                        {% elif log.action_type == 'login_attempt_failed' %}
+                                            <span class="badge bg-danger">Failed Login</span>
+                                        {% elif log.action_type == 'view' %}
+                                            <span class="badge bg-primary">View</span>
+                                        {% elif log.action_type == 'export' %}
+                                            <span class="badge bg-info">Export</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ log.action_type|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">{{ log.entity_type|title }}</span>
+                                    </td>
+                                    <td>
+                                        {% if log.resource_identifier %}
+                                            <code>{{ log.resource_identifier }}</code>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.description %}
+                                            <span title="{{ log.description }}">{{ log.description[:50] }}{% if log.description|length > 50 %}...{% endif %}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.ip_address %}
+                                            <small class="text-muted">{{ log.ip_address }}</small>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-inbox fa-3x mb-3"></i><br>
+                                            No activity logs found
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if pagination.pages > 1 %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('activity_logs', page=pagination.prev_num, search=search, action=action_filter, entity=entity_filter, user=user_filter, date_from=date_from, date_to=date_to) }}">
+                                Previous
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#">Previous</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                            {% if page_num %}
+                                {% if page_num == pagination.page %}
+                                <li class="page-item active">
+                                    <a class="page-link" href="#">{{ page_num }}</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('activity_logs', page=page_num, search=search, action=action_filter, entity=entity_filter, user=user_filter, date_from=date_from, date_to=date_to) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#">...</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('activity_logs', page=pagination.next_num, search=search, action=action_filter, entity=entity_filter, user=user_filter, date_from=date_from, date_to=date_to) }}">
+                                Next
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                <!-- Statistics -->
+                <div class="mt-3 text-center text-muted">
+                    <small>
+                        Showing {{ pagination.per_page * (pagination.page - 1) + 1 }} to 
+                        {{ pagination.per_page * (pagination.page - 1) + logs|length }} of 
+                        {{ pagination.total }} entries
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-responsive {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .card {
+        margin-bottom: 2rem;
+    }
+    
+    .badge {
+        font-weight: 500;
+    }
+    
+    code {
+        background-color: #f8f9fa;
+        padding: 0.1rem 0.4rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+

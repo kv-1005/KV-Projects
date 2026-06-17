@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Order {{ po.po_number }} - Invoice Generator{% endblock %}
+
+{% block page_title %}Purchase Order {{ po.po_number }}{% endblock %}
+
+{% block page_actions %}
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('purchase_orders') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Purchase Orders
+        </a>
+        <a href="{{ url_for('edit_purchase_order', po_id=po.id) }}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+        <a href="{{ url_for('purchase_order_print', po_id=po.id) }}" class="btn btn-success" target="_blank">
+            <i class="fas fa-print"></i> Print
+        </a>
+        <a href="{{ url_for('convert_po_to_invoice', po_id=po.id) }}" class="btn btn-warning">
+            <i class="fas fa-exchange-alt"></i> Convert to Invoice
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Purchase Order Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Purchase Order Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>PO Number:</strong></td>
+                                <td>{{ po.po_number }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PO Date:</strong></td>
+                                <td>{{ po.po_date.strftime('%d/%m/%Y') }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Delivery Date:</strong></td>
+                                <td>{{ po.delivery_date.strftime('%d/%m/%Y') if po.delivery_date else '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Reference No:</strong></td>
+                                <td>{{ po.reference_no if po.reference_no and po.reference_no != '-' else '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Place of Supply:</strong></td>
+                                <td>{{ po.place_of_supply }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    <span class="badge 
+                                        {% if po.status == 'pending' %}bg-warning
+                                        {% elif po.status == 'approved' %}bg-info
+                                        {% elif po.status == 'received' %}bg-success
+                                        {% elif po.status == 'cancelled' %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ po.status.title() }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Vendor Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Vendor Name:</strong></td>
+                                <td>{{ po.vendor.name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Address:</strong></td>
+                                <td>{{ po.vendor.address }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>City:</strong></td>
+                                <td>{{ po.vendor.city }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>State:</strong></td>
+                                <td>{{ po.vendor.state }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Pincode:</strong></td>
+                                <td>{{ po.vendor.pincode }}</td>
+                            </tr>
+                            {% if po.vendor.gstin %}
+                            <tr>
+                                <td><strong>GSTIN:</strong></td>
+                                <td>{{ po.vendor.gstin }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if po.vendor.phone %}
+                            <tr>
+                                <td><strong>Phone:</strong></td>
+                                <td>{{ po.vendor.phone }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if po.vendor.email %}
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td>{{ po.vendor.email }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if po.items %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Items</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>HSN Code</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Tax Rate</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in po.items %}
+                            <tr>
+                                <td>{{ item.description }}</td>
+                                <td>{{ item.hsn_code }}</td>
+                                <td>{{ "%.2f"|format(item.quantity) }}</td>
+                                <td>₹ {{ "{:,.2f}".format(item.unit_price|float) }}</td>
+                                <td>{{ "%.1f"|format(item.tax_rate) }}%</td>
+                                <td>₹ {{ "{:,.2f}".format(item.amount|float) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <th colspan="5">Subtotal:</th>
+                                <th>₹ {{ "{:,.2f}".format(po.subtotal|float) }}</th>
+                            </tr>
+                            <tr>
+                                <td colspan="5">Taxable Amount:</td>
+                                <td>₹ {{ "{:,.2f}".format(po.subtotal|float) }}</td>
+                            </tr>
+                            {% if po.cgst_amount > 0 %}
+                            <tr>
+                                <td colspan="5">CGST:</td>
+                                <td>₹ {{ "{:,.2f}".format(po.cgst_amount|float) }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if po.sgst_amount > 0 %}
+                            <tr>
+                                <td colspan="5">SGST:</td>
+                                <td>₹ {{ "{:,.2f}".format(po.sgst_amount|float) }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if po.igst_amount > 0 %}
+                            <tr>
+                                <td colspan="5">IGST:</td>
+                                <td>₹ {{ "{:,.2f}".format(po.igst_amount|float) }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if po.shipping_charges > 0 %}
+                            <tr>
+                                <td colspan="5">Shipping Charges:</td>
+                                <td>₹ {{ "{:,.2f}".format(po.shipping_charges|float) }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr class="table-success">
+                                <th colspan="5">Total Amount:</th>
+                                <th>₹ {{ "{:,.2f}".format(po.total_amount|float) }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card mt-3">
+            <div class="card-body text-center">
+                <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No Items Added</h5>
+                <p class="text-muted">This purchase order doesn't have any items yet.</p>
+                <a href="{{ url_for('edit_purchase_order', po_id=po.id) }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Items
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Terms & Conditions</h5>
+            </div>
+            <div class="card-body">
+                {% if po.terms_conditions %}
+                <h6>Terms & Conditions:</h6>
+                <p class="small">{{ po.terms_conditions }}</p>
+                {% endif %}
+                
+                {% if po.payment_terms %}
+                <h6>Payment Terms:</h6>
+                <p class="small">{{ po.payment_terms }}</p>
+                {% endif %}
+                
+                {% if po.notes %}
+                <h6>Notes:</h6>
+                <p class="small">{{ po.notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Status Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-info btn-sm" onclick="updateStatus('approved')">
+                        <i class="fas fa-check"></i> Approve
+                    </button>
+                    <button class="btn btn-outline-success btn-sm" onclick="updateStatus('received')">
+                        <i class="fas fa-truck"></i> Mark as Received
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="updateStatus('cancelled')">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateStatus(status) {
+    if (confirm(`Are you sure you want to ${status} this purchase order?`)) {
+        fetch(`/api/purchase-orders/{{ po.id }}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: status })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error updating status');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating status');
+        });
+    }
+}
+</script>
+{% endblock %}

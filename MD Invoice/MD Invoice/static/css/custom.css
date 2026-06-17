@@ -1,0 +1,314 @@
+/* Custom CSS for Invoice Generator - iPhone 14 Pro Max Optimized */
+
+/* Global font and character visibility improvements */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 16px;
+    line-height: 1.6;
+    color: #212529;
+    text-rendering: optimizeLegibility;
+}
+
+/* Ensure all text is visible and properly rendered */
+p,
+div,
+span,
+a,
+label,
+input,
+textarea,
+select,
+button,
+td,
+th,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: inherit;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Mobile First Design - Generalized for all mobile and tablet setups under 768px */
+@media (max-width: 767.98px) {
+
+    /* iPhone / Android / Tablet specific styles */
+    .container-fluid {
+        padding: 0;
+        margin: 0;
+    }
+
+    /* Ensure full width on mobile */
+    body {
+        overflow-x: hidden;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 280px;
+        height: 100vh;
+        z-index: 1050;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+    }
+
+    .sidebar.show {
+        left: 0;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+    }
+
+    /* Mobile Navigation Toggle */
+    .mobile-nav-toggle {
+        display: block;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 1060;
+        background: #2c3e50;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 18px;
+    }
+
+    .mobile-nav-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+    }
+
+    .mobile-nav-overlay.show {
+        display: block;
+    }
+
+    /* Card adjustments */
+    .card {
+        margin-bottom: 15px;
+        border-radius: 10px;
+    }
+
+    .card-header {
+        padding: 15px;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .card-body {
+        padding: 15px;
+    }
+
+    /* Form adjustments */
+    .form-control,
+    .form-select {
+        font-size: 16px;
+        /* Prevents zoom on iOS */
+        padding: 12px 15px;
+        border-radius: 8px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Fix form layout on mobile */
+    .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .col-md-6,
+    .col-md-4,
+    .col-md-3 {
+        padding-left: 0;
+        padding-right: 0;
+        margin-bottom: 15px;
+    }
+
+    /* Button adjustments */
+    .btn {
+        padding: 12px 20px;
+        font-size: 16px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    .btn-group .btn {
+        margin-bottom: 0;
+    }
+
+    /* Table adjustments */
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .table {
+        font-size: 14px;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 12px;
+    }
+
+    /* Statistics cards */
+    .col-xl-3,
+    .col-md-6 {
+        margin-bottom: 15px;
+    }
+
+    /* Invoice items table */
+    .item-row {
+        border-bottom: 1px solid #dee2e6;
+        padding: 10px 0;
+    }
+
+    /* Print styles */
+    @media print {
+
+        .sidebar,
+        .mobile-nav-toggle,
+        .btn,
+        .page-actions {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+}
+
+/* Desktop styles */
+@media (min-width: 768px) {
+    .mobile-nav-toggle {
+        display: none;
+    }
+
+    .mobile-nav-overlay {
+        display: none !important;
+    }
+
+    .sidebar {
+        position: relative;
+        left: 0;
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+}
+
+/* Common responsive adjustments */
+@media (max-width: 768px) {
+    .d-md-flex {
+        flex-direction: column;
+    }
+
+    .me-md-2 {
+        margin-right: 0 !important;
+        margin-bottom: 10px;
+    }
+
+    .btn-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-group {
+        width: 100%;
+    }
+
+    .btn-group .btn {
+        flex: 1;
+    }
+}
+
+/* Touch-friendly improvements */
+.btn,
+.form-control,
+.form-select {
+    min-height: 44px;
+    /* iOS recommended touch target size */
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Custom animations */
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease;
+}
+
+/* Status badges */
+.badge {
+    font-size: 0.75em;
+    padding: 0.5em 0.75em;
+}
+
+/* Invoice summary table */
+.table-sm td {
+    padding: 0.5rem;
+}
+
+/* Mobile-specific invoice view */
+@media (max-width: 428px) {
+    .invoice-details {
+        font-size: 14px;
+    }
+
+    .invoice-items .table {
+        font-size: 12px;
+    }
+
+    .invoice-summary {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        border-top: 2px solid #dee2e6;
+        z-index: 10;
+    }
+}

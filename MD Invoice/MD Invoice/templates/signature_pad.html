@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Draw Signature - InvoiceGen{% endblock %}
+
+{% block page_title %}Draw Digital Signature{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('upload_signature') }}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> Back to Signatures
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="signature-pad-container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="glass-card shadow-lg p-4 mb-4">
+                <div class="text-center mb-4">
+                    <h3 class="text-gradient">Create Your Signature</h3>
+                    <p class="text-muted">Use your mouse, trackpad, or touch screen to draw your signature below.</p>
+                </div>
+
+                <div class="signature-canvas-wrapper mb-4">
+                    <canvas id="signature-pad" class="signature-pad-canvas"></canvas>
+                    <div class="canvas-instructions">
+                        <span><i class="fas fa-pen-nib"></i> Draw Here</span>
+                    </div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label for="signature_name" class="form-label fw-bold">Signature Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fas fa-tag text-primary"></i>
+                        </span>
+                        <input type="text" id="signature_name" class="form-control border-start-0 ps-0"
+                            placeholder="e.g. Official Signature, My Sign" required>
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input" type="checkbox" id="is_default">
+                    <label class="form-check-label fw-bold" for="is_default">Set as default signature</label>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <button type="button" id="clear-btn" class="btn btn-outline-danger px-4">
+                        <i class="fas fa-eraser"></i> Clear
+                    </button>
+                    <button type="button" id="save-btn" class="btn btn-primary px-5 py-2 shadow">
+                        <i class="fas fa-save"></i> Save Signature
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .signature-pad-container {
+        padding: 20px 0;
+        position: relative;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .text-gradient {
+        background: linear-gradient(45deg, #1f4e79, #3498db);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
+    }
+
+    .signature-canvas-wrapper {
+        position: relative;
+        width: 100%;
+        height: 300px;
+        background: #fff;
+        border: 2px dashed #dee2e6;
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: crosshair;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .signature-pad-canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+    }
+
+    .canvas-instructions {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #adb5bd;
+        font-size: 1.2rem;
+        pointer-events: none;
+        opacity: 0.5;
+        transition: opacity 0.3s ease;
+    }
+
+    .signature-canvas-wrapper:active .canvas-instructions,
+    .signature-canvas-wrapper.has-content .canvas-instructions {
+        opacity: 0;
+    }
+
+    .input-group-text {
+        color: #3498db;
+    }
+
+    .form-control:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.1);
+    }
+
+    .btn-primary {
+        background: linear-gradient(45deg, #1f4e79, #3498db);
+        border: none;
+        font-weight: 600;
+        border-radius: 10px;
+    }
+
+    .btn-outline-danger {
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    /* Animation */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .glass-card {
+        animation: fadeIn 0.6s ease-out forwards;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const canvas = document.getElementById('signature-pad');
+        const wrapper = canvas.parentElement;
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgba(255, 255, 255, 0)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = wrapper.offsetWidth * ratio;
+            canvas.height = wrapper.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            signaturePad.clear();
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        const clearBtn = document.getElementById('clear-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const nameInput = document.getElementById('signature_name');
+        const defaultSwitch = document.getElementById('is_default');
+
+        signaturePad.addEventListener("beginStroke", () => {
+            wrapper.classList.add('has-content');
+        });
+
+        clearBtn.addEventListener('click', function () {
+            signaturePad.clear();
+            wrapper.classList.remove('has-content');
+        });
+
+        saveBtn.addEventListener('click', function () {
+            if (signaturePad.isEmpty()) {
+                alert("Please draw your signature first.");
+                return;
+            }
+
+            const signatureName = nameInput.value.trim();
+            if (!signatureName) {
+                alert("Please enter a name for this signature.");
+                nameInput.focus();
+                return;
+            }
+
+            const signatureData = signaturePad.toDataURL('image/png');
+            const isDefault = defaultSwitch.checked;
+
+            // Show loading state
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+
+            fetch('/api/signature/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    signature_name: signatureName,
+                    signature_data: signatureData,
+                    is_default: isDefault
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = "{{ url_for('upload_signature') }}";
+                    } else {
+                        alert("Error saving signature: " + data.error);
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Signature';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("An unexpected error occurred.");
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Signature';
+                });
+        });
+    });
+</script>
+{% endblock %}

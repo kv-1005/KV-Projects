@@ -1,0 +1,634 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Download Invoices - Invoice Generator{% endblock %}
+
+{% block page_title %}Bulk Download Invoices{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url_for('invoices') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Invoices
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-download"></i> Bulk Download Invoices
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Bulk Download:</strong> Download multiple invoices as PDFs in a ZIP file based on your selected criteria.
+                </div>
+                
+                <form id="bulkDownloadForm">
+                    <!-- Filter Type Selection -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Select Download Period</label>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="filter_type" id="filter_month" value="month" checked>
+                                        <label class="form-check-label" for="filter_month">
+                                            <i class="fas fa-calendar-alt"></i> By Month
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="filter_type" id="filter_quarter" value="quarter">
+                                        <label class="form-check-label" for="filter_quarter">
+                                            <i class="fas fa-calendar-week"></i> By Quarter
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="filter_type" id="filter_year" value="year">
+                                        <label class="form-check-label" for="filter_year">
+                                            <i class="fas fa-calendar"></i> By Year
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="filter_type" id="filter_custom" value="custom">
+                                        <label class="form-check-label" for="filter_custom">
+                                            <i class="fas fa-calendar-range"></i> Custom Range
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="filter_type" id="filter_all" value="all">
+                                        <label class="form-check-label" for="filter_all">
+                                            <i class="fas fa-download"></i> All Invoices
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Month Selection -->
+                    <div class="row mb-4" id="monthSelection">
+                        <div class="col-md-6">
+                            <label for="year" class="form-label">Year</label>
+                            <select class="form-select" id="year" name="year">
+                                {% for year in range(2020, 2030) %}
+                                <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="month" class="form-label">Month</label>
+                            <select class="form-select" id="month" name="month">
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9" selected>September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Quarter Selection -->
+                    <div class="row mb-4" id="quarterSelection" style="display: none;">
+                        <div class="col-md-6">
+                            <label for="quarter_year" class="form-label">Year</label>
+                            <select class="form-select" id="quarter_year" name="quarter_year">
+                                {% for year in range(2020, 2030) %}
+                                <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="quarter" class="form-label">Quarter</label>
+                            <select class="form-select" id="quarter" name="quarter">
+                                <option value="1">Q1 (Jan-Mar)</option>
+                                <option value="2">Q2 (Apr-Jun)</option>
+                                <option value="3" selected>Q3 (Jul-Sep)</option>
+                                <option value="4">Q4 (Oct-Dec)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Year Selection -->
+                    <div class="row mb-4" id="yearSelection" style="display: none;">
+                        <div class="col-md-6">
+                            <label for="year_only" class="form-label">Year</label>
+                            <select class="form-select" id="year_only" name="year_only">
+                                {% for year in range(2020, 2030) %}
+                                <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Custom Date Range -->
+                    <div class="row mb-4" id="customSelection" style="display: none;">
+                        <div class="col-md-6">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date">
+                        </div>
+                    </div>
+                    
+                    <!-- All Invoices Selection -->
+                    <div class="row mb-4" id="allSelection" style="display: none;">
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Warning:</strong> This will download ALL invoices in the system. This may take several minutes and result in a large file.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Invoice Preview Section -->
+                    <div class="row mb-4" id="invoicePreview" style="display: none;">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-list"></i> Invoice Preview
+                                        <span class="badge bg-primary ms-2" id="invoiceCount">0</span>
+                                    </h6>
+                                    <div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllBtn">
+                                            <i class="fas fa-check-square"></i> Select All
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllBtn">
+                                            <i class="fas fa-square"></i> Deselect All
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                        <table class="table table-sm table-hover">
+                                            <thead class="table-light sticky-top">
+                                                <tr>
+                                                    <th width="50">
+                                                        <input type="checkbox" id="selectAllCheckbox" class="form-check-input">
+                                                    </th>
+                                                    <th>Invoice No.</th>
+                                                    <th>Date</th>
+                                                    <th>Customer</th>
+                                                    <th>Amount</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="invoicePreviewTable">
+                                                <!-- Invoice rows will be populated here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="mt-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle"></i>
+                                            Selected invoices will be downloaded as PDF files in a ZIP archive.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Download Button -->
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary btn-lg w-100" id="downloadBtn" disabled>
+                                <i class="fas fa-download me-2"></i> Download Selected Invoices
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> Download Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <h6><i class="fas fa-file-archive"></i> ZIP File Format</h6>
+                    <p class="mb-0">All invoices will be downloaded as a ZIP file containing individual PDF files.</p>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-clock"></i> Processing Time</h6>
+                    <p class="mb-0">Large downloads may take a few minutes to process. Please be patient.</p>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-file-pdf"></i> File Naming</h6>
+                    <p class="mb-0">Files are named as: <code>Invoice_[Number]_[Date].pdf</code></p>
+                </div>
+                
+                <div class="alert alert-danger">
+                    <h6><i class="fas fa-exclamation-triangle"></i> All Invoices Warning</h6>
+                    <p class="mb-0">Downloading all invoices may take several minutes and create a very large ZIP file.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar"></i> Quick Stats
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h4 class="text-primary mb-0" id="totalInvoices">-</h4>
+                            <small class="text-muted">Total Invoices</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success mb-0" id="totalAmount">-</h4>
+                        <small class="text-muted">Total Amount</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5>Generating Download...</h5>
+                <p class="text-muted">Please wait while we prepare your invoice files.</p>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = currentDate.getFullYear();
+    
+    // Set current month and year as default
+    document.getElementById('month').value = currentMonth;
+    document.getElementById('year').value = currentYear;
+    document.getElementById('quarter_year').value = currentYear;
+    document.getElementById('year_only').value = currentYear;
+    
+    // Set default date range for custom selection
+    const firstDay = new Date(currentYear, currentMonth - 1, 1);
+    const lastDay = new Date(currentYear, currentMonth, 0);
+    document.getElementById('start_date').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('end_date').value = lastDay.toISOString().split('T')[0];
+    
+    // Trigger initial preview since month filter is selected by default
+    setTimeout(previewInvoices, 1000);
+    
+    // Filter type change handler
+    document.querySelectorAll('input[name="filter_type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const filterType = this.value;
+            
+            // Hide all selections
+            document.getElementById('monthSelection').style.display = 'none';
+            document.getElementById('quarterSelection').style.display = 'none';
+            document.getElementById('yearSelection').style.display = 'none';
+            document.getElementById('customSelection').style.display = 'none';
+            document.getElementById('allSelection').style.display = 'none';
+            document.getElementById('invoicePreview').style.display = 'none';
+            
+            // Show relevant selection
+            if (filterType === 'month') {
+                document.getElementById('monthSelection').style.display = 'block';
+            } else if (filterType === 'quarter') {
+                document.getElementById('quarterSelection').style.display = 'block';
+            } else if (filterType === 'year') {
+                document.getElementById('yearSelection').style.display = 'block';
+            } else if (filterType === 'custom') {
+                document.getElementById('customSelection').style.display = 'block';
+            } else if (filterType === 'all') {
+                document.getElementById('allSelection').style.display = 'block';
+            }
+            
+            // Preview invoices after a short delay
+            setTimeout(previewInvoices, 500);
+        });
+    });
+    
+    // Add event listeners for filter value changes
+    document.getElementById('year').addEventListener('change', previewInvoices);
+    document.getElementById('month').addEventListener('change', previewInvoices);
+    document.getElementById('quarter_year').addEventListener('change', previewInvoices);
+    document.getElementById('quarter').addEventListener('change', previewInvoices);
+    document.getElementById('year_only').addEventListener('change', previewInvoices);
+    document.getElementById('start_date').addEventListener('change', previewInvoices);
+    document.getElementById('end_date').addEventListener('change', previewInvoices);
+    
+    // Preview invoices function
+    function previewInvoices() {
+        const formData = new FormData(document.getElementById('bulkDownloadForm'));
+        const filterType = formData.get('filter_type');
+        
+        if (!filterType) {
+            document.getElementById('invoicePreview').style.display = 'none';
+            return;
+        }
+        
+        // Show loading state
+        const previewSection = document.getElementById('invoicePreview');
+        previewSection.style.display = 'block';
+        const previewTable = document.getElementById('invoicePreviewTable');
+        previewTable.innerHTML = '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading invoices...</td></tr>';
+        document.getElementById('invoiceCount').textContent = '...';
+        
+        // Prepare request data
+        const requestData = {
+            filter_type: filterType,
+            preview_only: true
+        };
+        
+        // Add filter-specific data
+        if (filterType === 'month') {
+            requestData.year = parseInt(formData.get('year'));
+            requestData.month = parseInt(formData.get('month'));
+            console.log('Month filter:', requestData.year, requestData.month);
+        } else if (filterType === 'quarter') {
+            requestData.year = parseInt(formData.get('quarter_year'));
+            requestData.quarter = parseInt(formData.get('quarter'));
+            console.log('Quarter filter:', requestData.year, requestData.quarter);
+        } else if (filterType === 'year') {
+            requestData.year = parseInt(formData.get('year_only'));
+            console.log('Year filter:', requestData.year);
+        } else if (filterType === 'custom') {
+            requestData.start_date = formData.get('start_date');
+            requestData.end_date = formData.get('end_date');
+            console.log('Custom filter:', requestData.start_date, requestData.end_date);
+        } else if (filterType === 'all') {
+            console.log('All filter selected');
+        }
+        
+        // Make API request for preview
+        fetch('/api/invoices/bulk-download', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('API Response:', data);
+            if (data && data.success) {
+                if (data.invoices && data.invoices.length > 0) {
+                    displayInvoicePreview(data.invoices);
+                } else {
+                    document.getElementById('invoicePreview').style.display = 'none';
+                    showAlert('info', 'No invoices found for the selected criteria.');
+                }
+            } else {
+                document.getElementById('invoicePreview').style.display = 'none';
+                showAlert('warning', 'Error: ' + (data ? data.error : 'No response from server'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('invoicePreview').style.display = 'none';
+            showAlert('danger', 'Network error: Unable to fetch invoice data');
+        });
+    }
+    
+    // Display invoice preview
+    function displayInvoicePreview(invoices) {
+        const previewTable = document.getElementById('invoicePreviewTable');
+        const invoiceCount = document.getElementById('invoiceCount');
+        
+        if (invoices.length === 0) {
+            document.getElementById('invoicePreview').style.display = 'none';
+            return;
+        }
+        
+        // Update count
+        invoiceCount.textContent = invoices.length;
+        
+        // Clear existing rows
+        previewTable.innerHTML = '';
+        
+        // Add invoice rows
+        invoices.forEach(invoice => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <input type="checkbox" class="form-check-input invoice-checkbox" 
+                           value="${invoice.id}" checked>
+                </td>
+                <td>${invoice.invoice_number}</td>
+                <td>${new Date(invoice.invoice_date).toLocaleDateString()}</td>
+                <td>${invoice.customer_name || 'N/A'}</td>
+                <td>₹${parseFloat(invoice.total_amount).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                <td>
+                    <span class="badge bg-${invoice.status === 'paid' ? 'success' : 'warning'}">
+                        ${invoice.status}
+                    </span>
+                </td>
+            `;
+            previewTable.appendChild(row);
+        });
+        
+        // Show preview section
+        document.getElementById('invoicePreview').style.display = 'block';
+        
+        // Update select all checkbox
+        updateSelectAllCheckbox();
+        
+        // Enable download button
+        document.getElementById('downloadBtn').disabled = false;
+    }
+    
+    // Update select all checkbox state
+    function updateSelectAllCheckbox() {
+        const checkboxes = document.querySelectorAll('.invoice-checkbox');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        
+        if (checkboxes.length === 0) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = false;
+            return;
+        }
+        
+        const checkedCount = document.querySelectorAll('.invoice-checkbox:checked').length;
+        
+        if (checkedCount === 0) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = false;
+        } else if (checkedCount === checkboxes.length) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = true;
+        } else {
+            selectAllCheckbox.indeterminate = true;
+            selectAllCheckbox.checked = false;
+        }
+        
+        // Update download button state
+        document.getElementById('downloadBtn').disabled = checkedCount === 0;
+    }
+    
+    // Select all functionality
+    document.getElementById('selectAllBtn').addEventListener('click', function() {
+        document.querySelectorAll('.invoice-checkbox').forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateSelectAllCheckbox();
+    });
+    
+    document.getElementById('deselectAllBtn').addEventListener('click', function() {
+        document.querySelectorAll('.invoice-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateSelectAllCheckbox();
+    });
+    
+    document.getElementById('selectAllCheckbox').addEventListener('change', function() {
+        const isChecked = this.checked;
+        document.querySelectorAll('.invoice-checkbox').forEach(checkbox => {
+            checkbox.checked = isChecked;
+        });
+        updateSelectAllCheckbox();
+    });
+    
+    // Individual checkbox change handler
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('invoice-checkbox')) {
+            updateSelectAllCheckbox();
+        }
+    });
+    
+    // Show alert function
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.querySelector('.container-fluid');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+    
+    // Form submission
+    document.getElementById('bulkDownloadForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Get selected invoice IDs
+        const selectedInvoices = Array.from(document.querySelectorAll('.invoice-checkbox:checked'))
+            .map(checkbox => parseInt(checkbox.value));
+        
+        if (selectedInvoices.length === 0) {
+            showAlert('warning', 'Please select at least one invoice to download');
+            return;
+        }
+        
+        // Show loading modal
+        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        loadingModal.show();
+        
+        // Disable download button
+        document.getElementById('downloadBtn').disabled = true;
+        
+        // Make API request with selected invoice IDs
+        fetch('/api/invoices/bulk-download', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                selected_invoice_ids: selectedInvoices
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            loadingModal.hide();
+            document.getElementById('downloadBtn').disabled = false;
+            
+            if (data.success) {
+                // Download the ZIP file
+                downloadZipFile(data.zip_data, data.filename);
+                
+                // Show success message
+                showAlert('success', `Successfully downloaded ${selectedInvoices.length} invoice(s) as ${data.filename}`);
+            } else {
+                showAlert('danger', 'Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            loadingModal.hide();
+            document.getElementById('downloadBtn').disabled = false;
+            console.error('Error:', error);
+            showAlert('danger', 'An error occurred while generating the download.');
+        });
+    });
+});
+
+function downloadZipFile(base64Data, filename) {
+    // Convert base64 to blob
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], {type: 'application/zip'});
+    
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}
