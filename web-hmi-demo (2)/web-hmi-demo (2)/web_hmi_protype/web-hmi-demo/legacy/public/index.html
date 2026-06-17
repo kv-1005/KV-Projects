@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANE-TECH | Professional HMI</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <header>
+    <div class="logo">CRANE<span style="color:white">TECH</span> V1.0</div>
+    <div class="system-status">
+      <div id="status-text" style="font-size: 0.9rem; font-weight: bold;">SYSTEM READY</div>
+      <div id="system-status-indicator" class="status-indicator status-safe">Safe</div>
+      <div id="clock" style="font-family: monospace; color: var(--text-dim);">00:00:00</div>
+    </div>
+  </header>
+
+  <main>
+    <nav>
+      <div class="nav-item active" data-screen="dashboard">
+        <i class="fa-solid fa-gauge-high"></i>
+        <span>DASHBOARD</span>
+      </div>
+      <div class="nav-item" data-screen="ops">
+        <i class="fa-solid fa-gamepad"></i>
+        <span>OPS</span>
+      </div>
+      <div class="nav-item" data-screen="engine">
+        <i class="fa-solid fa-engine"></i>
+        <i class="fa-solid fa-gears"></i>
+        <span>DIAG</span>
+      </div>
+      <div class="nav-item" data-screen="alarms">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>ALARMS</span>
+      </div>
+      <div class="nav-item" data-screen="settings">
+        <i class="fa-solid fa-sliders"></i>
+        <span>SETUP</span>
+      </div>
+    </nav>
+
+    <div id="screen-container">
+      
+      <!-- DASHBOARD SCREEN -->
+      <section id="screen-dashboard" class="screen active">
+        <div class="dashboard-grid">
+          <div class="card" style="grid-column: span 2;">
+            <div class="card-title">Crane Visualization</div>
+            <div class="crane-viz" id="viz-container">
+                <canvas id="crane-canvas"></canvas>
+            </div>
+          </div>
+          
+          <div class="card">
+            <div class="card-title">Current Load</div>
+            <div class="value-display">
+              <span class="big-value" id="val-load">0.0</span>
+              <span class="unit">Tons</span>
+            </div>
+            <div style="margin-top:20px; color: var(--text-dim); font-size: 0.8rem;">Max Capacity: 25.0 T</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Slew Angle</div>
+            <div class="value-display">
+              <span class="big-value" id="val-angle">0</span>
+              <span class="unit">°</span>
+            </div>
+            <canvas id="angle-canvas" width="100" height="100" style="position:absolute; right:20px; top:40px;"></canvas>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Hook Height</div>
+            <div class="value-display">
+              <span class="big-value" id="val-height">0.0</span>
+              <span class="unit">m</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Trolley Radius</div>
+            <div class="value-display">
+              <span class="big-value" id="val-radius">0.0</span>
+              <span class="unit">m</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Wind Speed</div>
+            <div class="value-display">
+              <span class="big-value" id="val-wind">0.0</span>
+              <span class="unit">km/h</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- OPS SCREEN -->
+      <section id="screen-ops" class="screen">
+        <h2>Crane Operations Control</h2>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">Manual override and target positioning</p>
+        
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-title">Set Target Height</div>
+            <input type="range" min="0" max="50" step="1" id="target-height-range" style="width:100%" oninput="document.getElementById('target-height-val').innerText = this.value">
+            <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                <span id="target-height-val">25</span>m
+                <button class="btn" onclick="sendCommand('height', document.getElementById('target-height-range').value)">SET TARGET</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Set Target Radius</div>
+            <input type="range" min="5" max="60" step="1" id="target-radius-range" style="width:100%" oninput="document.getElementById('target-radius-val').innerText = this.value">
+            <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                <span id="target-radius-val">30</span>m
+                <button class="btn" onclick="sendCommand('radius', document.getElementById('target-radius-range').value)">SET TARGET</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Simulation Tools</div>
+            <button class="btn btn-outline" style="width:100%; margin-bottom:10px;" onclick="sendCommand('alarm')">Toggle Test Alarm</button>
+            <button class="btn btn-outline" style="width:100%" onclick="alert('Maintenance mode requested')">Request Maintenance</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- DIAGNOSTICS SCREEN -->
+      <section id="screen-engine" class="screen">
+        <h2>System Diagnostics</h2>
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-title">Engine Temperature</div>
+            <div class="value-display">
+              <span class="big-value" id="val-temp">0.0</span>
+              <span class="unit">°C</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Hydraulic Pressure</div>
+            <div class="value-display">
+              <span class="big-value" id="val-pressure">0</span>
+              <span class="unit">Bar</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ALARMS SCREEN -->
+      <section id="screen-alarms" class="screen">
+        <h2>Active Alarms & Events</h2>
+        <div id="alarm-list" class="alarm-list" style="margin-top: 20px;">
+            <!-- Alarms injected here -->
+        </div>
+      </section>
+
+      <!-- SETTINGS SCREEN -->
+      <section id="screen-settings" class="screen">
+        <h2>System Configuration</h2>
+        <div class="card" style="margin-top:20px;">
+            <div class="card-title">Communication Settings</div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <label>PLC IP Address: <input type="text" value="192.168.1.10" style="background:#000; color:white; border:1px solid #333; padding:5px;"></label>
+                <label>Port: <input type="text" value="502 (Modbus TCP)" style="background:#000; color:white; border:1px solid #333; padding:5px;" disabled></label>
+                <button class="btn" style="width:fit-content" disabled>CONNECT TO REAL PLC</button>
+                <p style="font-size: 0.8rem; color: var(--accent-amber);">Currently running in Simulator Mode</p>
+            </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    // Simple Clock
+    setInterval(() => {
+        document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+    }, 1000);
+  </script>
+</body>
+</html>

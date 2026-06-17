@@ -1,0 +1,16 @@
+{
+    "name": "s7-1200-backend",
+    "version": "1.0.0",
+    "description": "Modbus TCP ↔ WebSocket bridge for Siemens S7-1200 PLC servo control",
+    "main": "server.js",
+    "type": "commonjs",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "node --watch server.js"
+    },
+    "dependencies": {
+        "jsmodbus": "^4.0.10",
+        "modbus-serial": "^8.0.16",
+        "ws": "^8.18.0"
+    }
+}

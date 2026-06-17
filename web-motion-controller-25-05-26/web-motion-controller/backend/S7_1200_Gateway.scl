@@ -1,0 +1,57 @@
+// ═══════════════════════════════════════════════════════════════════
+// S7-1200 Gateway Code (Modbus TCP Proxy)
+// Architecture: Node.js ↔ (Modbus) ↔ S7-1200 ↔ (Modbus) ↔ MP2300S
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── SECTION 1: Modbus Gateway Data Block (DB10) ───────────────
+// Create DB10 "ModbusGatewayDB" with NON-OPTIMIZED access.
+//
+// Array[0..19] of Word (Maps to HR 100-119 for MP2300S Status)
+// Array[0..19] of Word (Maps to HR 200-219 for MP2300S Commands)
+
+// ─── SECTION 2: MB_SERVER (Listens for Node.js) ────────────────
+// Runs on Port 502. Node.js writes commands to HR 200 area, 
+// reads status from HR 100 area.
+//
+// "MB_SERVER_DB"(
+//     Disconnect := FALSE,
+//     MB_HOLD_REG := "ModbusGatewayDB"
+// );
+
+// ─── SECTION 3: MB_CLIENT (Reads Status from MP2300S) ──────────
+// S7-1200 acts as a client to read MP2300S status (HR 100+)
+// IP Address: 192.168.1.11 (MP2300S IP), Port: 502
+//
+// "MB_CLIENT_READ_DB"(
+//     REQ := #clock_10Hz,        // Trigger read 10 times a second
+//     Disconnect := FALSE,
+//     MB_MODE := 0,              // 0 = Read Holding Registers
+//     MB_DATA_ADDR := 40101,     // Read from HR 100
+//     MB_DATA_LEN := 10,         // Read 10 words
+//     MB_DATA_PTR := "ModbusGatewayDB".StatusArray
+// );
+
+// ─── SECTION 4: MB_CLIENT (Writes Commands to MP2300S) ─────────
+// S7-1200 takes commands from Node.js and forwards to MP2300S
+//
+// "MB_CLIENT_WRITE_DB"(
+//     REQ := #clock_10Hz,        // Trigger write 10 times a second
+//     Disconnect := FALSE,
+//     MB_MODE := 1,              // 1 = Write Holding Registers
+//     MB_DATA_ADDR := 40201,     // Write to HR 200
+//     MB_DATA_LEN := 10,         // Write 10 words
+//     MB_DATA_PTR := "ModbusGatewayDB".CommandArray
+// );
+
+// ─── INSTRUCTIONS FOR TIA PORTAL ───────────────────────────────
+// 1. Create DB10 "ModbusGatewayDB" (Non-optimized)
+// 2. Add MB_SERVER to OB1
+// 3. Add two MB_CLIENT blocks to OB1 (one for Read, one for Write)
+// 4. Configure MP2300S 218IFA card to accept Modbus TCP on Port 502
+// 5. Connect the hardware using a D-Link DES-1008C switch:
+//    - Port 1: Connected to the Node.js Host PC
+//    - Port 2: Connected to the Siemens S7-1200 PLC
+//    - Port 3: Connected to the MP2300S Motion Controller
+//    Note: Since the Siemens S7-1200 has only one built-in Ethernet port, the switch is required to bridge the network.
+
+

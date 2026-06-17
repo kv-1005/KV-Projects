@@ -1,0 +1,79 @@
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.mb-4 {
+    margin-bottom: 16px;
+}
+
+.dashboard-state-card {}
+
+.ds-state-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.badge-xl {
+    font-size: 0.78rem;
+    padding: 6px 14px;
+}
+
+.ds-kv {
+    display: flex;
+    gap: 8px;
+    font-size: 0.75rem;
+    padding: 2px 0;
+}
+
+.ds-kv span:first-child {
+    color: var(--text-muted);
+    min-width: 50px;
+}
+
+.ds-kv span:last-child {
+    font-family: var(--font-mono);
+    font-weight: 600;
+}
+
+.ds-axis-section {
+    margin-top: 8px;
+}
+
+.ds-axis-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.ds-axis-pos {
+    margin-top: 6px;
+}
+
+.ds-health-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.ds-health-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.ds-health-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    margin-bottom: 3px;
+}
+
+.ds-health-val {
+    font-size: 1rem;
+    font-weight: 600;
+}

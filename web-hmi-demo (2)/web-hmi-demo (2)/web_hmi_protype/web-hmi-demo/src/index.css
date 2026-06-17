@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --bg-industrial: #020408;
+    --bg-panel: #0a0d14;
+    --bg-panel-highlight: #121826;
+    --accent-cyan: #00f2ff;
+    --accent-green: #00ff85;
+    --accent-amber: #ffb800;
+    --accent-red: #ff3c3c;
+    --text-primary: #f8fafc;
+    --text-secondary: #64748b;
+    --border-subtle: rgba(255, 255, 255, 0.05);
+}
+
+@layer base {
+    body {
+        @apply bg-[var(--bg-industrial)] text-[var(--text-primary)] overflow-hidden;
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+}
+
+@layer components {
+    .industrial-card {
+        @apply bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-xl relative overflow-hidden transition-all duration-300;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .industrial-card:hover {
+        @apply border-white/20 bg-[var(--bg-panel-highlight)];
+    }
+
+    .glass-header {
+        @apply bg-[#0a0d14]/80 backdrop-blur-xl border-b border-white/5;
+    }
+}
+
+/* Custom Industrial Grid Background */
+.bg-grid-slate {
+    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.03) 1px, transparent 0);
+    background-size: 24px 24px;
+}
+
+/* Scrollbar Utility */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-industrial);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #222;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #333;
+}
+
+@keyframes spin-slow {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin-slow {
+    animation: spin-slow 8s linear infinite;
+}

@@ -1,0 +1,36 @@
+{
+    "name": "crane-hmi-industrial",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "server": "node server.js"
+    },
+    "dependencies": {
+        "@react-three/drei": "^9.92.0",
+        "@react-three/fiber": "^8.15.0",
+        "clsx": "^2.1.0",
+        "express": "^4.19.2",
+        "lucide-react": "^0.363.0",
+        "nodes7": "^0.3.13",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "tailwind-merge": "^2.2.2",
+        "three": "^0.160.0",
+        "ws": "^8.16.0",
+        "zustand": "^4.5.2"
+    },
+    "devDependencies": {
+        "@types/react": "^18.2.66",
+        "@types/react-dom": "^18.2.22",
+        "@types/ws": "^8.5.10",
+        "@vitejs/plugin-react": "^4.2.1",
+        "autoprefixer": "^10.4.18",
+        "tailwindcss": "^3.4.1",
+        "typescript": "^5.2.2",
+        "vite": "^5.2.0"
+    }
+}

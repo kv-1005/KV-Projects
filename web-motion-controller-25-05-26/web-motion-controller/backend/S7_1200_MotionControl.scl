@@ -1,0 +1,177 @@
+// ═══════════════════════════════════════════════════════════════════
+// S7-1200 SCL Reference Code for Web Motion Control Dashboard
+// Controller: Siemens SIMATIC S7-1200 (CPU 1214C or similar)
+// Servo Drive: Yaskawa SGD7S-120A10A
+// Motor: Yaskawa SGM7G-09AFA6C (900W)
+//
+// IMPORTANT: This is reference code. Adapt to your TIA Portal project.
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── SECTION 1: Data Block for Modbus Communication ──────────────
+// Create a DB (e.g., DB10 "ModbusData") with NON-OPTIMIZED access.
+// In TIA Portal: Right-click DB → Properties → Uncheck "Optimized block access"
+//
+// DB10 Structure (maps to Modbus Holding Registers):
+//   Offset 200 (HR 100): StatusWord        : Word    // Bit-packed axis status
+//   Offset 202 (HR 101): PositionHI        : Word    // Actual position high word
+//   Offset 204 (HR 102): PositionLO        : Word    // Actual position low word  
+//   Offset 206 (HR 103): ActualVelocity    : Int     // mm/s signed
+//   Offset 208 (HR 104): TorqueX10         : Word    // Torque % × 10
+//   Offset 210 (HR 105): AlarmCode         : Word    // Active alarm (0=none)
+//   Offset 212 (HR 106): DriveTempX10      : Word    // Drive temp °C × 10
+//   Offset 214 (HR 107): BusVoltage        : Word    // DC bus voltage (V)
+//   Offset 400 (HR 200): CommandWord       : Word    // Bit-packed commands
+//   Offset 402 (HR 201): TargetPosHI       : Word    // Target position high
+//   Offset 404 (HR 202): TargetPosLO       : Word    // Target position low
+//   Offset 406 (HR 203): TargetVelocity    : Word    // Move velocity mm/s
+
+
+// ─── SECTION 2: MB_SERVER Setup (Call in OB1 or a cyclic OB) ─────
+// This allows the Node.js backend to read/write the ModbusData DB.
+//
+// "MB_SERVER_DB"(
+//     Disconnect := FALSE,
+//     NDR => #newDataReceived,
+//     DR => #dataRead,
+//     Error => #mbError,
+//     Status => #mbStatus,
+//     MB_HOLD_REG := "ModbusData"       // Your non-optimized DB
+// );
+
+
+// ─── SECTION 3: Command Word Bit Decoding ────────────────────────
+// Read the command word written by the web dashboard
+//
+// #cmdWord := "ModbusData".CommandWord;   // HR 200 = DBW400
+//
+// #cmd_ServoOn     := #cmdWord.%X0;       // Bit 0: Servo ON request
+// #cmd_ServoOff    := #cmdWord.%X1;       // Bit 1: Servo OFF request
+// #cmd_StartHome   := #cmdWord.%X2;       // Bit 2: Start homing
+// #cmd_AbsMove     := #cmdWord.%X3;       // Bit 3: Execute absolute move
+// #cmd_JogFwd      := #cmdWord.%X4;       // Bit 4: Jog forward
+// #cmd_JogRev      := #cmdWord.%X5;       // Bit 5: Jog reverse
+// #cmd_Stop        := #cmdWord.%X6;       // Bit 6: Immediate stop
+// #cmd_ResetAlarm  := #cmdWord.%X7;       // Bit 7: Reset alarms
+
+
+// ─── SECTION 4: MC_Power — Enable/Disable Servo ─────────────────
+//
+// "MC_Power_DB"(
+//     Axis := "Axis_1",
+//     Enable := #cmd_ServoOn AND NOT #cmd_ServoOff,
+//     StartMode := 1,                    // 1 = direct enable
+//     StopMode := 0,                     // 0 = emergency stop on disable
+//     Status => #axis_Enabled,
+//     Busy => #power_Busy,
+//     Error => #power_Error
+// );
+
+
+// ─── SECTION 5: MC_Jog — Jog Forward / Backward ─────────────────
+// THIS IS YOUR FIRST TEST! Start with this block.
+// Press and hold Jog FWD or Jog REV on the web dashboard.
+//
+// "MC_Jog_DB"(
+//     Axis := "Axis_1",
+//     JogForward := #cmd_JogFwd,         // Bit 4 from web dashboard
+//     JogBackward := #cmd_JogRev,        // Bit 5 from web dashboard
+//     Velocity := 10.0,                  // Start SLOW! 10 mm/s for first test
+//     Acceleration := 50.0,              // mm/s²
+//     Deceleration := 50.0,              // mm/s²
+//     Busy => #jog_Busy,
+//     Error => #jog_Error
+// );
+//
+// SAFETY TIP: Start with Velocity := 10.0 for your first test.
+// Once confirmed working, gradually increase to 50.0 mm/s.
+
+
+// ─── SECTION 6: MC_MoveAbsolute — Position Move ─────────────────
+// Add this AFTER jog forward/backward is working.
+//
+// // Combine target position from two 16-bit words into REAL
+// #targetPosDWord := SHL(DWORD_TO_DINT(WORD_TO_DWORD("ModbusData".TargetPosHI)), 16)
+//                   OR WORD_TO_DINT(WORD_TO_DWORD("ModbusData".TargetPosLO));
+// #targetPosMM := DINT_TO_REAL(#targetPosDWord) * 0.001;   // Convert to mm
+//
+// "MC_MoveAbsolute_DB"(
+//     Axis := "Axis_1",
+//     Execute := #cmd_AbsMove,           // Rising edge triggers move
+//     Position := #targetPosMM,          // mm
+//     Velocity := INT_TO_REAL("ModbusData".TargetVelocity),
+//     Acceleration := 100.0,
+//     Deceleration := 100.0,
+//     Direction := 1,                    // 1 = positive, shortest way
+//     Done => #move_Done,
+//     Busy => #move_Busy,
+//     Error => #move_Error
+// );
+
+
+// ─── SECTION 7: MC_Home — Homing Sequence ────────────────────────
+// Add this AFTER absolute move is working.
+//
+// "MC_Home_DB"(
+//     Axis := "Axis_1",
+//     Execute := #cmd_StartHome,
+//     Position := 0.0,                   // Set origin to 0.000mm
+//     Mode := 3,                         // Active homing mode
+//     Done => #home_Done,
+//     Busy => #home_Busy,
+//     Error => #home_Error
+// );
+
+
+// ─── SECTION 8: MC_Halt — Immediate Stop ─────────────────────────
+//
+// "MC_Halt_DB"(
+//     Axis := "Axis_1",
+//     Execute := #cmd_Stop,
+//     Deceleration := 500.0,             // Hard deceleration for E-Stop
+//     Done => #halt_Done,
+//     Error => #halt_Error
+// );
+
+
+// ─── SECTION 9: Write Status Back to Modbus DB ──────────────────
+// Update the status registers so the web dashboard can read them.
+//
+// // Build status word (bit-packed)
+// #statusWord := 0;
+// IF #axis_Enabled THEN #statusWord := #statusWord OR 16#0001; END_IF;   // Bit 0
+// IF #home_Done THEN #statusWord := #statusWord OR 16#0002; END_IF;      // Bit 1
+// IF #move_Busy THEN #statusWord := #statusWord OR 16#0004; END_IF;      // Bit 2
+// IF #axis_Error THEN #statusWord := #statusWord OR 16#0008; END_IF;     // Bit 3
+// IF #jog_Busy THEN #statusWord := #statusWord OR 16#0010; END_IF;       // Bit 4
+// IF #home_Busy THEN #statusWord := #statusWord OR 16#0020; END_IF;      // Bit 5
+//
+// "ModbusData".StatusWord := #statusWord;
+//
+// // Write actual position (split REAL → two 16-bit words)
+// #posRaw := REAL_TO_DINT(#actualPositionMM * 1000.0);   // mm → 0.001mm units  
+// "ModbusData".PositionHI := DINT_TO_WORD(SHR(#posRaw, 16));
+// "ModbusData".PositionLO := DINT_TO_WORD(#posRaw AND 16#0000FFFF);
+//
+// // Write velocity, torque, diagnostics
+// "ModbusData".ActualVelocity := REAL_TO_INT(#actualVelocity);
+// "ModbusData".TorqueX10 := REAL_TO_WORD(#torquePercent * 10.0);
+// "ModbusData".AlarmCode := #activeAlarmCode;
+// "ModbusData".DriveTempX10 := REAL_TO_WORD(#driveTemp * 10.0);
+// "ModbusData".BusVoltage := REAL_TO_WORD(#busVoltage);
+
+
+// ─── QUICK START CHECKLIST ───────────────────────────────────────
+// 1. Create DB10 "ModbusData" (non-optimized) with the structure above
+// 2. Add MB_SERVER call in OB1, pointing MB_HOLD_REG to DB10
+// 3. Configure Technology Object "Axis_1" for your servo drive
+//    - PTO mode: Use S7-1200 high-speed outputs (Q0.0, Q0.1)
+//    - PROFINET: If SGD7S has PROFINET option module
+// 4. In CPU Properties → Protection: Enable "Permit access with PUT/GET"
+// 5. Connect the hardware using a D-Link DES-1008C switch:
+//    - Port 1: Connected to the Node.js Host PC
+//    - Port 2: Connected to the Siemens S7-1200 PLC
+//    - Port 3: Connected to the MP2300S Motion Controller
+//    Note: Since the S7-1200 has only a single physical Ethernet port, the switch is required to bridge the network.
+// 6. Download to PLC, set CPU to RUN
+// 7. Start Node.js backend: cd backend && node server.js
+// 8. Open web dashboard → Login → Axis Control → Servo ON → Jog FWD!
